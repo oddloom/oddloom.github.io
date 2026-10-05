@@ -65,17 +65,22 @@
 
   // Fases: cenário próprio de cada uma. A fase 1 usa o cenário escolhido em Personalizar.
   const PHASES = [
-    { name: 'FLIPERAMA', board: null },
-    { name: 'DESERTO', danger: 'flechas', board: {
+    { name: 'FLIPERAMA', board: null,
+      how: 'Sem perigo. Coma, pegue cogumelos pra colorir e liberar a música, e emende comidas pro combo.' },
+    { name: 'DESERTO', danger: 'flechas',
+      how: 'Flechas. A linha pisca vermelho por 1 segundo antes da flecha passar: saia dela.', board: {
       bgGray: [12, 12, 12], bgTop: [44, 28, 8], bgBottom: [96, 60, 20],
       gridGray: [40, 40, 40], grid: [210, 160, 80], gridAlpha: 0.3, sun: false } },
-    { name: 'CAVERNA', danger: 'morcegos', board: {
+    { name: 'CAVERNA', danger: 'morcegos',
+      how: 'Morcegos voam de lado a lado em zigue-zague. Na cabeça mata; no corpo, corta o rabo.', board: {
       bgGray: [8, 8, 8], bgTop: [4, 6, 14], bgBottom: [18, 22, 40],
       gridGray: [36, 36, 36], grid: [90, 110, 170], gridAlpha: 0.35, sun: false } },
-    { name: 'VULCÃO', danger: 'rochas', board: {
+    { name: 'VULCÃO', danger: 'rochas',
+      how: 'Rochas caem onde aparece a sombra e ficam 9 segundos bloqueando o caminho.', board: {
       bgGray: [10, 10, 10], bgTop: [22, 2, 0], bgBottom: [84, 16, 0],
       gridGray: [40, 40, 40], grid: [255, 100, 30], gridAlpha: 0.3, sun: false } },
-    { name: 'CAOS', danger: 'tudo junto', board: null }, // usa o synthwave
+    { name: 'CAOS', danger: 'tudo junto', board: null, // usa o synthwave
+      how: 'Flechas, morcegos e rochas ao mesmo tempo, e com mais frequência.' },
   ];
 
   const BAT = [ // morcego 8x5 em dois quadros (asa em cima / embaixo)
@@ -180,7 +185,7 @@
     sound: $('btn-sound'), pause: $('btn-pause'),
   };
   const ov = $('overlay');
-  const screens = { main: $('scr-main'), msg: $('scr-msg'), records: $('scr-records'), custom: $('scr-custom') };
+  const screens = { main: $('scr-main'), msg: $('scr-msg'), records: $('scr-records'), custom: $('scr-custom'), phases: $('scr-phases') };
   for (let i = 0; i < 6; i++) hud.meter.appendChild(document.createElement('i'));
 
   // ---------- armazenamento local ----------
@@ -409,19 +414,23 @@
   }
 
   // ---------- partida ----------
-  // Atalho de teste: link terminando em #fase3 começa direto na fase 3 (não salva recorde).
-  const testPhase = (() => {
+  // Treino: começa direto numa fase, com a velocidade do início, e não conta
+  // pro recorde. Entra pelo menu FASES ou por link terminando em #fase3.
+  const hashPhase = (() => {
     const m = /^#fase([1-5])$/.exec(location.hash || '');
-    return m ? parseInt(m[1], 10) - 1 : 0;
+    return m ? parseInt(m[1], 10) - 1 : null;
   })();
+  let practicePhase = 0;
 
-  function start(m) {
+  function start(m, ph) {
+    if (m === 'normal' && hashPhase != null) { m = 'practice'; ph = hashPhase; }
     mode = m || 'normal';
+    if (mode === 'practice' && ph != null) practicePhase = ph;
     L.reset(game, mode === 'daily' ? L.seedRng(today().key) : Math.random);
-    if (testPhase && mode === 'normal') {
-      game.eaten = testPhase * L.PHASE_EVERY;
-      game.tickMs = Math.max(55, 150 - game.eaten * 3);
-      game.hazardTimer = 300;
+    if (mode === 'practice') {
+      game.eaten = practicePhase * L.PHASE_EVERY;
+      game.eatenBase = game.eaten;
+      game.hazardTimer = 1500;
     }
     loadBest();
     particles = []; waves = []; toasts = [];
@@ -431,7 +440,32 @@
     ov.hidden = true;
     S.ensure();
     S.start();
+    if (mode === 'practice') toast('TREINO · FASE ' + (practicePhase + 1), '#ffffff');
     updateHud();
+  }
+
+  function showPhases() {
+    const list = $('phase-list');
+    list.innerHTML = '';
+    PHASES.forEach((ph, i) => {
+      const row = document.createElement('div');
+      row.className = 'phase';
+      const txt = document.createElement('div');
+      const h = document.createElement('b');
+      h.textContent = (i + 1) + ' · ' + ph.name;
+      const p = document.createElement('span');
+      p.textContent = ph.how;
+      txt.append(h, p);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'opt';
+      b.textContent = 'JOGAR';
+      b.dataset.action = 'phase';
+      b.dataset.phase = i;
+      row.append(txt, b);
+      list.appendChild(row);
+    });
+    showScreen('phases');
   }
 
   function pause() {
@@ -459,8 +493,8 @@
     state = 'over';
     shake = win ? 0 : 1;
     S.die();
-    const record = !testPhase && game.score > 0 && game.score > best;
-    pendingSave = !testPhase;
+    const record = mode !== 'practice' && game.score > 0 && game.score > best;
+    pendingSave = mode !== 'practice';
     const canContinue = !win && !revived;
     if (!canContinue) commitRun();
     finishRun(record, win, cause, canContinue);
@@ -521,14 +555,16 @@
 
     setTimeout(() => {
       if (state !== 'over') return; // já reiniciou antes do aviso aparecer
-      const sub = (mode === 'daily' ? 'DESAFIO ' + today().label + '\n' : '') + 'SCORE ' + game.score;
+      const sub = (mode === 'daily' ? 'DESAFIO ' + today().label + '\n' : mode === 'practice' ? 'TREINO (não conta recorde)\n' : '') + 'SCORE ' + game.score;
       const ph = L.phase(game);
       const info = (CAUSES[cause] ? CAUSES[cause] + ' · ' : '') + 'fase ' + (ph + 1) + ' ' + PHASES[ph].name.toLowerCase() +
         '\n' + (record ? 'novo recorde!' : 'recorde: ' + best) +
         '\n' + game.eaten + ' comidas · ' + game.mushrooms + ' cogumelos · ' + game.nearMisses + ' raspadas';
       showMessage(win ? 'VOCÊ ZEROU' : 'GAME OVER', sub, info, mode === 'daily'
         ? [['DE NOVO', 'daily'], ['COPIAR RESULTADO', 'share', 'alt'], ['MENU', 'menu', 'quiet']]
-        : [['DE NOVO', 'normal'], ['MENU', 'menu', 'quiet']], !win);
+        : mode === 'practice'
+          ? [['DE NOVO', 'practice'], ['OUTRA FASE', 'phases', 'quiet'], ['MENU', 'menu', 'quiet']]
+          : [['DE NOVO', 'normal'], ['MENU', 'menu', 'quiet']], !win);
       if (!canContinue) return;
       // o botão só aparece se o Google tiver um anúncio pronto
       Ads.offerReward({
@@ -562,6 +598,9 @@
     if (a === 'normal' || a === 'daily') { if (state === 'over') again(a); else start(a); }
     else if (a === 'resume') pause();
     else if (a === 'menu') { commitRun(); goMenu(); }
+    else if (a === 'practice') again('practice');
+    else if (a === 'phase') start('practice', parseInt(b.dataset.phase, 10));
+    else if (a === 'phases') { commitRun(); showPhases(); }
     else if (a === 'records') showRecords();
     else if (a === 'custom') { buildCustom(); showScreen('custom'); }
     else if (a === 'share') share(b);

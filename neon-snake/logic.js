@@ -346,7 +346,8 @@
       g.combo = g.comboLeft > 0 ? Math.min(COMBO_MAX, g.combo + 1) : 1;
       g.comboLeft = COMBO_WINDOW;
       g.score += 10 * g.combo * turboMult(g);
-      g.tickMs = Math.max(MIN_MS, START_MS - g.eaten * STEP_MS);
+      // no treino (começa numa fase adiantada) a velocidade conta só o que comeu lá
+      g.tickMs = Math.max(MIN_MS, START_MS - (g.eaten - (g.eatenBase || 0)) * STEP_MS);
       if (!spawnFood(g)) {
         g.alive = false;
         return { type: 'win', at: next };

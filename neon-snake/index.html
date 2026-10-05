@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Neon Snake: a cobrinha que começa cinza e ganha cor com cogumelos. Grátis, no navegador.">
 <meta name="theme-color" content="#000000">
-<script>window.ADS_CONFIG = { client: '' }; /* sem AdSense ainda: anúncio simulado */</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6743099408388533" crossorigin="anonymous"></script>
+<script>
+  window.ADS_CONFIG = { client: '' }; /* anúncio simulado até o AdSense aprovar */
+  window.adsbygoogle = window.adsbygoogle || [];
+  window.adBreak = window.adConfig = function (o) { adsbygoogle.push(o); };
+</script>
 <title>Neon Snake</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
@@ -103,6 +108,14 @@
   .opt.sel { border-color: var(--text); color: var(--text); }
   .note { font-size: 18px; color: var(--muted); }
   .note a { color: var(--muted); }
+
+  /* fases (treino) */
+  .phases { align-self: stretch; display: flex; flex-direction: column; }
+  .phase { display: flex; gap: 12px; align-items: center; justify-content: space-between; text-align: left; padding-block: 10px; border-bottom: 1px solid var(--line); }
+  .phase > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .phase b { font-family: var(--font-display); font-size: 11px; font-weight: 400; color: var(--text); }
+  .phase span { font-size: 19px; line-height: 1.1; color: var(--muted); }
+  .phase .opt { flex-shrink: 0; color: var(--text); border-color: var(--text); }
   .btn:disabled { opacity: .5; }
 
   /* anúncio simulado (some quando o AdSense real estiver ligado) */
@@ -147,6 +160,7 @@
       <div class="btns">
         <button class="btn" type="button" data-action="normal">JOGAR</button>
         <button class="btn alt" type="button" data-action="daily">DESAFIO DO DIA</button>
+        <button class="btn quiet" type="button" data-action="phases">FASES</button>
         <button class="btn quiet" type="button" data-action="custom">PERSONALIZAR</button>
         <button class="btn quiet" type="button" data-action="records">RECORDES</button>
       </div>
@@ -166,6 +180,13 @@
       <div class="label">MODO NORMAL · TOP 5</div>
       <div class="rec" id="rec-list"></div>
       <div class="stats" id="rec-stats"></div>
+      <div class="btns"><button class="btn quiet" type="button" data-action="menu">VOLTAR</button></div>
+    </section>
+
+    <section id="scr-phases" hidden>
+      <div class="h2">FASES</div>
+      <div class="note">No jogo normal a fase muda a cada 15 comidas. Aqui você treina direto na fase que quiser, começando devagar. Treino não conta pro recorde.</div>
+      <div class="phases" id="phase-list"></div>
       <div class="btns"><button class="btn quiet" type="button" data-action="menu">VOLTAR</button></div>
     </section>
 
