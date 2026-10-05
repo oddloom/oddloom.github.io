@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Neon Snake: a cobrinha que começa cinza e ganha cor com cogumelos. Grátis, no navegador.">
+<meta name="theme-color" content="#000000">
+<script>window.ADS_CONFIG = { client: '' }; /* sem AdSense ainda: anúncio simulado */</script>
+<title>Neon Snake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+  /* Tela de fliperama preta, grade em cima, HUD em fonte de terminal. Tema único (escuro) de propósito. */
+  :root {
+    --bg: #000000;
+    --text: #d8d8d8;
+    --muted: #6f6f6f;
+    --line: #2a2a2a;
+    --hud: #9a9a9a;          /* JS troca conforme os cogumelos e a cor escolhida */
+    --danger: #e0245e;
+    --turbo: #3b8cff;
+    --gold: #ffcc33;
+    --font-display: "Press Start 2P", ui-monospace, monospace;
+    --font-hud: "VT323", ui-monospace, "Consolas", monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+  body {
+    font-family: var(--font-hud);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding-inline: 8px;
+    touch-action: none; user-select: none; -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--turbo); outline-offset: 2px; }
+
+  #hud {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px;
+    font-size: 21px; line-height: 1; padding-block: 6px; max-width: 100%;
+    color: var(--hud); font-variant-numeric: tabular-nums; letter-spacing: .04em;
+  }
+  #hud .right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  #hud .center { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 96px; }
+  #hud .tools { display: flex; gap: 10px; color: var(--muted); font-size: 19px; }
+  #meter { display: flex; gap: 3px; }
+  #meter i { width: 9px; height: 9px; background: #262626; display: block; }
+  #meter i.on { background: var(--hud); }
+  #status { height: 18px; font-size: 19px; }
+  #status.turbo { color: var(--turbo); }
+  #status.gold { color: var(--gold); }
+  #combo { width: 96px; height: 4px; background: #1c1c1c; visibility: hidden; }
+  #combo.on { visibility: visible; }
+  #combo i { display: block; height: 100%; width: 0; background: var(--hud); }
+
+  #wrap { position: relative; }
+  canvas { display: block; }
+  #overlay {
+    position: absolute; inset: 0; overflow-y: auto;
+    background: rgba(0, 0, 0, .82); padding: 20px 16px;
+    display: flex; flex-direction: column;
+  }
+  #overlay[hidden] { display: none; }
+  #overlay > section {
+    margin: auto; width: 100%; max-width: 330px;
+    display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center;
+  }
+  #overlay > section[hidden] { display: none; }
+  .title { font-family: var(--font-display); font-size: 24px; line-height: 1.3; color: var(--text); text-wrap: balance; }
+  .title.dead { color: var(--danger); }
+  .h2 { font-family: var(--font-display); font-size: 15px; letter-spacing: .06em; color: var(--text); }
+  .label { font-family: var(--font-display); font-size: 9px; letter-spacing: .12em; color: var(--muted); }
+  #ov-score { font-family: var(--font-display); font-size: 13px; color: var(--hud); line-height: 1.6; white-space: pre-line; }
+  #ov-text { font-size: 21px; color: var(--muted); line-height: 1.15; max-width: 30ch; white-space: pre-line; user-select: text; -webkit-user-select: text; }
+  #legend { display: grid; grid-template-columns: auto 1fr; gap: 5px 10px; text-align: left; font-size: 19px; color: var(--text); }
+  #legend b { width: 14px; height: 14px; display: inline-block; align-self: center; }
+  .btns { display: flex; flex-direction: column; gap: 10px; align-self: stretch; }
+  .btn {
+    font-family: var(--font-display); font-size: 12px; letter-spacing: .06em;
+    padding: 14px 18px; border: 3px solid var(--text); color: var(--text);
+  }
+  .btn.alt { border-color: var(--gold); color: var(--gold); }
+  .btn.quiet { border-color: var(--line); color: var(--muted); }
+
+  /* recordes */
+  .rec { align-self: stretch; display: grid; grid-template-columns: auto 1fr auto; gap: 8px 12px; font-size: 22px; text-align: left; font-variant-numeric: tabular-nums; }
+  .rec .n { color: var(--muted); }
+  .rec .s { color: var(--hud); text-align: right; }
+  .rec .empty { grid-column: 1 / -1; color: var(--muted); text-align: center; }
+  .stats { align-self: stretch; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 20px; text-align: left; border-top: 1px solid var(--line); padding-top: 12px; }
+  .stats span:nth-child(even) { text-align: right; color: var(--text); }
+  .stats span:nth-child(odd) { color: var(--muted); }
+
+  /* personalizar */
+  #preview { border: 1px solid var(--line); max-width: 100%; }
+  .group { align-self: stretch; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+  .swatch { width: 34px; height: 34px; border: 3px solid transparent; outline: 1px solid var(--line); }
+  .swatch.sel { border-color: var(--bg); outline: 3px solid var(--text); }
+  .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .opt { font-family: var(--font-display); font-size: 10px; padding: 10px 12px; border: 2px solid var(--line); color: var(--muted); }
+  .opt.sel { border-color: var(--text); color: var(--text); }
+  .note { font-size: 18px; color: var(--muted); }
+  .note a { color: var(--muted); }
+  .btn:disabled { opacity: .5; }
+
+  /* anúncio simulado (some quando o AdSense real estiver ligado) */
+  .mock-ad { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .92); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .mock-card { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; }
+  .mock-tag { font-family: var(--font-display); font-size: 9px; letter-spacing: .12em; color: var(--gold); }
+  .mock-slot { width: 100%; aspect-ratio: 4 / 5; max-width: 100%; border: 2px dashed var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 22px; color: var(--text); background: #111; }
+  .mock-slot small { font-size: 18px; color: var(--muted); }
+  .mock-timer { font-size: 20px; color: var(--muted); min-height: 22px; }
+  .mock-close { font-family: var(--font-display); font-size: 11px; padding: 12px 20px; border: 2px solid var(--text); }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div>SCORE: <span id="score">0</span><br>SPEED: <span id="speed">7</span></div>
+  <div class="center">
+    <div id="status"></div>
+    <div id="combo"><i></i></div>
+    <div id="meter" title="cogumelos: cor do mundo"></div>
+  </div>
+  <div class="right">
+    <div>HIGH: <span id="best">0</span></div>
+    <div class="tools">
+      <button id="btn-sound" type="button">SOM</button>
+      <button id="btn-pause" type="button">II</button>
+    </div>
+  </div>
+</div>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="overlay">
+    <section id="scr-main">
+      <div class="title">SNAKE</div>
+      <div id="legend">
+        <b style="background:#e0245e"></b><span>comida: cresce (rápido = combo)</span>
+        <b style="background:#ff4b3e;border-radius:7px 7px 2px 2px"></b><span>cogumelo: pinta o mundo</span>
+        <b style="background:#3b8cff;transform:rotate(45deg) scale(.8)"></b><span>azul: turbo 3s, pontos 2x</span>
+        <b style="background:#ffcc33;border-radius:7px 7px 2px 2px"></b><span>dourado (raro): chuva de moedas</span>
+        <b style="border:2px dashed #d8d8d8"></b><span>raspar no corpo: bônus</span>
+        <b style="background:#ff2846"></b><span>a cada 15 comidas: fase nova com perigo. na cabeça mata, no corpo corta o rabo</span>
+      </div>
+      <div class="btns">
+        <button class="btn" type="button" data-action="normal">JOGAR</button>
+        <button class="btn alt" type="button" data-action="daily">DESAFIO DO DIA</button>
+        <button class="btn quiet" type="button" data-action="custom">PERSONALIZAR</button>
+        <button class="btn quiet" type="button" data-action="records">RECORDES</button>
+      </div>
+      <div class="note">deslize o dedo ou use as setas</div>
+      <div class="note"><a href="../">mais jogos</a> · <a href="../privacidade/">privacidade</a></div>
+    </section>
+
+    <section id="scr-msg" hidden>
+      <div class="title" id="ov-title"></div>
+      <div id="ov-score"></div>
+      <div id="ov-text"></div>
+      <div class="btns" id="msg-btns"></div>
+    </section>
+
+    <section id="scr-records" hidden>
+      <div class="h2">RECORDES</div>
+      <div class="label">MODO NORMAL · TOP 5</div>
+      <div class="rec" id="rec-list"></div>
+      <div class="stats" id="rec-stats"></div>
+      <div class="btns"><button class="btn quiet" type="button" data-action="menu">VOLTAR</button></div>
+    </section>
+
+    <section id="scr-custom" hidden>
+      <div class="h2">PERSONALIZAR</div>
+      <canvas id="preview"></canvas>
+      <div class="group">
+        <div class="label">COR DA COBRA</div>
+        <div class="swatches" id="opt-color"></div>
+      </div>
+      <div class="group">
+        <div class="label">COMIDA</div>
+        <div class="opts" id="opt-food"></div>
+      </div>
+      <div class="group">
+        <div class="label">CENÁRIO</div>
+        <div class="opts" id="opt-board"></div>
+      </div>
+      <div class="note">no jogo tudo começa cinza e ganha essa cor com os cogumelos</div>
+      <div class="btns"><button class="btn" type="button" data-action="menu">PRONTO</button></div>
+    </section>
+  </div>
+</div>
+<script src="logic.js"></script>
+<script src="sound.js"></script>
+<script src="ads.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
