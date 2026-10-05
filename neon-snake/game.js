@@ -677,7 +677,7 @@
   function handle(r) {
     if (CAUSES[r.type]) { gameOver(false, r.type); return; }
     if (r.type === 'win') { updateHud(); gameOver(true); return; }
-    S.beat(beatN++);
+    S.beat(beatN++, game.mushrooms, L.interval(game) / 1000);
     runMaxCombo = Math.max(runMaxCombo, r.combo || 0);
     if (r.nearMiss) {
       slowmo = 0.45;
@@ -704,7 +704,9 @@
       const c = center(r.at);
       waves.push({ x: c.x, y: c.y, r: 0, life: 0.8 });
       S.mushroom();
-      toast(game.mushrooms === 6 ? 'COR TOTAL' : game.mushrooms > 6 ? 'ARCO-ÍRIS' : '+COR', rgba(palette().hud));
+      // cada cogumelo libera um instrumento da música (ver Sound.beat)
+      const LAYERS = ['', '+COR · BUMBO', '+COR · CASCAVEL', '+COR · BAIXO', '+COR · PALMAS', '+COR · SSSS', 'COR TOTAL · MELODIA'];
+      toast(LAYERS[game.mushrooms] || 'ARCO-ÍRIS', rgba(palette().hud));
     } else if (r.type === 'boost') {
       burst(r.at, BLUE, 16);
       S.boost();
