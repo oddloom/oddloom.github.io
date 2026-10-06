@@ -107,13 +107,13 @@
     },
   };
 
+  function saved() {
+    try { const s = localStorage.getItem('neonsnake.lang'); return STRINGS[s] ? s : null; } catch (e) { return null; }
+  }
+  const fromLocale = (loc) => (/^pt\b/i.test(loc || '') ? 'pt' : 'en');
   function detect() {
-    try {
-      const saved = localStorage.getItem('neonsnake.lang');
-      if (STRINGS[saved]) return saved;
-    } catch (e) {}
     const langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
-    return /^pt\b/i.test(langs[0] || '') ? 'pt' : 'en';
+    return saved() || fromLocale(langs[0]);
   }
 
   const I18N = {
@@ -127,6 +127,16 @@
       I18N.lang = lang;
       try { localStorage.setItem('neonsnake.lang', lang); } catch (e) {}
       I18N.apply();
+    },
+    // idioma informado pela plataforma (ex.: CrazyGames). Só vale se o jogador
+    // ainda não escolheu no menu.
+    setDefault(locale) {
+      if (saved()) return;
+      const lang = fromLocale(locale);
+      if (lang === I18N.lang) return;
+      I18N.lang = lang;
+      I18N.apply();
+      root.dispatchEvent(new Event('langchange'));
     },
     // textos fixos do HTML: elementos com data-i18n (texto) ou data-i18n-title
     apply() {

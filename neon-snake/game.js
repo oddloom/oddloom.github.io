@@ -260,10 +260,15 @@
 
   // ---------- tamanho da tela ----------
   function resize() {
-    const hudH = 64;
+    const hudH = 64, hudW = 150;
     const vw = document.documentElement.clientWidth || window.innerWidth;
     const vh = document.documentElement.clientHeight || window.innerHeight;
-    cell = Math.max(8, Math.floor(Math.min(Math.min(vw - 16, 560) / COLS, (vh - hudH - 12) / ROWS)));
+    // Tela deitada: placar ao lado ganha mais altura pro tabuleiro (que é em pé).
+    const side = vw > vh;
+    document.body.classList.toggle('side', side);
+    cell = side
+      ? Math.max(8, Math.floor(Math.min((vw - hudW - 40) / COLS, (vh - 12) / ROWS)))
+      : Math.max(8, Math.floor(Math.min(Math.min(vw - 16, 560) / COLS, (vh - hudH - 12) / ROWS)));
     const w = cell * COLS, h = cell * ROWS;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = w * dpr;
@@ -271,7 +276,7 @@
     canvas.style.width = w + 'px';
     canvas.style.height = h + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    $('hud').style.width = w + 'px';
+    $('hud').style.width = (side ? hudW : w) + 'px';
     draw(performance.now());
   }
   window.addEventListener('resize', resize);
@@ -437,6 +442,7 @@
     revived = false; pendingSave = false; freeze = 0;
     state = 'play';
     ov.hidden = true;
+    Ads.gameplay(true);
     S.ensure();
     S.start();
     if (mode === 'practice') toast(T('toast.practice') + ' ' + (practicePhase + 1), '#ffffff');
@@ -471,10 +477,12 @@
   function pause() {
     if (state === 'play') {
       state = 'pause';
+      Ads.gameplay(false);
       showMessage(T('pause'), '', '', [[T('resume'), 'resume'], [T('menu'), 'menu', 'quiet']]);
     } else if (state === 'pause') {
       state = 'play';
       ov.hidden = true;
+      Ads.gameplay(true);
     }
   }
 
@@ -488,6 +496,7 @@
 
   function gameOver(win, cause) {
     state = 'over';
+    Ads.gameplay(false);
     shake = win ? 0 : 1;
     S.die();
     const record = mode !== 'practice' && game.score > 0 && game.score > best;
@@ -510,6 +519,7 @@
     L.revive(game);
     state = 'play';
     ov.hidden = true;
+    Ads.gameplay(true);
     freeze = 1200;
     acc = 0;
     prevSnake = null;
@@ -565,10 +575,11 @@
           : [[againTxt, 'normal'], [menu, 'menu', 'quiet']], !win);
       if (!canContinue) return;
       // o botão só aparece se o Google tiver um anúncio pronto
+      let b = null;
       Ads.offerReward({
         onAvailable(show) {
           if (state !== 'over') return;
-          const b = document.createElement('button');
+          b = document.createElement('button');
           b.type = 'button';
           b.className = 'btn alt';
           b.textContent = T('over.continue');
@@ -576,6 +587,7 @@
           $('msg-btns').prepend(b);
         },
         onReward: doRevive,
+        onSkip() { if (b) b.remove(); }, // anúncio falhou ou o jogador desistiu
       });
     }, 500);
   }
@@ -605,6 +617,7 @@
     else if (a === 'lang') { I18N.set(b.dataset.lang); updateHud(); }
   });
   hud.pause.addEventListener('click', pause);
+  window.addEventListener('langchange', updateHud); // idioma veio da plataforma
   hud.sound.addEventListener('click', () => { S.ensure(); S.toggle(); updateHud(); });
 
   function updateHud() {

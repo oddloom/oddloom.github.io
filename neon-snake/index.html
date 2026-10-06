@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -58,6 +58,17 @@
   #combo { width: 96px; height: 4px; background: #1c1c1c; visibility: hidden; }
   #combo.on { visibility: visible; }
   #combo i { display: block; height: 100%; width: 0; background: var(--hud); }
+
+  /* tela deitada (desktop, CrazyGames): placar numa coluna ao lado do tabuleiro */
+  body.side { flex-direction: row; gap: 16px; }
+  body.side #hud { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+  body.side #hud .right, body.side #hud .center { align-items: flex-start; }
+  /* tela baixa: menu mais compacto pra JOGAR aparecer sem rolar */
+  @media (max-height: 560px) {
+    #overlay > section { gap: 10px; }
+    .title { font-size: 18px; }
+    .btn { padding: 9px 12px; font-size: 11px; }
+  }
 
   #wrap { position: relative; }
   canvas { display: block; }
@@ -149,6 +160,13 @@
   <div id="overlay">
     <section id="scr-main">
       <div class="title">SNAKE</div>
+      <div class="btns">
+        <button class="btn" type="button" data-action="normal" data-i18n="menu.play"></button>
+        <button class="btn alt" type="button" data-action="daily" data-i18n="menu.daily"></button>
+        <button class="btn quiet" type="button" data-action="phases" data-i18n="menu.phases"></button>
+        <button class="btn quiet" type="button" data-action="custom" data-i18n="menu.custom"></button>
+        <button class="btn quiet" type="button" data-action="records" data-i18n="menu.records"></button>
+      </div>
       <div id="legend">
         <b style="background:#e0245e"></b><span data-i18n="legend.food"></span>
         <b style="background:#ff4b3e;border-radius:7px 7px 2px 2px"></b><span data-i18n="legend.mush"></span>
@@ -156,13 +174,6 @@
         <b style="background:#ffcc33;border-radius:7px 7px 2px 2px"></b><span data-i18n="legend.gold"></span>
         <b style="border:2px dashed #d8d8d8"></b><span data-i18n="legend.near"></span>
         <b style="background:#ff2846"></b><span data-i18n="legend.phase"></span>
-      </div>
-      <div class="btns">
-        <button class="btn" type="button" data-action="normal" data-i18n="menu.play"></button>
-        <button class="btn alt" type="button" data-action="daily" data-i18n="menu.daily"></button>
-        <button class="btn quiet" type="button" data-action="phases" data-i18n="menu.phases"></button>
-        <button class="btn quiet" type="button" data-action="custom" data-i18n="menu.custom"></button>
-        <button class="btn quiet" type="button" data-action="records" data-i18n="menu.records"></button>
       </div>
       <div class="opts" aria-label="Idioma / Language"><button class="opt" type="button" data-action="lang" data-lang="pt">PORTUGUÊS</button><button class="opt" type="button" data-action="lang" data-lang="en">ENGLISH</button></div>
       <div class="note" data-i18n="menu.hint"></div>
