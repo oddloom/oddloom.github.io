@@ -36,19 +36,14 @@
   }
   main { max-width: 760px; margin: 0 auto; padding-block: 48px 32px; display: flex; flex-direction: column; gap: 36px; }
   h1 { font-family: var(--font-display); font-size: clamp(20px, 5vw, 30px); line-height: 1.4; text-wrap: balance; }
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .cover { display: block; max-width: 480px; margin: 0 auto; border: 2px solid var(--accent); }
-  .cover:hover, .cover:focus-visible { box-shadow: 0 0 0 2px var(--accent), 0 0 24px rgba(70,230,95,.35); outline: none; }
-  .cover img { display: block; width: 100%; height: auto; }
+  .lead { color: var(--muted); max-width: 40ch; line-height: 1.2; }
   .games { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
   .card { display: flex; flex-direction: column; gap: 12px; padding: 18px; border: 2px solid var(--accent); color: inherit; text-decoration: none; background: rgba(0,0,0,.7); }
   .card:hover, .card:focus-visible { box-shadow: 0 0 0 2px var(--accent), 0 0 24px rgba(70,230,95,.35); outline: none; }
   .card h2 { font-family: var(--font-display); font-size: 14px; color: var(--accent); }
   .card p { color: var(--muted); line-height: 1.15; }
   .card .play { font-family: var(--font-display); font-size: 11px; color: var(--text); }
-  .thumb { height: 120px; background: #050505; border: 1px solid var(--line); position: relative; overflow: hidden; }
-  .thumb i { position: absolute; height: 12px; top: 54px; left: 20%; width: 52%; background: linear-gradient(90deg, rgba(70,230,95,0), var(--accent)); }
-  .thumb b { position: absolute; width: 12px; height: 12px; top: 54px; left: 82%; background: #e0245e; }
+  .thumb { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: #050505; border: 1px solid var(--line); }
   .soon { border-style: dashed; border-color: var(--line); }
   .soon h2 { color: var(--muted); }
   footer { max-width: 760px; margin: 0 auto; padding-block: 24px 40px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; color: var(--muted); font-size: 19px; }
@@ -58,14 +53,12 @@
 <body>
 <main>
   <header>
-    <!-- A capa já traz o nome e a frase; o h1 e o texto ficam só para leitores de tela e Google. -->
-    <h1 class="sr">Oddloom Games</h1>
-    <p class="sr">Jogos grátis pra jogar no navegador. Sem instalar, sem cadastro, funciona no celular.</p>
-    <a class="cover" href="neon-snake/"><img src="img/capa.webp" width="1024" height="1536" alt="Oddloom Games: jogar Neon Snake"></a>
+    <h1>Oddloom Games</h1>
+    <p class="lead">Jogos grátis pra jogar no navegador. Sem instalar, sem cadastro, funciona no celular.</p>
   </header>
   <section class="games" aria-label="Jogos">
     <a class="card" href="neon-snake/">
-      <div class="thumb" aria-hidden="true"><i></i><b></b></div>
+      <img class="thumb" src="img/thumb-snake.webp" width="640" height="360" alt="">
       <h2>NEON SNAKE</h2>
       <p>A cobrinha começa cinza e ganha cor com cogumelos. Cinco fases: deserto com flechas, caverna com morcegos, vulcão com rochas.</p>
       <span class="play">JOGAR ›</span>
