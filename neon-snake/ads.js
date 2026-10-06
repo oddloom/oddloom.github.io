@@ -16,15 +16,16 @@
 
   // ---------- simulação ----------
   function mock(kind, done) {
+    const T = root.I18N.t;
     const box = document.createElement('div');
     box.className = 'mock-ad';
     box.innerHTML =
       '<div class="mock-card">' +
-      '<div class="mock-tag">ANÚNCIO · SIMULAÇÃO</div>' +
-      '<div class="mock-slot">aqui aparece o anúncio do Google<br><small>(' +
-      (kind === 'reward' ? 'recompensado' : 'entre partidas') + ')</small></div>' +
+      '<div class="mock-tag">' + T('ad.tag') + '</div>' +
+      '<div class="mock-slot">' + T('ad.slot') + '<br><small>(' +
+      T(kind === 'reward' ? 'ad.reward' : 'ad.next') + ')</small></div>' +
       '<div class="mock-timer"></div>' +
-      '<button type="button" class="mock-close">FECHAR</button>' +
+      '<button type="button" class="mock-close"></button>' +
       '</div>';
     document.body.appendChild(box);
     const timer = box.querySelector('.mock-timer');
@@ -32,9 +33,9 @@
     let left = kind === 'reward' ? 5 : 3;
     const tick = () => {
       timer.textContent = left > 0
-        ? (kind === 'reward' ? 'recompensa em ' : 'pode fechar em ') + left + 's'
-        : (kind === 'reward' ? 'recompensa liberada' : '');
-      close.textContent = kind === 'reward' && left > 0 ? 'DESISTIR' : 'FECHAR';
+        ? T(kind === 'reward' ? 'ad.rewardIn' : 'ad.closeIn') + ' ' + left + 's'
+        : (kind === 'reward' ? T('ad.rewardOk') : '');
+      close.textContent = T(kind === 'reward' && left > 0 ? 'ad.skip' : 'ad.close');
     };
     tick();
     const iv = setInterval(() => { left--; tick(); if (left <= 0) clearInterval(iv); }, 1000);

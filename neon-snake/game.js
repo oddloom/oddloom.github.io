@@ -4,6 +4,7 @@
   const ROWS = 32; // em pé, bom pra gravar vídeo vertical
   const L = window.SnakeLogic;
   const S = window.Sound;
+  const T = window.I18N.t;
 
   const RED = '#e0245e';
   const BLUE = '#3b8cff';
@@ -33,7 +34,7 @@
   ];
   const FOODS = [
     {
-      id: 'classica', name: 'CLÁSSICA',
+      id: 'classica',
       draw(c, x, y, s, t) {
         const k = 0.78 + 0.06 * Math.sin(t / 180);
         const d = (s * (1 - k)) / 2;
@@ -42,7 +43,7 @@
       },
     },
     {
-      id: 'maca', name: 'MAÇÃ',
+      id: 'maca',
       draw(c, x, y, s, t) {
         const bob = Math.sin(t / 220) * s * 0.04;
         pixelArt(c, APPLE, { r: '#ff3b3b', w: '#ffc2c2', l: '#5fd35f', t: '#8a5a2b' }, x, y + bob, s);
@@ -52,36 +53,33 @@
 
   const BOARDS = [
     {
-      id: 'classico', name: 'CLÁSSICO',
+      id: 'classico',
       bgGray: [0, 0, 0], bgTop: [0, 0, 0], bgBottom: [0, 0, 0],
       gridGray: [34, 34, 34], grid: [16, 58, 20], gridAlpha: 1, sun: false,
     },
     {
-      id: 'synth', name: 'SYNTHWAVE',
+      id: 'synth',
       bgGray: [12, 12, 14], bgTop: [18, 0, 42], bgBottom: [74, 0, 84],
       gridGray: [44, 44, 48], grid: [255, 60, 175], gridAlpha: 0.45, sun: true,
     },
   ];
 
   // Fases: cenário próprio de cada uma. A fase 1 usa o cenário escolhido em Personalizar.
+  // Nome, perigo e explicação de cada fase ficam em i18n.js ('phases').
   const PHASES = [
-    { name: 'FLIPERAMA', board: null,
-      how: 'Sem perigo. Coma, pegue cogumelos pra colorir e liberar a música, e emende comidas pro combo.' },
-    { name: 'DESERTO', danger: 'flechas',
-      how: 'Flechas. A linha pisca vermelho por 1 segundo antes da flecha passar: saia dela.', board: {
+    { board: null },
+    { board: {
       bgGray: [12, 12, 12], bgTop: [44, 28, 8], bgBottom: [96, 60, 20],
       gridGray: [40, 40, 40], grid: [210, 160, 80], gridAlpha: 0.3, sun: false } },
-    { name: 'CAVERNA', danger: 'morcegos',
-      how: 'Morcegos voam de lado a lado em zigue-zague. Na cabeça mata; no corpo, corta o rabo.', board: {
+    { board: {
       bgGray: [8, 8, 8], bgTop: [4, 6, 14], bgBottom: [18, 22, 40],
       gridGray: [36, 36, 36], grid: [90, 110, 170], gridAlpha: 0.35, sun: false } },
-    { name: 'VULCÃO', danger: 'rochas',
-      how: 'Rochas caem onde aparece a sombra e ficam 9 segundos bloqueando o caminho.', board: {
+    { board: {
       bgGray: [10, 10, 10], bgTop: [22, 2, 0], bgBottom: [84, 16, 0],
       gridGray: [40, 40, 40], grid: [255, 100, 30], gridAlpha: 0.3, sun: false } },
-    { name: 'CAOS', danger: 'tudo junto', board: null, // usa o synthwave
-      how: 'Flechas, morcegos e rochas ao mesmo tempo, e com mais frequência.' },
+    { board: null }, // caos: usa o synthwave
   ];
+  const phaseText = (i) => T('phases')[i];
 
   const BAT = [ // morcego 8x5 em dois quadros (asa em cima / embaixo)
     ['b......b', 'bb.bb.bb', '.bbbbbb.', '..beeb..', '...bb...'],
@@ -320,7 +318,7 @@
     if (!top.length) {
       const e = document.createElement('span');
       e.className = 'empty';
-      e.textContent = 'nenhuma partida ainda';
+      e.textContent = T('records.empty');
       list.appendChild(e);
     }
     top.forEach((r, i) => {
@@ -333,14 +331,14 @@
     });
     const st = loadStats();
     const rows = [
-      ['desafio de hoje (' + today().label + ')', loadJSON(dailyKey(), 0)],
-      ['partidas jogadas', st.games],
-      ['maior combo', st.bestCombo ? 'x' + st.bestCombo : '-'],
-      ['fase mais longe', (st.maxPhase + 1) + ' · ' + PHASES[st.maxPhase].name],
-      ['mais cogumelos numa partida', st.maxMush],
-      ['raspadas no total', st.near],
-      ['moedas no total', st.coins],
-      ['rabos cortados', st.cuts],
+      [T('stats.daily') + ' (' + today().label + ')', loadJSON(dailyKey(), 0)],
+      [T('stats.games'), st.games],
+      [T('stats.combo'), st.bestCombo ? 'x' + st.bestCombo : '-'],
+      [T('stats.phase'), (st.maxPhase + 1) + ' · ' + phaseText(st.maxPhase).name],
+      [T('stats.mush'), st.maxMush],
+      [T('stats.near'), st.near],
+      [T('stats.coins'), st.coins],
+      [T('stats.cuts'), st.cuts],
     ];
     const box = $('rec-stats');
     box.innerHTML = '';
@@ -363,18 +361,19 @@
       b.type = 'button';
       b.className = 'swatch' + (c.id === skin.color ? ' sel' : '');
       b.style.background = rgba(c.body);
-      b.setAttribute('aria-label', 'cobra ' + c.id);
+      b.setAttribute('aria-label', T('custom.snake') + ' ' + c.id);
       b.addEventListener('click', () => setSkin('color', c.id));
       colorBox.appendChild(b);
     }
     for (const [boxId, list, key] of [['opt-food', FOODS, 'food'], ['opt-board', BOARDS, 'board']]) {
+      const prefix = key === 'food' ? 'food.' : 'board.';
       const box = $(boxId);
       box.innerHTML = '';
       for (const o of list) {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'opt' + (o.id === skin[key] ? ' sel' : '');
-        b.textContent = o.name;
+        b.textContent = T(prefix + o.id);
         b.addEventListener('click', () => setSkin(key, o.id));
         box.appendChild(b);
       }
@@ -440,14 +439,15 @@
     ov.hidden = true;
     S.ensure();
     S.start();
-    if (mode === 'practice') toast('TREINO · FASE ' + (practicePhase + 1), '#ffffff');
+    if (mode === 'practice') toast(T('toast.practice') + ' ' + (practicePhase + 1), '#ffffff');
     updateHud();
   }
 
   function showPhases() {
     const list = $('phase-list');
     list.innerHTML = '';
-    PHASES.forEach((ph, i) => {
+    PHASES.forEach((_, i) => {
+      const ph = phaseText(i);
       const row = document.createElement('div');
       row.className = 'phase';
       const txt = document.createElement('div');
@@ -459,7 +459,7 @@
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'opt';
-      b.textContent = 'JOGAR';
+      b.textContent = T('play');
       b.dataset.action = 'phase';
       b.dataset.phase = i;
       row.append(txt, b);
@@ -471,17 +471,14 @@
   function pause() {
     if (state === 'play') {
       state = 'pause';
-      showMessage('PAUSA', '', '', [['CONTINUAR', 'resume'], ['MENU', 'menu', 'quiet']]);
+      showMessage(T('pause'), '', '', [[T('resume'), 'resume'], [T('menu'), 'menu', 'quiet']]);
     } else if (state === 'pause') {
       state = 'play';
       ov.hidden = true;
     }
   }
 
-  const CAUSES = {
-    wall: 'bateu na parede', self: 'bateu no próprio corpo', rock: 'bateu numa rocha',
-    arrow: 'flechada na cabeça', bat: 'pego por um morcego',
-  };
+  const CAUSES = { wall: 1, self: 1, rock: 1, arrow: 1, bat: 1 }; // textos em i18n.js ('cause.*')
 
   // Recorde só é gravado quando a partida acaba de vez: se o jogador ainda
   // pode continuar pelo anúncio, espera ele sair da tela de game over.
@@ -516,7 +513,7 @@
     freeze = 1200;
     acc = 0;
     prevSnake = null;
-    toast('VOLTOU!', '#ffffff');
+    toast(T('toast.back'), '#ffffff');
     S.start();
     updateHud();
   }
@@ -555,16 +552,17 @@
 
     setTimeout(() => {
       if (state !== 'over') return; // já reiniciou antes do aviso aparecer
-      const sub = (mode === 'daily' ? 'DESAFIO ' + today().label + '\n' : mode === 'practice' ? 'TREINO (não conta recorde)\n' : '') + 'SCORE ' + game.score;
+      const sub = (mode === 'daily' ? T('over.daily') + ' ' + today().label + '\n' : mode === 'practice' ? T('over.practice') + '\n' : '') + 'SCORE ' + game.score;
       const ph = L.phase(game);
-      const info = (CAUSES[cause] ? CAUSES[cause] + ' · ' : '') + 'fase ' + (ph + 1) + ' ' + PHASES[ph].name.toLowerCase() +
-        '\n' + (record ? 'novo recorde!' : 'recorde: ' + best) +
-        '\n' + game.eaten + ' comidas · ' + game.mushrooms + ' cogumelos · ' + game.nearMisses + ' raspadas';
-      showMessage(win ? 'VOCÊ ZEROU' : 'GAME OVER', sub, info, mode === 'daily'
-        ? [['DE NOVO', 'daily'], ['COPIAR RESULTADO', 'share', 'alt'], ['MENU', 'menu', 'quiet']]
+      const info = (CAUSES[cause] ? T('cause.' + cause) + ' · ' : '') + T('over.phase') + ' ' + (ph + 1) + ' ' + phaseText(ph).name.toLowerCase() +
+        '\n' + (record ? T('over.record') : T('over.best') + ': ' + best) +
+        '\n' + game.eaten + ' ' + T('over.eaten') + ' · ' + game.mushrooms + ' ' + T('over.mush') + ' · ' + game.nearMisses + ' ' + T('over.near');
+      const againTxt = T('over.again'), menu = T('menu');
+      showMessage(win ? T('over.win') : 'GAME OVER', sub, info, mode === 'daily'
+        ? [[againTxt, 'daily'], [T('over.copy'), 'share', 'alt'], [menu, 'menu', 'quiet']]
         : mode === 'practice'
-          ? [['DE NOVO', 'practice'], ['OUTRA FASE', 'phases', 'quiet'], ['MENU', 'menu', 'quiet']]
-          : [['DE NOVO', 'normal'], ['MENU', 'menu', 'quiet']], !win);
+          ? [[againTxt, 'practice'], [T('over.otherPhase'), 'phases', 'quiet'], [menu, 'menu', 'quiet']]
+          : [[againTxt, 'normal'], [menu, 'menu', 'quiet']], !win);
       if (!canContinue) return;
       // o botão só aparece se o Google tiver um anúncio pronto
       Ads.offerReward({
@@ -573,7 +571,7 @@
           const b = document.createElement('button');
           b.type = 'button';
           b.className = 'btn alt';
-          b.textContent = 'CONTINUAR · VER ANÚNCIO';
+          b.textContent = T('over.continue');
           b.addEventListener('click', () => { b.disabled = true; show(); });
           $('msg-btns').prepend(b);
         },
@@ -583,10 +581,10 @@
   }
 
   function share(btn) {
-    const text = 'Neon Snake · desafio de ' + today().label + '\n' +
-      game.score + ' pontos · ' + game.eaten + ' comidas · ' + game.mushrooms + ' cogumelos';
-    const done = () => { btn.textContent = 'COPIADO'; };
-    const fail = () => { $('ov-text').textContent = text; btn.textContent = 'COPIE O TEXTO ACIMA'; };
+    const text = T('share.head') + ' ' + today().label + '\n' +
+      game.score + ' ' + T('share.points') + ' · ' + game.eaten + ' ' + T('over.eaten') + ' · ' + game.mushrooms + ' ' + T('over.mush');
+    const done = () => { btn.textContent = T('share.copied'); };
+    const fail = () => { $('ov-text').textContent = text; btn.textContent = T('share.manual'); };
     try { navigator.clipboard.writeText(text).then(done, fail); } catch (e) { fail(); }
   }
 
@@ -604,6 +602,7 @@
     else if (a === 'records') showRecords();
     else if (a === 'custom') { buildCustom(); showScreen('custom'); }
     else if (a === 'share') share(b);
+    else if (a === 'lang') { I18N.set(b.dataset.lang); updateHud(); }
   });
   hud.pause.addEventListener('click', pause);
   hud.sound.addEventListener('click', () => { S.ensure(); S.toggle(); updateHud(); });
@@ -614,17 +613,17 @@
     hud.score.textContent = game.score;
     hud.best.textContent = best;
     hud.speed.textContent = L.speed(game);
-    hud.sound.textContent = S.muted ? 'MUDO' : 'SOM';
+    hud.sound.textContent = T(S.muted ? 'sound.off' : 'sound.on');
     [...hud.meter.children].forEach((el, i) => el.classList.toggle('on', i < game.mushrooms));
   }
 
   // status do meio: moedas > turbo > combo
   function updateStatus() {
     let text = '', cls = '';
-    if (game.frenzyLeft > 0) { text = 'MOEDAS ' + Math.ceil(game.frenzyLeft / 1000) + 's'; cls = 'gold'; }
-    else if (game.boostLeft > 0) { text = 'TURBO 2x'; cls = 'turbo'; }
+    if (game.frenzyLeft > 0) { text = T('status.coins') + ' ' + Math.ceil(game.frenzyLeft / 1000) + 's'; cls = 'gold'; }
+    else if (game.boostLeft > 0) { text = T('status.turbo'); cls = 'turbo'; }
     else if (game.combo >= 2) text = 'COMBO x' + game.combo;
-    else if (state === 'play') text = 'FASE ' + (L.phase(game) + 1);
+    else if (state === 'play') text = T('status.phase') + ' ' + (L.phase(game) + 1);
     if (text !== statusText) {
       statusText = text;
       hud.status.textContent = text;
@@ -707,7 +706,7 @@
     } else if (ev.type === 'cut') {
       S.cut();
       burst(ev.at, rgba(palette().body), 14);
-      toast('CORTOU -' + ev.lost, RED);
+      toast(T('toast.cut') + ' -' + ev.lost, RED);
       // o desenho liso usa a posição anterior; corta ela junto
       if (prevSnake) prevSnake = prevSnake.slice(0, game.snake.length + 1);
     }
@@ -721,19 +720,19 @@
     if (r.nearMiss) {
       slowmo = 0.45;
       S.near();
-      toast('RASPOU! +15', '#ffffff');
+      toast(T('toast.near'), '#ffffff');
     }
     if (r.type === 'eat') {
       burst(r.at, RED, 10);
       S.eat(r.combo);
       if (r.combo >= 2) toast('COMBO x' + r.combo, rgba(palette().hud));
       if (r.phase != null) {
-        const ph = PHASES[r.phase];
+        const ph = phaseText(r.phase);
         S.phase();
         const c = center(r.at);
         waves.push({ x: c.x, y: c.y, r: 0, life: 1 });
-        toast('FASE ' + (r.phase + 1) + ' ' + ph.name, '#ffffff');
-        toast('cuidado: ' + ph.danger, RED);
+        toast(T('toast.phase') + ' ' + (r.phase + 1) + ' ' + ph.name, '#ffffff');
+        toast(T('toast.danger') + ' ' + ph.danger, RED);
       }
     } else if (r.type === 'coin') {
       runCoins++;
@@ -744,16 +743,15 @@
       waves.push({ x: c.x, y: c.y, r: 0, life: 0.8 });
       S.mushroom();
       // cada cogumelo libera um instrumento da música (ver Sound.beat)
-      const LAYERS = ['', '+COR · BUMBO', '+COR · CASCAVEL', '+COR · BAIXO', '+COR · PALMAS', '+COR · SSSS', 'COR TOTAL · MELODIA'];
-      toast(LAYERS[game.mushrooms] || 'ARCO-ÍRIS', rgba(palette().hud));
+      toast(T('layers')[game.mushrooms] || T('toast.rainbow'), rgba(palette().hud));
     } else if (r.type === 'boost') {
       burst(r.at, BLUE, 16);
       S.boost();
-      toast('TURBO', BLUE);
+      toast(T('toast.boost'), BLUE);
     } else if (r.type === 'gold') {
       burst(r.at, GOLD, 24);
       S.gold();
-      toast('CHUVA DE MOEDAS', GOLD);
+      toast(T('toast.gold'), GOLD);
     }
     updateHud();
   }
@@ -1002,6 +1000,7 @@
     ctx.shadowBlur = 0;
   }
 
+  I18N.apply();
   loadBest();
   updateHud();
   resize();

@@ -134,7 +134,7 @@
   <div class="center">
     <div id="status"></div>
     <div id="combo"><i></i></div>
-    <div id="meter" title="cogumelos: cor do mundo"></div>
+    <div id="meter" data-i18n-title="meter"></div>
   </div>
   <div class="right">
     <div>HIGH: <span id="best">0</span></div>
@@ -150,22 +150,23 @@
     <section id="scr-main">
       <div class="title">SNAKE</div>
       <div id="legend">
-        <b style="background:#e0245e"></b><span>comida: cresce (rápido = combo)</span>
-        <b style="background:#ff4b3e;border-radius:7px 7px 2px 2px"></b><span>cogumelo: pinta o mundo e solta a música</span>
-        <b style="background:#3b8cff;transform:rotate(45deg) scale(.8)"></b><span>azul: turbo 3s, pontos 2x</span>
-        <b style="background:#ffcc33;border-radius:7px 7px 2px 2px"></b><span>dourado (raro): chuva de moedas</span>
-        <b style="border:2px dashed #d8d8d8"></b><span>raspar no corpo: bônus</span>
-        <b style="background:#ff2846"></b><span>a cada 15 comidas: fase nova com perigo. na cabeça mata, no corpo corta o rabo</span>
+        <b style="background:#e0245e"></b><span data-i18n="legend.food"></span>
+        <b style="background:#ff4b3e;border-radius:7px 7px 2px 2px"></b><span data-i18n="legend.mush"></span>
+        <b style="background:#3b8cff;transform:rotate(45deg) scale(.8)"></b><span data-i18n="legend.boost"></span>
+        <b style="background:#ffcc33;border-radius:7px 7px 2px 2px"></b><span data-i18n="legend.gold"></span>
+        <b style="border:2px dashed #d8d8d8"></b><span data-i18n="legend.near"></span>
+        <b style="background:#ff2846"></b><span data-i18n="legend.phase"></span>
       </div>
       <div class="btns">
-        <button class="btn" type="button" data-action="normal">JOGAR</button>
-        <button class="btn alt" type="button" data-action="daily">DESAFIO DO DIA</button>
-        <button class="btn quiet" type="button" data-action="phases">FASES</button>
-        <button class="btn quiet" type="button" data-action="custom">PERSONALIZAR</button>
-        <button class="btn quiet" type="button" data-action="records">RECORDES</button>
+        <button class="btn" type="button" data-action="normal" data-i18n="menu.play"></button>
+        <button class="btn alt" type="button" data-action="daily" data-i18n="menu.daily"></button>
+        <button class="btn quiet" type="button" data-action="phases" data-i18n="menu.phases"></button>
+        <button class="btn quiet" type="button" data-action="custom" data-i18n="menu.custom"></button>
+        <button class="btn quiet" type="button" data-action="records" data-i18n="menu.records"></button>
       </div>
-      <div class="note">deslize o dedo ou use as setas</div>
-      <div class="note"><a href="../">mais jogos</a> · <a href="../privacidade/">privacidade</a></div>
+      <div class="opts" aria-label="Idioma / Language"><button class="opt" type="button" data-action="lang" data-lang="pt">PORTUGUÊS</button><button class="opt" type="button" data-action="lang" data-lang="en">ENGLISH</button></div>
+      <div class="note" data-i18n="menu.hint"></div>
+      <div class="note"><a href="../" data-i18n="site.more">mais jogos</a> · <a href="../privacidade/" data-i18n="site.privacy">privacidade</a></div>
     </section>
 
     <section id="scr-msg" hidden>
@@ -176,40 +177,41 @@
     </section>
 
     <section id="scr-records" hidden>
-      <div class="h2">RECORDES</div>
-      <div class="label">MODO NORMAL · TOP 5</div>
+      <div class="h2" data-i18n="records.title"></div>
+      <div class="label" data-i18n="records.label"></div>
       <div class="rec" id="rec-list"></div>
       <div class="stats" id="rec-stats"></div>
-      <div class="btns"><button class="btn quiet" type="button" data-action="menu">VOLTAR</button></div>
+      <div class="btns"><button class="btn quiet" type="button" data-action="menu" data-i18n="back"></button></div>
     </section>
 
     <section id="scr-phases" hidden>
-      <div class="h2">FASES</div>
-      <div class="note">No jogo normal a fase muda a cada 15 comidas. Aqui você treina direto na fase que quiser, começando devagar. Treino não conta pro recorde.</div>
+      <div class="h2" data-i18n="phases.title"></div>
+      <div class="note" data-i18n="phases.note"></div>
       <div class="phases" id="phase-list"></div>
-      <div class="btns"><button class="btn quiet" type="button" data-action="menu">VOLTAR</button></div>
+      <div class="btns"><button class="btn quiet" type="button" data-action="menu" data-i18n="back"></button></div>
     </section>
 
     <section id="scr-custom" hidden>
-      <div class="h2">PERSONALIZAR</div>
+      <div class="h2" data-i18n="custom.title"></div>
       <canvas id="preview"></canvas>
       <div class="group">
-        <div class="label">COR DA COBRA</div>
+        <div class="label" data-i18n="custom.color"></div>
         <div class="swatches" id="opt-color"></div>
       </div>
       <div class="group">
-        <div class="label">COMIDA</div>
+        <div class="label" data-i18n="custom.food"></div>
         <div class="opts" id="opt-food"></div>
       </div>
       <div class="group">
-        <div class="label">CENÁRIO</div>
+        <div class="label" data-i18n="custom.board"></div>
         <div class="opts" id="opt-board"></div>
       </div>
-      <div class="note">no jogo tudo começa cinza e ganha essa cor com os cogumelos</div>
-      <div class="btns"><button class="btn" type="button" data-action="menu">PRONTO</button></div>
+      <div class="note" data-i18n="custom.note"></div>
+      <div class="btns"><button class="btn" type="button" data-action="menu" data-i18n="done"></button></div>
     </section>
   </div>
 </div>
+<script src="i18n.js"></script>
 <script src="logic.js"></script>
 <script src="sound.js"></script>
 <script src="ads.js"></script>
