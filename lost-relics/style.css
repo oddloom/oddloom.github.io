@@ -240,6 +240,10 @@ img.coin { width: 1.1em; height: 1.1em; vertical-align: -0.18em; margin-right: .
 .best.new { color: var(--gold-hi); text-shadow: 0 0 12px rgba(247,226,161,.5); }
 .toggle-row { display: flex; gap: 10px; } .toggle-row > * { flex: 1; }
 
+/* cortina circular entre telas */
+#wipe { position: fixed; inset: 0; z-index: 40; pointer-events: none; background: radial-gradient(circle at 50% 45%, #2a1f0e 0%, #0d0a06 55%, #050403 100%); clip-path: circle(0px at 50% 50%); }
+#wipe::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(247,226,161,.18), transparent 40%); }
+
 /* textos que aparecem sobre o tabuleiro */
 .praise {
   position: fixed; left: 50%; top: 34%; z-index: 20; pointer-events: none; white-space: nowrap;

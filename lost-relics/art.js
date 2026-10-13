@@ -166,7 +166,7 @@
       const c = new Image(), a = new Image(); let got = 0;
       const join = () => {
         if (++got < 2) return;
-        const w = c.naturalWidth, h = c.naturalHeight, cv = mkCanvas(w, h), x = cv.getContext('2d');
+        const w = c.naturalWidth, h = c.naturalHeight, cv = mkCanvas(w, h), x = cv.getContext('2d', { willReadFrequently: true });
         x.drawImage(a, 0, 0, w, h);
         const m = x.getImageData(0, 0, w, h);
         x.clearRect(0, 0, w, h); x.drawImage(c, 0, 0);

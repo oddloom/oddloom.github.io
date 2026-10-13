@@ -204,11 +204,11 @@
     }
     const vb = V(pb, b[0], b[1]);
     Sound.play('swap');
-    await Promise.all([tween(va, { x: b[0], y: b[1] }, 0.15, 'inout'), tween(vb, { x: a[0], y: a[1] }, 0.15, 'inout')]);
+    await Promise.all([tween(va, { x: b[0], y: b[1] }, 0.19, 'back'), tween(vb, { x: a[0], y: a[1] }, 0.19, 'back')]);
     const start = LR.doSwap(state, a, b);
     if (!start) {
-      Sound.play('bad');
-      await Promise.all([tween(va, { x: a[0], y: a[1] }, 0.15, 'inout'), tween(vb, { x: b[0], y: b[1] }, 0.15, 'inout')]);
+      Sound.play('bad'); buzz(10);
+      await Promise.all([tween(va, { x: a[0], y: a[1] }, 0.17, 'back'), tween(vb, { x: b[0], y: b[1] }, 0.17, 'back')]);
       busy = false; return;
     }
     praiseLevel = 0;
@@ -231,6 +231,7 @@
   const WAVE = 0.085;
   async function onClear(ev) {
     if (ev.kind !== 'armed') Sound.play('match', ev.cascade);
+    buzz(ev.blasts.length ? 35 : 12);
     for (const b of ev.blasts) later(b.wave * WAVE, () => blastFx(b));
     for (const r of ev.removed) {
       const d = r.wave * WAVE;
@@ -286,7 +287,7 @@
       proms.push(anim(n * CELL + 0.04, (q) => {
         const f = q * n, i = Math.min(n - 1, Math.floor(f)), fr = f - i, A = e.pts[i], B = e.pts[i + 1];
         v.x = A[0] + (B[0] - A[0]) * fr; v.y = A[1] + (B[1] - A[1]) * fr;
-      }, 'fall', e.start * CELL).then(() => { v.sq = 0.12; tween(v, { sq: 0 }, 0.16); }));
+      }, 'fall', e.start * CELL).then(() => { v.sq = 0.17; tween(v, { sq: 0 }, 0.22, 'back'); }));
     }
     await Promise.all(proms);
   }
@@ -376,6 +377,25 @@
     renderHUD();
     await wait(0.35);
   }
+
+  // ---------- transição entre telas: cortina circular que fecha, troca a tela e abre ----------
+  let wiping = false;
+  function wipe(fn) {
+    const el = $('wipe');
+    if (REDUCED || !el.animate || wiping) { fn(); return; }
+    wiping = true;
+    const big = Math.ceil(Math.hypot(W, H)) + 'px';
+    el.style.pointerEvents = 'auto';
+    Sound.play('swap');
+    const a = el.animate([{ clipPath: 'circle(0px at 50% 55%)' }, { clipPath: 'circle(' + big + ' at 50% 55%)' }], { duration: 360, easing: 'cubic-bezier(.6,0,.3,1)', fill: 'forwards' });
+    a.onfinish = () => {
+      fn();
+      const b = el.animate([{ clipPath: 'circle(' + big + ' at 50% 50%)' }, { clipPath: 'circle(0px at 50% 50%)' }], { duration: 560, delay: 80, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'forwards' });
+      b.onfinish = () => { el.style.pointerEvents = 'none'; wiping = false; };
+    };
+  }
+  // vibração curta no celular (segue a chave de SOM)
+  function buzz(p) { try { if (navigator.vibrate && Sound.sfx) navigator.vibrate(p); } catch (e) {} }
 
   // ---------- efeitos ----------
   const addShake = (v) => { if (!REDUCED) shake = Math.max(shake, v); };
@@ -601,6 +621,15 @@
     if (scene === 'play' && state) drawBoard();
   }
 
+  let emberC = null;
+  function emberSprite() {
+    if (emberC) return emberC;
+    emberC = document.createElement('canvas'); emberC.width = emberC.height = 32;
+    const x = emberC.getContext('2d'), g = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+    g.addColorStop(0, 'rgba(255,214,140,1)'); g.addColorStop(0.35, 'rgba(240,150,60,0.5)'); g.addColorStop(1, 'rgba(240,150,60,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 32, 32);
+    return emberC;
+  }
   function drawEmbers(dt) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -609,9 +638,8 @@
       if (e.y < -10) { e.y = H + 10; e.x = Math.random() * W; }
       const x = e.x + Math.sin(e.ph * e.sw) * 14;
       const a = (0.35 + 0.35 * Math.sin(e.ph * 3 + e.x)) * Math.min(1, e.y / (H * 0.25));
-      const g = ctx.createRadialGradient(x, e.y, 0, x, e.y, e.r * 4);
-      g.addColorStop(0, 'rgba(255,214,140,' + a + ')'); g.addColorStop(0.35, 'rgba(240,150,60,' + a * 0.5 + ')'); g.addColorStop(1, 'rgba(240,150,60,0)');
-      ctx.fillStyle = g; ctx.fillRect(x - e.r * 4, e.y - e.r * 4, e.r * 8, e.r * 8);
+      ctx.globalAlpha = Math.max(0, a);
+      ctx.drawImage(emberSprite(), x - e.r * 4, e.y - e.r * 4, e.r * 8, e.r * 8);
     }
     ctx.restore();
   }
@@ -684,10 +712,8 @@
       const gg = ART.GEMS[p.color], pulse = 0.5 + 0.5 * Math.sin(now * 2.1 + p.id * 1.7);
       const r = cs * s * (0.6 + 0.1 * pulse);
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      const au = ctx.createRadialGradient(cx, cy, r * 0.12, cx, cy, r);
-      au.addColorStop(0, ART.hsl(gg.h, Math.min(100, gg.s + 12), Math.min(78, gg.l + 28), (gg.key === 'diamond' ? 0.16 : 0.26) * (0.55 + 0.45 * pulse) * v.a));
-      au.addColorStop(1, ART.hsl(gg.h, gg.s, gg.l, 0));
-      ctx.fillStyle = au; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      ctx.globalAlpha = (0.55 + 0.45 * pulse) * v.a;
+      ctx.drawImage(auraSprite(p.color), cx - r, cy - r, r * 2, r * 2);
       ctx.restore();
     }
     if (p.special === 'idol') {
@@ -716,10 +742,9 @@
       if (gemFx.width !== S) { gemFx.width = gemFx.height = S; }
       gx2.globalCompositeOperation = 'copy'; gx2.drawImage(spr, 0, 0);
       gx2.globalCompositeOperation = 'source-atop';
-      const bx = S / 2 - turn * S * 0.55;
-      const band = gx2.createLinearGradient(bx - S * 0.2, 0, bx + S * 0.2, S * 0.35);
-      band.addColorStop(0, 'rgba(255,255,255,0)'); band.addColorStop(0.5, 'rgba(255,252,240,' + (0.2 + 0.22 * Math.abs(turn)) + ')'); band.addColorStop(1, 'rgba(255,255,255,0)');
-      gx2.fillStyle = band; gx2.fillRect(0, 0, S, S);
+      gx2.globalAlpha = 0.45 + 0.55 * Math.abs(turn);
+      gx2.drawImage(bandSprite(S), -S * 0.5 - turn * S * 0.55, 0, S * 2, S);
+      gx2.globalAlpha = 1;
       ctx.save();
       ctx.translate(cx, cy + bob + (cs * v.sq) / 2);
       ctx.transform(kx, skew, 0, ky, 0, 0);
@@ -745,6 +770,26 @@
     ctx.globalAlpha = 1;
   }
 
+  // aura (uma por cor) e faixa de reflexo pré-desenhadas: o quadro só copia imagem, sem recriar gradiente
+  const auraCache = {};
+  function auraSprite(color) {
+    if (auraCache[color]) return auraCache[color];
+    const gg = ART.GEMS[color], c = document.createElement('canvas'); c.width = c.height = 128;
+    const x = c.getContext('2d'), au = x.createRadialGradient(64, 64, 8, 64, 64, 64);
+    au.addColorStop(0, ART.hsl(gg.h, Math.min(100, gg.s + 12), Math.min(78, gg.l + 28), gg.key === 'diamond' ? 0.16 : 0.26));
+    au.addColorStop(1, ART.hsl(gg.h, gg.s, gg.l, 0));
+    x.fillStyle = au; x.fillRect(0, 0, 128, 128);
+    return (auraCache[color] = c);
+  }
+  let bandC = null;
+  function bandSprite(S) {
+    if (bandC && bandC.height === S) return bandC;
+    bandC = document.createElement('canvas'); bandC.width = S * 2; bandC.height = S;
+    const x = bandC.getContext('2d'), g = x.createLinearGradient(S * 0.8, 0, S * 1.2, S * 0.35);
+    g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,252,240,0.42)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, S * 2, S);
+    return bandC;
+  }
   // tela de apoio pro reflexo que corre pela joia (reaproveitada por todas)
   const gemFx = document.createElement('canvas'), gx2 = gemFx.getContext('2d');
 
@@ -924,7 +969,7 @@
     card.querySelector('#mPlay').onclick = () => {
       Sound.init(); Sound.play('click');
       for (const k in picked) if (picked[k] && save.items[k] > 0) save.items[k]--; else delete picked[k];
-      persist(); closeModal(); startLevel(id, picked);
+      persist(); closeModal(); wipe(() => startLevel(id, picked));
     };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); if (scene !== 'map') openMap(); };
   }
@@ -940,7 +985,7 @@
     const earned = coinsOf(state.score) + stars * 10;
     save.coins += earned;
     persist();
-    Sound.play('win');
+    Sound.play('win'); buzz([30, 60, 30, 60, 90]);
     setTimeout(() => Sound.voice('win', I18N.lang), 350);
     const last = id === LEVELS.length;
     const card = openModal(
@@ -964,7 +1009,7 @@
       const go = () => openPre(id + 1);
       if (save.wins % 3 === 0) Ads.interstitial(go); else go();
     };
-    card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); openMap(); };
+    card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
     for (let i = 0; i < stars; i++) { await wait(0.35); imgs[i].classList.add('on'); Sound.play('star', i); }
   }
 
@@ -983,8 +1028,8 @@
       '<button class="btn stack" id="mExtra" type="button" hidden>' + T('lose.extra') + '<span class="sub">' + T('lose.extraAd') + '</span></button>' +
       '<button class="btn' + (usedExtra ? '' : ' stone') + '" id="mRetry" type="button">' + T('retry') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
-    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); closeModal(); startLevel(id); };
-    card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); openMap(); };
+    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel(id)); };
+    card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
     if (!usedExtra) {
       Ads.offerReward({
         onAvailable(show) {
@@ -1019,8 +1064,8 @@
     };
     paint();
     card.querySelector('#mResume').onclick = () => { Sound.play('click'); closeModal(); };
-    card.querySelector('#mRestart').onclick = () => { Sound.play('click'); closeModal(); startLevel(level.id); };
-    card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); openMap(); };
+    card.querySelector('#mRestart').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel(level.id)); };
+    card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
     card.querySelector('#mSfx').onclick = () => { Sound.setSfx(!Sound.sfx); paint(); };
     card.querySelector('#mMusic').onclick = () => { Sound.setMusic(!Sound.music); paint(); };
   }
@@ -1092,13 +1137,12 @@
   }
   $('btnPlay').onclick = () => {
     Sound.init(); Sound.play('click');
-    openMap();
-    if (save.unlocked === 1 && !save.stars[1]) openPre(1);
+    wipe(() => { openMap(); if (save.unlocked === 1 && !save.stars[1]) openPre(1); });
   };
   $('btnSfx').onclick = () => { Sound.init(); Sound.setSfx(!Sound.sfx); paintMenu(); Sound.play('click'); };
   $('btnMusic').onclick = () => { Sound.init(); Sound.setMusic(!Sound.music); paintMenu(); };
   $('btnLang').onclick = () => { I18N.toggle(); paintMenu(); Sound.play('click'); };
-  $('btnMapBack').onclick = () => { Sound.play('click'); openMenu(); };
+  $('btnMapBack').onclick = () => { Sound.play('click'); wipe(openMenu); };
 
   // ---------- mapa ----------
   function openMap() {
