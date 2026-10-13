@@ -598,7 +598,7 @@
     shake = Math.max(0, shake - dt * 1.6);
     if (scene === 'play' && state) {
       glintClock += dt;
-      if (glintClock > 0.11) {
+      if (glintClock > 0.35) {
         glintClock = 0;
         const x = (Math.random() * state.W) | 0, y = (Math.random() * state.H) | 0;
         const p = LR.inside(state, x, y) && state.grid[y][x];
@@ -733,23 +733,24 @@
     const NF = !ART.hasAI && window.GEM3D && GEM3D.ready ? GEM3D.FRAMES : 1;
     if (NF > 1 && p.kind === 'gem' && !p.special) { const k = Math.floor(now * 5 + (p.id * 2.37) % 14) % (NF * 2 - 2); fr = k < NF ? k : NF * 2 - 2 - k; }
     const spr = ART.pieceSprite(p, S, fr);
-    if (p.kind === 'gem' && !p.special && ART.hasAI && !REDUCED) {
-      // giro 3D leve: a pedra vira até ~25° pros lados (estreita e alarga), inclina, flutua,
-      // e uma faixa de reflexo corre pelas facetas acompanhando o giro
-      const tt = now * 0.85 + p.id * 0.73, turn = Math.sin(tt);
-      const kx = Math.cos(turn * 0.44), ky = 0.97 + 0.03 * Math.cos(tt * 0.7 + 1), skew = 0.035 * Math.sin(tt * 1.3);
-      const bob = Math.sin(tt * 0.8) * cs * 0.018;
+    const isSel = selected && v === vis.get(p.id) && state && state.grid[selected[1]] && state.grid[selected[1]][selected[0]] === p;
+    // joia parada e nítida; a cada ~7 s uma faixa de luz atravessa as facetas (cada joia no seu momento)
+    const sweepU = ((now + p.id * 1.37) % 7) / 0.9;
+    if (p.kind === 'gem' && !p.special && ART.hasAI && !REDUCED && (sweepU < 1 || isSel)) {
       if (gemFx.width !== S) { gemFx.width = gemFx.height = S; }
       gx2.globalCompositeOperation = 'copy'; gx2.drawImage(spr, 0, 0);
       gx2.globalCompositeOperation = 'source-atop';
-      gx2.globalAlpha = 0.45 + 0.55 * Math.abs(turn);
-      gx2.drawImage(bandSprite(S), -S * 0.5 - turn * S * 0.55, 0, S * 2, S);
-      gx2.globalAlpha = 1;
+      if (sweepU < 1) {
+        const e = sweepU * sweepU * (3 - 2 * sweepU);
+        gx2.globalAlpha = Math.sin(Math.PI * sweepU);
+        gx2.drawImage(bandSprite(S), -S * 1.4 + e * S * 1.8, 0, S * 2, S);
+        gx2.globalAlpha = 1;
+      }
       ctx.save();
-      ctx.translate(cx, cy + bob + (cs * v.sq) / 2);
-      ctx.transform(kx, skew, 0, ky, 0, 0);
+      ctx.translate(cx, cy + (cs * v.sq) / 2);
+      if (isSel) { const k = Math.sin(now * 4); ctx.transform(Math.cos(k * 0.35), 0.03 * k, 0, 1, 0, 0); }   // selecionada: inclina e respira
       ctx.drawImage(gemFx, -w / 2, -h / 2, w, h);
-      ctx.restore();
+      ctx.restore()
     } else {
       ctx.drawImage(spr, cx - w / 2, cy - h / 2 + (cs * v.sq) / 2, w, h);
     }
@@ -1243,6 +1244,7 @@
     $('loading').remove();
     const m = /^#fase(\d+)$/.exec(location.hash || '');
     if (m && LEVELS[+m[1] - 1]) { openMap(); openPre(+m[1]); }
+    else if (/^#jogar\d+$/.test(location.hash)) startLevel(+location.hash.slice(6));
     else if (location.hash === '#mapa') openMap();
     else if (location.hash === '#loja') { openMap(); openShop(); }
     else openMenu();
