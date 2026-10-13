@@ -671,7 +671,28 @@
     let fr = 0;
     const NF = !ART.hasAI && window.GEM3D && GEM3D.ready ? GEM3D.FRAMES : 1;
     if (NF > 1 && p.kind === 'gem' && !p.special) { const k = Math.floor(now * 5 + (p.id * 2.37) % 14) % (NF * 2 - 2); fr = k < NF ? k : NF * 2 - 2 - k; }
-    ctx.drawImage(ART.pieceSprite(p, S, fr), cx - w / 2, cy - h / 2 + (cs * v.sq) / 2, w, h);
+    const spr = ART.pieceSprite(p, S, fr);
+    if (p.kind === 'gem' && !p.special && ART.hasAI && !REDUCED) {
+      // giro 3D leve: a pedra vira até ~25° pros lados (estreita e alarga), inclina, flutua,
+      // e uma faixa de reflexo corre pelas facetas acompanhando o giro
+      const tt = now * 0.85 + p.id * 0.73, turn = Math.sin(tt);
+      const kx = Math.cos(turn * 0.44), ky = 0.97 + 0.03 * Math.cos(tt * 0.7 + 1), skew = 0.035 * Math.sin(tt * 1.3);
+      const bob = Math.sin(tt * 0.8) * cs * 0.018;
+      if (gemFx.width !== S) { gemFx.width = gemFx.height = S; }
+      gx2.globalCompositeOperation = 'copy'; gx2.drawImage(spr, 0, 0);
+      gx2.globalCompositeOperation = 'source-atop';
+      const bx = S / 2 - turn * S * 0.55;
+      const band = gx2.createLinearGradient(bx - S * 0.2, 0, bx + S * 0.2, S * 0.35);
+      band.addColorStop(0, 'rgba(255,255,255,0)'); band.addColorStop(0.5, 'rgba(255,252,240,' + (0.2 + 0.22 * Math.abs(turn)) + ')'); band.addColorStop(1, 'rgba(255,255,255,0)');
+      gx2.fillStyle = band; gx2.fillRect(0, 0, S, S);
+      ctx.save();
+      ctx.translate(cx, cy + bob + (cs * v.sq) / 2);
+      ctx.transform(kx, skew, 0, ky, 0, 0);
+      ctx.drawImage(gemFx, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    } else {
+      ctx.drawImage(spr, cx - w / 2, cy - h / 2 + (cs * v.sq) / 2, w, h);
+    }
     if (p.vine) ctx.drawImage(ART.vineSprite(S), cx - (cs * s) / 2, cy - (cs * s) / 2, cs * s, cs * s);
     if (p.special === 'lineH' || p.special === 'lineV') {
       const [fx, fy] = ART.fusePoint(cs * s, p.special === 'lineV');
@@ -688,6 +709,9 @@
     }
     ctx.globalAlpha = 1;
   }
+
+  // tela de apoio pro reflexo que corre pela joia (reaproveitada por todas)
+  const gemFx = document.createElement('canvas'), gx2 = gemFx.getContext('2d');
 
   // faísca de joia: brilho central + raios longos em cruz (estrela de luz)
   function flare(x, y, r, a) {
