@@ -1132,7 +1132,7 @@
     $('btnPause').setAttribute('aria-label', T('pause'));
   }
   function openMenu() {
-    scene = 'menu'; state = null;
+    scene = 'menu'; state = null; updateHammerBtn();
     $('hud').hidden = true; $('screen-map').hidden = true; $('screen-menu').hidden = false;
     paintMenu();
   }
@@ -1148,7 +1148,7 @@
   // ---------- mapa ----------
   function openMap() {
     Ads.gameplay(false);
-    scene = 'map'; state = null;
+    scene = 'map'; state = null; updateHammerBtn();
     $('hud').hidden = true; $('screen-menu').hidden = true; $('screen-map').hidden = false;
     paintMenu();
     buildMap();
@@ -1187,7 +1187,15 @@
         '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face +
         (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
     });
-    inner.innerHTML = html;
+    // animações do mapa: tochas tremulando, porta do templo pulsando, joias piscando, calendário girando a luz, vaga-lumes
+    const FX = D.mapFx || {}, pos = (p) => 'left:' + (offX + p[0] * s).toFixed(1) + 'px;top:' + (offY + p[1] * s).toFixed(1) + 'px';
+    let fx = '';
+    (FX.torch || []).forEach((p, k) => { fx += '<i class="fx-torch" style="' + pos(p) + ';--d:' + (k * 0.37) + 's;--r:' + (60 * s * 1.9) + 'px"></i>'; });
+    if (FX.door) fx += '<i class="fx-door" style="' + pos(FX.door) + ';--r:' + (130 * s) + 'px"></i>';
+    (FX.gems || []).forEach((p, k) => { fx += '<i class="fx-gem" style="' + pos(p) + ';--d:' + ((k * 0.73) % 4) + 's"></i>'; });
+    if (FX.disc) fx += '<i class="fx-disc" style="' + pos(FX.disc) + ';--r:' + (300 * s) + 'px"></i>';
+    for (let k = 0; k < 28; k++) fx += '<i class="fx-fly" style="left:' + (Math.random() * w).toFixed(0) + 'px;top:' + (h * 0.25 + Math.random() * h * 0.75).toFixed(0) + 'px;--d:' + (Math.random() * 8).toFixed(2) + 's;--t:' + (6 + Math.random() * 6).toFixed(2) + 's"></i>';
+    inner.innerHTML = '<div class="map-fx" aria-hidden="true">' + fx + '</div>' + html;
     $('mapStars').textContent = totalStars + '/' + n * 3;
     $('mapStarIc').src = ART.icon('star', 44);
     $('mapCoinIc').src = ART.icon('coin', 64);
