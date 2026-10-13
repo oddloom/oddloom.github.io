@@ -1,0 +1,106 @@
+// Sons sintetizados na hora (sem arquivo de áudio, sem direito autoral).
+// Música: marimba e tambor da selva, gerados em escala pentatônica.
+(function (root) {
+  let ctx = null, master = null, sfxBus = null, musicBus = null, noiseBuf = null;
+  let sfxOn = true, musicOn = true, musicTimer = null, beat = 0;
+  try { sfxOn = localStorage.getItem('lostrelics.sfx') !== '0'; musicOn = localStorage.getItem('lostrelics.music') !== '0'; } catch (e) {}
+
+  function init() {
+    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    const AC = root.AudioContext || root.webkitAudioContext;
+    if (!AC) return;
+    ctx = new AC();
+    master = ctx.createGain(); master.gain.value = 0.8;
+    const comp = ctx.createDynamicsCompressor();
+    master.connect(comp); comp.connect(ctx.destination);
+    sfxBus = ctx.createGain(); sfxBus.gain.value = sfxOn ? 1 : 0; sfxBus.connect(master);
+    musicBus = ctx.createGain(); musicBus.gain.value = musicOn ? 0.32 : 0; musicBus.connect(master);
+    noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    startMusic();
+  }
+
+  const hz = (semi) => 261.63 * Math.pow(2, semi / 12); // C4 + semitons
+  function tone(freq, t0, dur, type, vol, bus, attack) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + (attack || 0.005));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(bus || sfxBus);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+    return o;
+  }
+  function marimba(freq, t0, vol, bus) {
+    tone(freq, t0, 0.5, 'sine', vol, bus);
+    tone(freq * 4, t0, 0.08, 'sine', vol * 0.35, bus);
+    tone(freq * 2.01, t0, 0.2, 'triangle', vol * 0.25, bus);
+  }
+  function noise(t0, dur, vol, filter, f0, f1, bus) {
+    const s = ctx.createBufferSource(); s.buffer = noiseBuf;
+    const f = ctx.createBiquadFilter(); f.type = filter || 'lowpass';
+    f.frequency.setValueAtTime(f0 || 1000, t0);
+    if (f1) f.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    s.connect(f); f.connect(g); g.connect(bus || sfxBus);
+    s.start(t0); s.stop(t0 + dur + 0.05);
+  }
+
+  const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31];
+  const S = {
+    swap() { const t = ctx.currentTime; noise(t, 0.12, 0.25, 'bandpass', 600, 2400); },
+    bad() { const t = ctx.currentTime; tone(160, t, 0.18, 'triangle', 0.3); tone(120, t + 0.06, 0.2, 'triangle', 0.25); },
+    match(cascade) {
+      const t = ctx.currentTime, i = Math.min(PENTA.length - 3, cascade - 1);
+      marimba(hz(PENTA[i] + 12), t, 0.35); marimba(hz(PENTA[i + 2] + 12), t + 0.04, 0.22);
+    },
+    line() { const t = ctx.currentTime; const o = tone(1400, t, 0.3, 'sawtooth', 0.12); o.frequency.exponentialRampToValueAtTime(180, t + 0.3); noise(t, 0.35, 0.35, 'highpass', 900); },
+    barrel() { const t = ctx.currentTime; noise(t, 0.6, 0.7, 'lowpass', 900, 80); const o = tone(110, t, 0.5, 'sine', 0.6); o.frequency.exponentialRampToValueAtTime(40, t + 0.5); },
+    idol() { const t = ctx.currentTime; [0, 4, 7, 12, 16, 19, 24].forEach((s, k) => marimba(hz(s + 12), t + k * 0.045, 0.22)); noise(t, 0.6, 0.12, 'highpass', 5000); },
+    rock() { const t = ctx.currentTime; noise(t, 0.18, 0.5, 'bandpass', 1800, 400); tone(90, t, 0.12, 'square', 0.12); },
+    sand() { const t = ctx.currentTime; noise(t, 0.2, 0.18, 'lowpass', 2500, 500); },
+    vine() { const t = ctx.currentTime; noise(t, 0.06, 0.4, 'highpass', 3000); tone(520, t, 0.1, 'triangle', 0.15); },
+    chest() { const t = ctx.currentTime; [0, 7, 12, 19].forEach((s, k) => tone(hz(s + 24), t + k * 0.07, 0.25, 'square', 0.08)); },
+    create() { const t = ctx.currentTime; tone(hz(31), t, 0.25, 'sine', 0.18); tone(hz(36), t + 0.06, 0.3, 'sine', 0.14); },
+    click() { const t = ctx.currentTime; tone(900, t, 0.05, 'triangle', 0.15); },
+    rush() { const t = ctx.currentTime; const o = tone(200, t, 1, 'sawtooth', 0.08); o.frequency.exponentialRampToValueAtTime(1600, t + 0.9); },
+    convert() { const t = ctx.currentTime; tone(hz(24 + Math.floor(Math.random() * 5) * 2), t, 0.12, 'square', 0.06); },
+    win() { const t = ctx.currentTime; [0, 4, 7, 12, 7, 12, 16].forEach((s, k) => marimba(hz(s + 12), t + k * 0.11, 0.3)); },
+    lose() { const t = ctx.currentTime; [7, 3, 0, -5].forEach((s, k) => marimba(hz(s + 12), t + k * 0.18, 0.28)); },
+    star(i) { const t = ctx.currentTime; marimba(hz([12, 16, 19][i] + 12), t, 0.35); tone(hz([12, 16, 19][i] + 36), t, 0.4, 'sine', 0.08); },
+  };
+
+  // música generativa: marimba + tambor, 104 bpm
+  const MELODY = [0, 4, 7, 9, 7, 4, 2, 4, 0, 2, 4, 7, 12, 9, 7, 4];
+  function startMusic() {
+    if (musicTimer || !ctx) return;
+    let next = ctx.currentTime + 0.1;
+    const step = 60 / 104 / 2;
+    musicTimer = setInterval(() => {
+      if (!ctx || ctx.state !== 'running') return;
+      while (next < ctx.currentTime + 0.3) {
+        const b = beat % 32;
+        if (b % 4 === 0) { noise(next, 0.18, 0.5, 'lowpass', 180, 60, musicBus); tone(70, next, 0.2, 'sine', 0.5, musicBus); }
+        if (b % 4 === 2) noise(next, 0.05, 0.15, 'highpass', 6000, null, musicBus);
+        if (b % 2 === 0 && Math.random() < 0.8) {
+          const n = MELODY[(beat / 2) % 16 | 0] + (beat % 64 >= 32 ? 2 : 0);
+          marimba(hz(n), next, 0.18, musicBus);
+        }
+        if (b === 0 || b === 16) marimba(hz(-12 + (beat % 64 >= 32 ? 5 : 0)), next, 0.25, musicBus);
+        beat++; next += step;
+      }
+    }, 100);
+  }
+
+  root.Sound = {
+    init,
+    play(name, arg) { if (!ctx || !sfxOn) return; try { S[name](arg); } catch (e) {} },
+    get sfx() { return sfxOn; }, get music() { return musicOn; },
+    setSfx(v) { sfxOn = v; if (sfxBus) sfxBus.gain.value = v ? 1 : 0; try { localStorage.setItem('lostrelics.sfx', v ? '1' : '0'); } catch (e) {} },
+    setMusic(v) { musicOn = v; if (musicBus) musicBus.gain.value = v ? 0.32 : 0; try { localStorage.setItem('lostrelics.music', v ? '1' : '0'); } catch (e) {} },
+    pause() { if (ctx && ctx.state === 'running') ctx.suspend(); },
+    resume() { if (ctx && ctx.state === 'suspended') ctx.resume(); },
+  };
+})(window);

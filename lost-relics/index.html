@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Lost Relics</title>
+<meta name="description" content="Combine joias num templo perdido. 20 fases, dinamite, barris de pólvora e o ídolo dourado.">
+<meta name="theme-color" content="#0a0907">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,500;0,600;1,500;1,600&display=swap">
+<link rel="stylesheet" href="style.css">
+<meta property="og:title" content="Lost Relics">
+<meta property="og:description" content="Combine joias num templo maia perdido. 20 fases, grátis, no navegador.">
+<meta property="og:image" content="https://oddloom.github.io/img/thumb-lost-relics.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6743099408388533" crossorigin="anonymous"></script>
+<script>
+  window.ADS_CONFIG = { client: '' }; /* anúncio simulado até o AdSense aprovar */
+  window.adsbygoogle = window.adsbygoogle || [];
+  window.adBreak = window.adConfig = function (o) { adsbygoogle.push(o); };
+</script>
+</head>
+<body>
+<canvas id="stage" aria-label="Tabuleiro de joias"></canvas>
+
+<div id="hud" hidden>
+  <button id="btnPause" class="icon-btn" type="button" aria-label="Pausa"><svg viewBox="0 0 20 20"><rect x="5" y="3" width="3.2" height="14" rx="1"/><rect x="11.8" y="3" width="3.2" height="14" rx="1"/></svg></button>
+  <div class="hud-moves"><span class="lbl" data-t="moves"></span><span id="moves" class="metal">0</span></div>
+  <div id="goals" class="hud-goals"></div>
+  <div class="hud-score"><span class="lbl" data-t="score"></span><span id="score">0</span>
+    <div class="starbar"><div id="starfill"></div><img id="mk1" alt=""><img id="mk2" alt=""><img id="mk3" alt=""></div>
+  </div>
+</div>
+
+<section id="screen-menu" class="screen" hidden>
+  <h1 class="logo-wrap"><img id="logo" src="assets/logo.png" alt="Lost Relics"></h1>
+  <p class="tagline" data-t="title.sub"></p>
+  <div class="menu-buttons">
+    <button id="btnPlay" class="btn" type="button"></button>
+  </div>
+  <div class="menu-toggles">
+    <button id="btnSfx" class="btn dark small" type="button"></button>
+    <button id="btnMusic" class="btn dark small" type="button"></button>
+    <button id="btnLang" class="btn dark small" type="button"></button>
+  </div>
+  <div class="menu-foot"><a href="../" style="color:inherit;text-decoration:none">ODDLOOM GAMES</a></div>
+</section>
+
+<section id="screen-map" class="screen" hidden>
+  <header class="map-head">
+    <button id="btnMapBack" class="icon-btn" type="button" aria-label="Menu"><svg viewBox="0 0 20 20"><path d="M12.5 3 5.5 10l7 7 1.6-1.6L8.7 10l5.4-5.4z"/></svg></button>
+    <div class="map-title"><small data-t="map.world"></small><strong class="metal" data-t="map.title"></strong></div>
+    <div class="map-stars"><img id="mapStarIc" alt=""><span id="mapStars">0/60</span></div>
+  </header>
+  <div id="mapScroll"><div id="mapInner"></div></div>
+</section>
+
+<div id="modal" class="modal" hidden><div id="modalCard" class="card" role="dialog" aria-modal="true"></div></div>
+<div id="loading" class="loading">…</div>
+
+<script src="i18n.js"></script>
+<script src="ads.js"></script>
+<script src="sound.js"></script>
+<script src="engine.js"></script>
+<script src="levels.js"></script>
+<script src="textures.js"></script>
+<script src="gems3d.js"></script>
+<script src="art-data.js"></script>
+<script src="art.js"></script>
+<script src="ui-art.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
