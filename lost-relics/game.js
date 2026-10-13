@@ -1179,12 +1179,13 @@
       const locked = id > save.unlocked, current = id === save.unlocked && !st;
       const gem = locked ? (L.boss ? 'g-amethyst' : 'g-night') : 'g-emerald';
       const cls = 'node' + (st ? ' done' : '') + (L.boss ? ' boss' : '') + (locked ? ' locked' : '') + (current ? ' current' : '');
-      const stars = locked || current ? '' : '<span class="st">' + [0, 1, 2].map((k) => '<img alt="" src="' + ART.icon(k < st ? 'star' : 'star0', 40) + '">').join('') + '</span>';
+      const NI = (k) => ART.nodeImg(k), starSrc = (on) => NI(on ? 'star' : 'star0') || ART.icon(on ? 'star' : 'star0', 40);
+      const stars = locked || current ? '' : '<span class="st">' + [0, 1, 2].map((k) => '<img alt="" src="' + starSrc(k < st) + '">').join('') + '</span>';
       const face = locked ? (L.boss ? '<img class="scarab" alt="" src="' + ART.icon('scarab', 80) + '">' : lock) : '<span class="num">' + id + '</span>';
       html += '<button type="button" class="' + cls + '" data-id="' + id + '" style="left:' + pts[i][0].toFixed(1) + 'px;top:' + pts[i][1].toFixed(1) + 'px;z-index:' + (current ? 30 : 10 + i) + '"' +
         (locked ? ' disabled' : '') + ' aria-label="' + T('level') + ' ' + id + (locked ? ' (bloqueada)' : '') + '">' +
         (current ? '<span class="cur-label">' + T('level') + '</span>' : '') +
-        '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face +
+        (NI('done') ? '<img class="node-img" alt="" src="' + NI(current ? 'current' : locked ? (L.boss ? 'boss' : 'locked') : L.boss ? 'boss' : 'done') + '">' + (locked ? '' : '<span class="num">' + id + '</span>') : '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face) +
         (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
     });
     // animações do mapa: tochas tremulando, porta do templo pulsando, joias piscando, calendário girando a luz, vaga-lumes
@@ -1248,6 +1249,7 @@
     if (m && LEVELS[+m[1] - 1]) { openMap(); openPre(+m[1]); }
     else if (/^#jogar\d+$/.test(location.hash)) startLevel(+location.hash.slice(6));
     else if (location.hash === '#mapa') openMap();
+    else if (location.hash === '#mapademo') { save.unlocked = 7; for (let i = 1; i <= 6; i++) save.stars[i] = (i % 3) + 1; openMap(); }
     else if (location.hash === '#loja') { openMap(); openShop(); }
     else openMenu();
     requestAnimationFrame(frame);

@@ -124,7 +124,7 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .node.locked .hex-frame { filter: drop-shadow(0 6px 10px rgba(0,0,0,.7)) saturate(.6) brightness(.75); }
 .node.boss { width: 54px; height: 60px; margin: -30px 0 0 -27px; }
 .node.boss .num { font-size: 22px; }
-.node.current { width: 78px; height: 87px; margin: -44px 0 0 -39px; }
+.node.current { width: 60px; height: 67px; margin: -34px 0 0 -30px; }
 .node.current .num { font-size: 34px; }
 .node.current .hex-frame { animation: nodeGlow 2s ease-in-out infinite; }
 @keyframes nodeGlow { 0%,100% { filter: drop-shadow(0 0 8px rgba(80,255,150,.45)) drop-shadow(0 6px 10px rgba(0,0,0,.7)); } 50% { filter: drop-shadow(0 0 24px rgba(80,255,150,.85)) drop-shadow(0 6px 10px rgba(0,0,0,.7)); } }
@@ -344,3 +344,13 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .ui-kit .coin-pill i, .ui-kit .shop-item small { background: none; }
 .ui-kit .coin-pill i { background: #3fd8cc; color: #062a28; }
 .ui-kit .shop-item small { color: #3fd8cc; }
+/* medalhões pintados das fases (Gemini) */
+.node .node-img { position: absolute; inset: -12% -10%; width: 120%; height: 124%; object-fit: contain; filter: drop-shadow(0 5px 6px rgba(0,0,0,.75)); }
+.node.current .node-img { inset: -30% -34%; width: 168%; height: 160%; animation: nodeBreath 2.4s ease-in-out infinite; filter: drop-shadow(0 0 18px rgba(70,255,140,.55)) drop-shadow(0 6px 8px rgba(0,0,0,.7)); }
+@keyframes nodeBreath { 50% { transform: scale(1.06); filter: drop-shadow(0 0 30px rgba(70,255,140,.9)) drop-shadow(0 6px 8px rgba(0,0,0,.7)); } }
+.node:has(.node-img) .num { font-family: var(--f-display); color: #fff3c4; text-shadow: 0 2px 0 #3a2504, 0 0 8px rgba(0,0,0,.9), 0 0 2px #000; z-index: 1; }
+.node.current:has(.node-img) .num { font-size: 30px; }
+.node.locked .node-img { filter: drop-shadow(0 5px 6px rgba(0,0,0,.75)) brightness(.85); }
+.node .st img { width: 15px; height: 15px; filter: drop-shadow(0 1px 1px #000); }
+.node .cur-label { font-family: var(--f-display); font-size: 18px; top: -40px; }
+.node .cur-bar { bottom: -34px; }

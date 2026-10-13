@@ -153,7 +153,7 @@
   }
 
   // ---------- arte de IA (art-data.js): joias e fundo. Se não existir, usa a arte desenhada aqui ----------
-  const AI = { gems: {}, pieces: {}, ui: {}, bg: null, board: null, ready: false };
+  const AI = { gems: {}, pieces: {}, ui: {}, nodes: {}, bg: null, board: null, ready: false };
   function loadAI(onReady) {
     const D = root.ART_DATA;
     if (!D) { if (onReady) onReady(); return; }
@@ -181,6 +181,7 @@
     for (const k in D.gems) load(D.gems[k], (im) => { AI.gems[k] = im; });
     for (const k in D.pieces || {}) load(D.pieces[k], (im) => { AI.pieces[k] = im; });
     for (const k in D.ui || {}) load(D.ui[k], (im) => { AI.ui[k] = im; });
+    for (const k in D.nodes || {}) load(D.nodes[k], (im) => { AI.nodes[k] = im.toDataURL ? im.toDataURL('image/png') : im.src; });
     if (D.bg) load(D.bg, (im) => { AI.bg = im; });
     if (D.board) load(D.board, (im) => { AI.board = im; });
     if (!left) { AI.ready = true; if (onReady) onReady(); }
@@ -672,5 +673,5 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     return c;
   }
-  root.ART = { loadAI, uiImages: () => AI.ui, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { return Object.keys(AI.gems).length > 0; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
+  root.ART = { loadAI, uiImages: () => AI.ui, nodeImg: (k) => AI.nodes[k] || null, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { return Object.keys(AI.gems).length > 0; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
 })(window);
