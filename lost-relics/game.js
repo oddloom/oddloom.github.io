@@ -114,9 +114,22 @@
       const v = V(p, x, y - state.H - 1);
       proms.push(tween(v, { y }, 0.42, 'in', x * 0.025 + (state.H - y) * 0.035).then(() => { v.sq = 0.1; tween(v, { sq: 0 }, 0.14); }));
     }
-    Sound.play('swap');
+    announceLevel(level);
     await Promise.all(proms);
     busy = false;
+  }
+
+  // FASE N na tela + locutor (estrondo, gongo e a voz grave dizendo a fase)
+  function announceLevel(L) {
+    const el = document.createElement('div');
+    el.className = 'announce' + (L.boss ? ' boss' : '');
+    el.innerHTML = '<span class="metal">' + T('announce', { n: L.id }) + '</span>' + (L.boss ? '<small>' + T('boss') + '</small>' : '');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2300);
+    Sound.play('announce');
+    later(0.18, () => addShake(0.45));
+    const say = L.id === LEVELS.length ? T('announce.final') : L.boss ? T('announce.boss') : T('announce.say', { n: L.id });
+    setTimeout(() => Sound.speak(say, I18N.lang), 250);
   }
 
   // ---------- toque ----------
@@ -693,7 +706,7 @@
     } else {
       ctx.drawImage(spr, cx - w / 2, cy - h / 2 + (cs * v.sq) / 2, w, h);
     }
-    if (p.vine) ctx.drawImage(ART.vineSprite(S), cx - (cs * s) / 2, cy - (cs * s) / 2, cs * s, cs * s);
+    if (p.vine) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(now * 0.35 + p.id); ctx.globalAlpha = v.a * (0.85 + 0.15 * Math.sin(now * 3 + p.id)); ctx.drawImage(ART.vineSprite(S), -(cs * s) / 2, -(cs * s) / 2, cs * s, cs * s); ctx.restore(); }
     if (p.special === 'lineH' || p.special === 'lineV') {
       const [fx, fy] = ART.fusePoint(cs * s, p.special === 'lineV');
       const r = cs * (0.05 + Math.random() * 0.04);

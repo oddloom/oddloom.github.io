@@ -213,6 +213,14 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .praise.info { font-family: var(--f-body); font-style: italic; font-weight: 600; font-size: 24px; letter-spacing: .02em; background: none; color: var(--bone); filter: drop-shadow(0 2px 6px #000); }
 @keyframes praise { 0% { transform: translate(-50%,-50%) scale(1.6); opacity: 0; letter-spacing: .4em; } 20% { transform: translate(-50%,-50%) scale(1); opacity: 1; letter-spacing: .08em; } 75% { opacity: 1; } 100% { transform: translate(-50%,-58%) scale(.98); opacity: 0; } }
 
+/* anúncio da fase: entra gigante e desfocado, bate, segura e some subindo */
+.announce { position: fixed; left: 50%; top: 42%; z-index: 25; pointer-events: none; text-align: center; transform: translate(-50%,-50%); animation: annIn 2.2s cubic-bezier(.2,.9,.25,1) forwards; }
+.announce span { display: block; font-family: var(--f-display); font-weight: 900; font-size: clamp(54px, 15vw, 110px); letter-spacing: .06em; line-height: 1; white-space: nowrap; filter: drop-shadow(0 4px 0 #000) drop-shadow(0 0 30px rgba(255,190,90,.75)) drop-shadow(0 0 70px rgba(224,112,58,.45)); }
+.announce small { display: block; margin-top: 10px; font-family: var(--f-display); font-size: clamp(14px, 3.6vw, 20px); letter-spacing: .4em; color: var(--ember); text-shadow: 0 0 14px rgba(224,112,58,.8), 0 2px 0 #000; }
+.announce::before { content: ''; position: absolute; left: 50%; top: 50%; width: 140vw; height: 2px; transform: translate(-50%,-50%); background: linear-gradient(90deg, transparent, rgba(247,226,161,.9), transparent); box-shadow: 0 0 20px rgba(247,226,161,.8); animation: annLine 2.2s ease forwards; z-index: -1; }
+@keyframes annIn { 0% { opacity: 0; transform: translate(-50%,-50%) scale(3.2); filter: blur(14px); } 14% { opacity: 1; transform: translate(-50%,-50%) scale(.94); filter: blur(0); } 22% { transform: translate(-50%,-50%) scale(1.04); } 30% { transform: translate(-50%,-50%) scale(1); } 78% { opacity: 1; transform: translate(-50%,-50%) scale(1.02); } 100% { opacity: 0; transform: translate(-50%,-68%) scale(1.06); } }
+@keyframes annLine { 0%,10% { opacity: 0; width: 0; } 22% { opacity: 1; width: 140vw; } 75% { opacity: .7; } 100% { opacity: 0; } }
+
 /* anúncio simulado (ads.js) */
 .mock-ad { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(0,0,0,.88); padding: 16px; }
 .mock-card { width: min(360px, 100%); background: #f4f1ea; color: #222; border-radius: 14px; padding: 18px; text-align: center; font-family: system-ui, sans-serif; display: flex; flex-direction: column; gap: 12px; }

@@ -69,6 +69,7 @@
     convert() { const t = ctx.currentTime; tone(hz(24 + Math.floor(Math.random() * 5) * 2), t, 0.12, 'square', 0.06); },
     win() { const t = ctx.currentTime; [0, 4, 7, 12, 7, 12, 16].forEach((s, k) => marimba(hz(s + 12), t + k * 0.11, 0.3)); },
     lose() { const t = ctx.currentTime; [7, 3, 0, -5].forEach((s, k) => marimba(hz(s + 12), t + k * 0.18, 0.28)); },
+    announce() { const t = ctx.currentTime; noise(t, 1.2, 0.9, 'lowpass', 400, 40); const o = tone(65, t, 1.4, 'sine', 0.8); o.frequency.exponentialRampToValueAtTime(32, t + 1.2); [0, 7, 12].forEach((s, k) => tone(hz(s - 12), t + 0.05, 2.2, 'triangle', 0.16 - k * 0.04)); tone(hz(-5) * 2.76, t + 0.05, 2.4, 'sine', 0.1); },
     star(i) { const t = ctx.currentTime; marimba(hz([12, 16, 19][i] + 12), t, 0.35); tone(hz([12, 16, 19][i] + 36), t, 0.4, 'sine', 0.08); },
   };
 
@@ -94,8 +95,27 @@
     }, 100);
   }
 
+  // locutor: voz do próprio aparelho, grave e lenta (estilo anúncio de luta)
+  let voices = [];
+  function loadVoices() { try { voices = speechSynthesis.getVoices() || []; } catch (e) { voices = []; } }
+  if (root.speechSynthesis) { loadVoices(); try { speechSynthesis.onvoiceschanged = loadVoices; } catch (e) {} }
+  function speak(text, lang) {
+    if (!sfxOn || !root.speechSynthesis || !root.SpeechSynthesisUtterance) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      const pref = lang === 'pt' ? /^pt/i : /^en/i;
+      const male = /(daniel|felipe|ricardo|reed|eddy|rocko|grandpa|fred|ralph|male|masculin|google uk english male|antonio|thiago|jorge)/i;
+      const pool = voices.filter((v) => pref.test(v.lang));
+      u.voice = pool.find((v) => male.test(v.name)) || pool[0] || null;
+      u.lang = lang === 'pt' ? 'pt-BR' : 'en-US';
+      u.pitch = 0.2; u.rate = 0.78; u.volume = 1;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
   root.Sound = {
-    init,
+    speak,    init,
     play(name, arg) { if (!ctx || !sfxOn) return; try { S[name](arg); } catch (e) {} },
     get sfx() { return sfxOn; }, get music() { return musicOn; },
     setSfx(v) { sfxOn = v; if (sfxBus) sfxBus.gain.value = v ? 1 : 0; try { localStorage.setItem('lostrelics.sfx', v ? '1' : '0'); } catch (e) {} },

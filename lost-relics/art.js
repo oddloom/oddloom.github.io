@@ -424,6 +424,39 @@
     ctx.lineWidth = Math.max(1, S * 0.018); ctx.strokeStyle = two ? 'rgba(212,168,75,0.5)' : 'rgba(212,168,75,0.28)'; ctx.stroke();
     ctx.restore();
   }
+  // selo rúnico dourado (prende a joia): anel duplo de ouro, runas e um losango de luz
+  function drawSeal(ctx, S) {
+    const R = S * 0.46;
+    ctx.save();
+    const glow = ctx.createRadialGradient(0, 0, R * 0.55, 0, 0, R * 1.05);
+    glow.addColorStop(0, 'rgba(255,200,90,0)'); glow.addColorStop(0.75, 'rgba(255,200,90,0.28)'); glow.addColorStop(1, 'rgba(255,200,90,0)');
+    ctx.fillStyle = glow; ctx.fillRect(-S / 2, -S / 2, S, S);
+    const gold = ctx.createLinearGradient(0, -R, 0, R);
+    gold.addColorStop(0, '#fff3c4'); gold.addColorStop(0.45, '#e2b54e'); gold.addColorStop(1, '#8e6420');
+    ctx.strokeStyle = gold; ctx.shadowColor = 'rgba(255,200,100,0.9)'; ctx.shadowBlur = S * 0.06;
+    ctx.lineWidth = Math.max(1.5, S * 0.035); ctx.beginPath(); ctx.arc(0, 0, R * 0.92, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = Math.max(1, S * 0.016); ctx.beginPath(); ctx.arc(0, 0, R * 0.74, 0, Math.PI * 2); ctx.stroke();
+    // runas entre os anéis
+    ctx.lineWidth = Math.max(1, S * 0.018); ctx.lineCap = 'round';
+    for (let i = 0; i < 12; i++) {
+      ctx.save(); ctx.rotate((i / 12) * Math.PI * 2); ctx.translate(0, -R * 0.83);
+      const k = i % 4; ctx.beginPath();
+      if (k === 0) { ctx.moveTo(-S * 0.02, -S * 0.025); ctx.lineTo(S * 0.02, S * 0.025); ctx.moveTo(S * 0.02, -S * 0.025); ctx.lineTo(-S * 0.02, S * 0.025); }
+      else if (k === 1) { ctx.moveTo(0, -S * 0.028); ctx.lineTo(0, S * 0.028); ctx.moveTo(-S * 0.018, 0); ctx.lineTo(S * 0.018, 0); }
+      else if (k === 2) { ctx.arc(0, 0, S * 0.018, 0, Math.PI * 2); }
+      else { ctx.moveTo(-S * 0.02, S * 0.02); ctx.lineTo(0, -S * 0.025); ctx.lineTo(S * 0.02, S * 0.02); }
+      ctx.stroke(); ctx.restore();
+    }
+    // quatro travas apontando pro centro
+    ctx.fillStyle = gold;
+    for (let i = 0; i < 4; i++) {
+      ctx.save(); ctx.rotate(Math.PI / 4 + (i * Math.PI) / 2); ctx.translate(0, -R * 0.7);
+      ctx.beginPath(); ctx.moveTo(0, S * 0.07); ctx.lineTo(-S * 0.035, -S * 0.01); ctx.lineTo(S * 0.035, -S * 0.01); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
   // ---------- cache de sprites ----------
   let cache = new Map(), cacheSize = 0;
   function sprite(key, S, draw) {
@@ -469,7 +502,7 @@
     if (p.special === 'barrel') return sprite('b' + p.color, S, (ctx) => { drawBarrel(ctx, S, GEMS[p.color]); ctx.scale(0.46, 0.46); paintGem(ctx, GEMS[p.color], S * 0.4); });
     return gemSprite(p.color, S, f);
   }
-  const vineSprite = (S) => sprite('vine', S, (ctx) => { if (!drawAIPiece(ctx, 'vine', S, 1.12)) drawVine(ctx, S); });
+  const vineSprite = (S) => sprite('seal', S, (ctx) => drawSeal(ctx, S));
   const sandSprite = (n, S) => sprite('s' + n, S, (ctx) => {
     if (!drawAIPiece(ctx, 'sand', S, 1.16)) return drawSand(ctx, S, n);
     if (n >= 2) { ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = 'rgba(70,40,10,0.45)'; ctx.fillRect(-S / 2, -S / 2, S, S); }
@@ -485,7 +518,7 @@
     if (key.startsWith('gem')) paintGem(ctx, GEMS[+key.slice(3)], px * 0.4);
     else if (key === 'sand' && drawAIPiece(ctx, 'sand', px, 0.95)) {}
     else if (key === 'rock' && drawAIPiece(ctx, 'rock3', px, 1)) {}
-    else if (key === 'vine' && AI.gems.emerald && AI.pieces.vine) { paintGem(ctx, GEMS[1], px * 0.3); drawAIPiece(ctx, 'vine', px, 0.95); }
+    else if (key === 'vine') { paintGem(ctx, GEMS[1], px * 0.3); drawSeal(ctx, px * 0.95); }
     else if (key === 'chest' && drawAIPiece(ctx, 'chest', px, 1)) {}
     else if (key === 'idol' && drawAIPiece(ctx, 'orb', px, 1)) {}
     else if (key === 'dynamite' && AI.pieces.dynamite) { drawAIPiece(ctx, 'dynamite', px, 1.05, -0.35); ctx.scale(0.7, 0.7); paintGem(ctx, GEMS[0], px * 0.4); }
