@@ -457,6 +457,31 @@
     ctx.restore();
   }
 
+  // ícones das vantagens da loja (ouro, mesmo estilo dos selos)
+  function drawToolIcon(ctx, px, kind) {
+    const s = px;
+    const gold = ctx.createLinearGradient(0, -s * 0.4, 0, s * 0.4);
+    gold.addColorStop(0, '#fff3c4'); gold.addColorStop(0.45, '#e2b54e'); gold.addColorStop(1, '#8e6420');
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = s * 0.06; ctx.shadowOffsetY = s * 0.03;
+    ctx.fillStyle = gold; ctx.strokeStyle = '#4a3108'; ctx.lineWidth = Math.max(1, s * 0.025); ctx.lineJoin = 'round';
+    if (kind === 'hammer') {
+      ctx.rotate(-0.6);
+      const wood = ctx.createLinearGradient(-s * 0.05, 0, s * 0.05, 0); wood.addColorStop(0, '#5a3416'); wood.addColorStop(0.5, '#a8662c'); wood.addColorStop(1, '#4a2a10');
+      ctx.fillStyle = wood; roundRect(ctx, -s * 0.045, -s * 0.12, s * 0.09, s * 0.52, s * 0.03); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = gold; roundRect(ctx, -s * 0.27, -s * 0.34, s * 0.54, s * 0.22, s * 0.05); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(-s * 0.24, -s * 0.32, s * 0.48, s * 0.04);
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.24, -s * 0.38); ctx.lineTo(s * 0.24, -s * 0.38); ctx.lineTo(s * 0.04, 0); ctx.lineTo(s * 0.24, s * 0.38); ctx.lineTo(-s * 0.24, s * 0.38); ctx.lineTo(-s * 0.04, 0); ctx.closePath();
+      ctx.fillStyle = 'rgba(180,220,255,0.25)'; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e8c06a'; ctx.beginPath(); ctx.moveTo(-s * 0.16, s * 0.34); ctx.lineTo(s * 0.16, s * 0.34); ctx.lineTo(0, s * 0.12); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = gold; roundRect(ctx, -s * 0.3, -s * 0.44, s * 0.6, s * 0.08, s * 0.03); ctx.fill(); ctx.stroke();
+      roundRect(ctx, -s * 0.3, s * 0.36, s * 0.6, s * 0.08, s * 0.03); ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // ---------- cache de sprites ----------
   let cache = new Map(), cacheSize = 0;
   function sprite(key, S, draw) {
@@ -530,6 +555,10 @@
     else if (key === 'idol') drawIdol(ctx, px);
     else if (key === 'dynamite') { drawDynamite(ctx, px * 0.95, false); ctx.scale(0.7, 0.7); paintGem(ctx, GEMS[0], px * 0.4); }
     else if (key === 'barrel') { drawBarrel(ctx, px, GEMS[2]); ctx.scale(0.46, 0.46); paintGem(ctx, GEMS[2], px * 0.4); }
+    else if (key === 'coin' && drawAIPiece(ctx, 'coin', px, 1.05)) {}
+    else if (key === 'scarab' && drawAIPiece(ctx, 'scarab', px, 1.05)) {}
+    else if (key === 'hammer') drawToolIcon(ctx, px, 'hammer');
+    else if (key === 'hourglass') drawToolIcon(ctx, px, 'hourglass');
     else if (key === 'star') drawStar(ctx, px * 0.46, true);
     else if (key === 'star0') drawStar(ctx, px * 0.46, false);
     return (iconCache[k] = c.toDataURL());

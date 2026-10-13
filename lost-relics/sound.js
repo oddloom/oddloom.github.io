@@ -114,7 +114,33 @@
     } catch (e) {}
   }
 
+  // locutor gravado (audio-data.js): decodifica uma vez e toca pelo canal de efeitos; a música abaixa enquanto ele fala
+  const voiceBufs = {};
+  function voice(id, lang) {
+    if (!ctx || !sfxOn) return;
+    const L = root.VOICE_DATA && (root.VOICE_DATA[lang] || root.VOICE_DATA.pt);
+    const src = L && L[id];
+    if (!src) return;
+    const play = (buf) => {
+      const s = ctx.createBufferSource(), g = ctx.createGain();
+      s.buffer = buf; g.gain.value = 1.15; s.connect(g); g.connect(sfxBus); s.start();
+      if (musicOn && musicBus) {
+        const t = ctx.currentTime;
+        musicBus.gain.cancelScheduledValues(t); musicBus.gain.setValueAtTime(musicBus.gain.value, t);
+        musicBus.gain.linearRampToValueAtTime(0.1, t + 0.15); musicBus.gain.linearRampToValueAtTime(0.32, t + buf.duration + 0.4);
+      }
+    };
+    const key = lang + id;
+    if (voiceBufs[key]) return play(voiceBufs[key]);
+    try {
+      const bin = atob(src.split(',')[1]), arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      ctx.decodeAudioData(arr.buffer, (b) => { voiceBufs[key] = b; play(b); }, () => {});
+    } catch (e) {}
+  }
+
   root.Sound = {
+    voice,
     speak,    init,
     play(name, arg) { if (!ctx || !sfxOn) return; try { S[name](arg); } catch (e) {} },
     get sfx() { return sfxOn; }, get music() { return musicOn; },

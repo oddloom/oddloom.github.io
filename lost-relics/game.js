@@ -11,6 +11,16 @@
   const SAVE_KEY = 'lostrelics.save.v1';
   let save = { unlocked: 1, stars: {}, best: {}, wins: 0 };
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.unlocked) save = Object.assign(save, s); } catch (e) {}
+  save.coins = save.coins == null ? 300 : save.coins;
+  save.items = Object.assign({ moves: 0, dyn: 0, orb: 0, hammer: 1 }, save.items);
+  // moedas da fase = pontos / 100 (+10 por estrela na vitória)
+  const coinsOf = (score) => Math.floor(score / 100);
+  const SHOP = [
+    { id: 'moves', price: 150, icon: 'hourglass' },
+    { id: 'dyn', price: 200, icon: 'dynamite' },
+    { id: 'orb', price: 400, icon: 'idol' },
+    { id: 'hammer', price: 250, icon: 'hammer' },
+  ];
   const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
 
   // ---------- tempo do jogo: animações e agendamentos ----------
@@ -95,9 +105,11 @@
   }
   const cellX = (x) => ox + (x + 0.5) * cs, cellY = (y) => oy + (y + 0.5) * cs;
 
-  async function startLevel(id) {
+  async function startLevel(id, boosts) {
     level = LEVELS[id - 1];
     state = LR.createState(level, ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
+    applyBoosts(boosts || {});
+    hammerMode = false;
     vis = new Map(); dying = []; parts = []; floats = []; glints = [];
     hint = null; selected = null; drag = null; usedExtra = false; idle = 0; shake = 0;
     scene = 'play';
@@ -119,6 +131,14 @@
     busy = false;
   }
 
+  // vantagens da loja aplicadas no começo da fase
+  function applyBoosts(b) {
+    if (b.moves) state.moves += 3;
+    const plain = () => { const out = []; for (let y = 0; y < state.H; y++) for (let x = 0; x < state.W; x++) { const p = state.grid[y][x]; if (p && p.kind === 'gem' && !p.special && !p.vine) out.push(p); } return out; };
+    if (b.dyn) { const l = plain(); for (let k = 0; k < 2 && l.length; k++) { const p = l.splice(Math.floor(Math.random() * l.length), 1)[0]; p.special = Math.random() < 0.5 ? 'lineH' : 'lineV'; } }
+    if (b.orb) { const l = plain(); if (l.length) { const p = l[Math.floor(Math.random() * l.length)]; p.special = 'idol'; p.color = null; } }
+  }
+
   // FASE N na tela + locutor (estrondo, gongo e a voz grave dizendo a fase)
   function announceLevel(L) {
     const el = document.createElement('div');
@@ -128,8 +148,7 @@
     setTimeout(() => el.remove(), 2300);
     Sound.play('announce');
     later(0.18, () => addShake(0.45));
-    const say = L.id === LEVELS.length ? T('announce.final') : L.boss ? T('announce.boss') : T('announce.say', { n: L.id });
-    setTimeout(() => Sound.speak(say, I18N.lang), 250);
+    setTimeout(() => Sound.voice(L.id === LEVELS.length ? 'final' : L.boss ? 'boss' : 'fase' + L.id, I18N.lang), 200);
   }
 
   // ---------- toque ----------
@@ -145,6 +164,7 @@
     idle = 0; hint = null;
     const c = cellAt(e.clientX, e.clientY);
     if (!c) { selected = null; return; }
+    if (hammerMode) { const hp = state.grid[c[1]][c[0]]; if (hp && hp.kind !== 'artifact') { selected = null; useHammer(c); } return; }
     if (selected && adj(selected, c)) { const a = selected; selected = null; trySwap(a, c); return; }
     const p = state.grid[c[1]][c[0]];
     if (!LR.swappable(p)) { selected = null; if (p) nudge(p, c); return; }
@@ -349,6 +369,7 @@
     if (state.moves > 0) {
       showPraise(T('rush'), 'banner');
       Sound.play('rush');
+      Sound.voice('rush', I18N.lang);
       await wait(0.7);
     }
     await play(LR.treasureRush(state));
@@ -362,6 +383,7 @@
     if (n <= praiseLevel) return;
     praiseLevel = n;
     showPraise(T('praise.' + n));
+    Sound.voice('p' + n, I18N.lang);
   }
   function showPraise(text, cls) {
     const el = document.createElement('div');
@@ -840,7 +862,8 @@
     const mv = $('moves');
     mv.textContent = state.moves;
     mv.classList.toggle('low', state.moves <= 5 && state.moves > 0 && !LR.isWon(state));
-    $('score').textContent = state.score.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
+    $('score').innerHTML = '<img class="coin" alt="" src="' + ART.icon('coin', 48) + '">' + coinsOf(state.score).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
+    updateHammerBtn();
     const top = level.stars[2];
     $('starfill').style.width = Math.min(100, (state.score / top) * 100) + '%';
     level.stars.forEach((v, i) => {
@@ -892,9 +915,17 @@
       '<div class="goal-list">' + rows + '</div>' +
       '<div class="moves-line">' + T('moves') + ': <b>' + L.moves + '</b></div>' +
       (tutKey ? '<div class="tut"><img alt="" src="' + ART.icon(TUT_ICON[L.tut] || 'barrel', 108) + '"><p>' + T(tutKey) + '</p></div>' : '') +
+      boostPicker() +
       '<div class="btns"><button class="btn" id="mPlay" type="button">' + T('play') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
-    card.querySelector('#mPlay').onclick = () => { Sound.init(); Sound.play('click'); closeModal(); startLevel(id); };
+    const picked = {};
+    card.querySelectorAll('.boost').forEach((b) => { b.onclick = () => { const k = b.dataset.k; picked[k] = !picked[k]; b.classList.toggle('on', picked[k]); b.setAttribute('aria-pressed', picked[k]); Sound.play('click'); }; });
+    const shopLink = card.querySelector('#mShop'); if (shopLink) shopLink.onclick = () => { Sound.play('click'); openShop(() => openPre(id)); };
+    card.querySelector('#mPlay').onclick = () => {
+      Sound.init(); Sound.play('click');
+      for (const k in picked) if (picked[k] && save.items[k] > 0) save.items[k]--; else delete picked[k];
+      persist(); closeModal(); startLevel(id, picked);
+    };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); if (scene !== 'map') openMap(); };
   }
 
@@ -906,21 +937,24 @@
     save.best[id] = Math.max(prevBest, state.score);
     save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, id + 1));
     save.wins = (save.wins || 0) + 1;
+    const earned = coinsOf(state.score) + stars * 10;
+    save.coins += earned;
     persist();
     Sound.play('win');
+    setTimeout(() => Sound.voice('win', I18N.lang), 350);
     const last = id === LEVELS.length;
     const card = openModal(
       '<div class="eyebrow">' + T('level') + ' ' + id + '</div>' +
       '<h2 class="metal">' + T('win.title') + '</h2><div class="orn"><i></i></div>' +
       '<div class="stars-big"><img alt=""><img alt=""><img alt=""></div>' +
-      '<div class="final-score" id="mScore">0</div>' +
-      '<div class="best' + (isNew ? ' new' : '') + '">' + (isNew ? T('win.new') : T('win.best', { n: save.best[id].toLocaleString() })) + '</div>' +
+      '<div class="final-score"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '">+<span id="mScore">0</span></div>' +
+      '<div class="best' + (isNew ? ' new' : '') + '">' + (isNew ? T('win.new') + ' · ' : '') + T('wallet', { n: save.coins.toLocaleString() }) + '</div>' +
       (last ? '<p>' + T('map.soon') + '</p>' : '') +
       '<div class="btns">' + (last ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
     const imgs = card.querySelectorAll('.stars-big img');
     imgs.forEach((im) => { im.src = ART.icon('star', 128); });
-    const sc = { v: 0 }, target = state.score;
+    const sc = { v: 0 }, target = earned;
     tween(sc, { v: target }, 1, 'out').then(() => {});
     const scoreEl = card.querySelector('#mScore');
     const iv = setInterval(() => { scoreEl.textContent = Math.round(sc.v).toLocaleString(); if (sc.v >= target) clearInterval(iv); }, 40);
@@ -993,6 +1027,55 @@
   $('btnPause').onclick = openPause;
   $('modal').addEventListener('pointerdown', (e) => { e.stopPropagation(); });
 
+  // ---------- loja do templo e vantagens ----------
+  function boostPicker() {
+    const owned = SHOP.filter((it) => it.id !== 'hammer' && save.items[it.id] > 0);
+    if (!owned.length) return '<button class="link-btn" id="mShop" type="button">' + T('shop.get') + '</button>';
+    return '<div class="boosts"><div class="moves-line">' + T('shop.use') + '</div><div class="boost-row">' +
+      owned.map((it) => '<button class="boost" type="button" aria-pressed="false" data-k="' + it.id + '"><img alt="" src="' + ART.icon(it.icon, 80) + '"><span>' + T('item.' + it.id) + '</span><b>×' + save.items[it.id] + '</b></button>').join('') +
+      '</div></div>';
+  }
+  function openShop(back) {
+    Sound.play('click');
+    const render = () => {
+      const card = openModal(
+        '<div class="eyebrow">' + T('shop.eyebrow') + '</div>' +
+        '<h2 class="metal">' + T('shop.title') + '</h2><div class="orn"><i></i></div>' +
+        '<div class="wallet"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '"><b>' + save.coins.toLocaleString() + '</b></div>' +
+        '<div class="shop-list">' + SHOP.map((it) =>
+          '<div class="shop-item"><img alt="" src="' + ART.icon(it.icon, 96) + '"><div><b>' + T('item.' + it.id) + '</b><span>' + T('item.' + it.id + '.d') + '</span><small>' + T('shop.have', { n: save.items[it.id] }) + '</small></div>' +
+          '<button class="btn small buy" type="button" data-id="' + it.id + '"' + (save.coins < it.price ? ' disabled' : '') + '><img class="coin" alt="" src="' + ART.icon('coin', 48) + '">' + it.price + '</button></div>').join('') + '</div>' +
+        '<p class="shop-note">' + T('shop.note') + '</p>' +
+        '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('close') + '</button></div>');
+      card.querySelectorAll('.buy').forEach((b) => { b.onclick = () => {
+        const it = SHOP.find((x) => x.id === b.dataset.id);
+        if (!it || save.coins < it.price) return;
+        save.coins -= it.price; save.items[it.id]++; persist();
+        Sound.play('chest'); render(); paintWallet();
+      }; });
+      card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); if (back) back(); };
+    };
+    render();
+  }
+  function paintWallet() { const el = $('mapCoins'); if (el) el.textContent = save.coins.toLocaleString(); }
+
+  // martelo: o próximo toque quebra a joia escolhida (não gasta movimento)
+  let hammerMode = false;
+  function updateHammerBtn() {
+    const b = $('btnHammer'); if (!b) return;
+    b.hidden = scene !== 'play' || !(save.items.hammer > 0);
+    b.classList.toggle('on', hammerMode);
+    $('hammerCount').textContent = '×' + (save.items.hammer || 0);
+  }
+  $('btnHammer').onclick = () => { if (busy || scene !== 'play' || !(save.items.hammer > 0)) return; hammerMode = !hammerMode; Sound.play('click'); updateHammerBtn(); };
+  async function useHammer(c) {
+    hammerMode = false; save.items.hammer--; persist(); updateHammerBtn();
+    busy = true; praiseLevel = 0;
+    Sound.play('rock'); addShake(0.3);
+    await play(LR.resolve(state, { hits: [{ x: c[0], y: c[1], src: 'blast' }] }));
+    await afterMove();
+  }
+
   // ---------- menu ----------
   function paintMenu() {
     document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = T(el.dataset.t); });
@@ -1027,11 +1110,11 @@
   }
   function buildMap() {
     const inner = $('mapInner'), scroll = $('mapScroll');
-    const n = LEVELS.length, gap = 108, padTop = 170, padBottom = 120;
+    const n = LEVELS.length, gap = 122, padTop = 190, padBottom = 140;
     const h = padTop + (n - 1) * gap + padBottom;
     inner.style.height = h + 'px';
     const w = inner.clientWidth || Math.min(480, W);
-    const pts = LEVELS.map((L, i) => [w * (0.5 + Math.sin(i * 0.95) * 0.27), padTop + (n - 1 - i) * gap]);
+    const pts = LEVELS.map((L, i) => [w * (0.5 + Math.sin(i * 0.9 + 0.4) * 0.26), padTop + (n - 1 - i) * gap]);
     const curve = (P) => {
       let d = 'M' + P[0][0].toFixed(1) + ' ' + P[0][1].toFixed(1);
       for (let i = 0; i < P.length - 1; i++) {
@@ -1042,32 +1125,40 @@
       return d;
     };
     const done = Math.min(save.unlocked, n);
-    let html = '<svg class="trail" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' +
-      '<path d="' + curve(pts) + '" fill="none" stroke="rgba(10,8,4,0.65)" stroke-width="22" stroke-linecap="round"/>' +
-      '<path d="' + curve(pts) + '" fill="none" stroke="rgba(201,164,106,0.45)" stroke-width="5" stroke-dasharray="2 12" stroke-linecap="round"/>' +
-      (done > 1 ? '<path d="' + curve(pts.slice(0, done)) + '" fill="none" stroke="#f2c14e" stroke-width="6" stroke-dasharray="2 11" stroke-linecap="round"/>' : '') +
-      '</svg>';
     let totalStars = 0;
+    for (let i = 1; i <= n; i++) totalStars += save.stars[i] || 0;
+    // trilha: sulco escuro + pontos de luz (dourados no caminho já feito, verde-água no que falta)
+    let html = '<svg class="trail" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' +
+      '<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
+      '<path d="' + curve(pts) + '" fill="none" stroke="rgba(6,8,6,0.7)" stroke-width="26" stroke-linecap="round"/>' +
+      '<path d="' + curve(pts) + '" fill="none" stroke="rgba(110,220,200,0.55)" stroke-width="5" stroke-dasharray="0 15" stroke-linecap="round" filter="url(#glow)"/>' +
+      (done > 1 ? '<path d="' + curve(pts.slice(0, done)) + '" fill="none" stroke="#ffd36a" stroke-width="7" stroke-dasharray="0 15" stroke-linecap="round" filter="url(#glow)"/>' : '') +
+      '</svg>';
+    const lock = '<svg class="lock" viewBox="0 0 20 20"><path d="M6 8V6a4 4 0 1 1 8 0v2h1v10H5V8zm2 0h4V6a2 2 0 1 0-4 0z"/></svg>';
     LEVELS.forEach((L, i) => {
       const id = i + 1, st = save.stars[id] || 0;
-      totalStars += st;
-      const locked = id > save.unlocked, current = id === save.unlocked && !save.stars[id];
+      const locked = id > save.unlocked, current = id === save.unlocked && !st;
+      const gem = locked ? (L.boss ? 'g-amethyst' : 'g-night') : current ? 'g-emerald' : 'g-emerald';
       const cls = 'node' + (st ? ' done' : '') + (L.boss ? ' boss' : '') + (locked ? ' locked' : '') + (current ? ' current' : '');
       const stars = locked ? '' : '<span class="st">' + [0, 1, 2].map((k) => '<img alt="" src="' + ART.icon(k < st ? 'star' : 'star0', 40) + '">').join('') + '</span>';
-      const inside = locked ? '<svg class="lock" viewBox="0 0 20 20"><path d="M6 8V6a4 4 0 1 1 8 0v2h1v10H5V8zm2 0h4V6a2 2 0 1 0-4 0z"/></svg>' : id;
+      const face = locked ? (L.boss ? '<img class="scarab" alt="" src="' + ART.icon('scarab', 80) + '">' : lock) : '<span class="num">' + id + '</span>';
       html += '<button type="button" class="' + cls + '" data-id="' + id + '" style="left:' + pts[i][0].toFixed(1) + 'px;top:' + pts[i][1].toFixed(1) + 'px"' +
-        (locked ? ' disabled aria-label="' + T('level') + ' ' + id + ' 🔒"' : ' aria-label="' + T('level') + ' ' + id + '"') + '>' +
-        (L.boss ? '<img class="boss-ic" alt="" src="' + ART.icon('idol', 68) + '">' : '') + inside + stars + '</button>';
+        (locked ? ' disabled' : '') + ' aria-label="' + T('level') + ' ' + id + (locked ? ' (bloqueada)' : '') + '">' +
+        (current ? '<span class="cur-label">' + T('level') + '</span>' : '') +
+        '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face +
+        (current ? '<span class="cur-bar"><i style="width:' + Math.round((totalStars / (n * 3)) * 100) + '%"></i></span>' : stars) + '</button>';
     });
-    html += '<div class="map-end" style="top:40px"><strong>' + T('map.soon').split(':')[0] + '</strong>' + (T('map.soon').split(':')[1] || '') + '</div>';
+    html += '<div class="map-end" style="top:46px"><strong>' + T('map.soon').split(':')[0] + '</strong>' + (T('map.soon').split(':')[1] || '') + '</div>';
     inner.innerHTML = html;
     $('mapStars').textContent = totalStars + '/' + n * 3;
     $('mapStarIc').src = ART.icon('star', 44);
+    $('mapCoinIc').src = ART.icon('coin', 64);
+    paintWallet();
     inner.querySelectorAll('.node:not(.locked)').forEach((b) => { b.onclick = () => { Sound.init(); Sound.play('click'); openPre(+b.dataset.id); }; });
     const cur = Math.min(save.unlocked, n) - 1;
     requestAnimationFrame(() => { scroll.scrollTop = Math.max(0, pts[cur][1] - scroll.clientHeight * 0.6); });
   }
-
+  $('btnShop').onclick = () => { Sound.init(); openShop(); };
   // ---------- laço principal ----------
   let last = performance.now(), lastDt = 0.016;
   function frame(t) {
@@ -1102,11 +1193,14 @@
     layout();
     TEX.applyCss();
     UIART.applyCorners();
+    $('hammerIc').src = ART.icon('hammer', 80);
     if (!window.ART_DATA) GEM3D.init();
     ART.clearCache();
     $('loading').remove();
     const m = /^#fase(\d+)$/.exec(location.hash || '');
     if (m && LEVELS[+m[1] - 1]) { openMap(); openPre(+m[1]); }
+    else if (location.hash === '#mapa') openMap();
+    else if (location.hash === '#loja') { openMap(); openShop(); }
     else openMenu();
     requestAnimationFrame(frame);
   }
