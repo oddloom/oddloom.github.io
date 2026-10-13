@@ -75,7 +75,7 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; z-index: 10; }
 
 #screen-menu { justify-content: center; gap: 18px; padding: max(28px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom)); text-align: center; }
-.logo-wrap { margin: 0; width: min(620px, 100%); }
+.logo-wrap { margin: 0; width: min(640px, 100%); }
 #logo { display: block; width: 100%; height: auto; max-width: 100%; filter: drop-shadow(0 18px 30px rgba(0,0,0,.75)) drop-shadow(0 0 40px rgba(240,190,90,.18)); animation: logoIn 1.6s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes logoIn { from { opacity: 0; transform: scale(.86); filter: blur(6px) brightness(.4); } }
 .tagline { margin: -8px 0 4px; font-family: var(--f-body); font-style: italic; font-size: 19px; color: var(--bone-dim); letter-spacing: .04em; }
