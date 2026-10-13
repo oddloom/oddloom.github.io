@@ -1235,6 +1235,10 @@
   function boot() {
     layout();
     TEX.applyCss();
+    // kit de interface pintado: cada peça vira variável CSS (--ui-btn, --ui-frame...)
+    const UIK = ART.uiImages();
+    for (const k in UIK) { const im = UIK[k]; const url = im.toDataURL ? im.toDataURL('image/png') : im.src; document.documentElement.style.setProperty('--ui-' + k, 'url(' + url + ')'); }
+    if (Object.keys(UIK).length) document.documentElement.classList.add('ui-kit');
     UIART.applyCorners();
     $('hammerIc').src = ART.icon('hammer', 80);
     if (!window.ART_DATA) GEM3D.init();

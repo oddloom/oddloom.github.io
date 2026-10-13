@@ -298,3 +298,49 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+/* ===== kit de interface pintado (pedra, raízes, runas turquesa) — vale quando o kit carrega ===== */
+.ui-kit .btn {
+  clip-path: none; border-radius: 0; min-height: 64px; padding: 0 40px;
+  background: var(--ui-btn) center / 100% 100% no-repeat; box-shadow: none;
+  color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.55), 0 -1px 0 rgba(0,0,0,.25);
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,.6));
+}
+.ui-kit .btn:hover { filter: drop-shadow(0 8px 14px rgba(0,0,0,.6)) brightness(1.08); }
+.ui-kit .btn:active { transform: translateY(2px) scale(.98); filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)) brightness(.95); }
+.ui-kit .btn.dark {
+  background: var(--ui-btn2) center / 100% 100% no-repeat; color: #f7e2a1;
+  text-shadow: 0 0 10px rgba(63,216,204,.35), 0 2px 0 #000; min-height: 52px; padding: 0 28px;
+}
+.ui-kit .btn.small { min-height: 48px; }
+.ui-kit .card {
+  background: var(--ui-frame) center / 100% 100% no-repeat; box-shadow: none; border: 0;
+  width: min(440px, 100%); padding: 17% 13% 23%; max-height: none; overflow: visible; filter: drop-shadow(0 24px 40px rgba(0,0,0,.75));
+}
+.ui-kit .card::before { display: none; }
+.ui-kit .modal { overflow-y: auto; place-items: start center; padding-block: 28px; }
+.ui-kit .modal .card { margin: auto 0; }
+.ui-kit .card::after { content: ''; position: absolute; inset: 13.5% 9.5% 16%; z-index: -1; background: rgba(12,16,13,.9); }
+.ui-kit .btn:focus-visible { outline: none; filter: drop-shadow(0 0 12px rgba(63,216,204,.9)) drop-shadow(0 8px 14px rgba(0,0,0,.6)); }
+.ui-kit .shop-item { grid-template-columns: 40px minmax(0, 1fr); gap: 8px 10px; padding: 10px; }
+.ui-kit .shop-item > img { width: 40px; height: 40px; grid-row: span 2; }
+.ui-kit .shop-item .buy { grid-column: 2; justify-self: start; min-height: 44px; min-width: 120px; }
+.ui-kit .shop-item b { font-size: 16px; }
+.ui-kit .card > * { position: relative; }
+.ui-kit .hud-moves { background: var(--ui-medal) center / 100% 100% no-repeat; box-shadow: none; width: 84px; height: 84px; }
+.ui-kit .hud-moves .lbl { color: #2b2214; text-shadow: 0 1px 0 rgba(255,240,210,.5); }
+.ui-kit #moves { -webkit-text-fill-color: #3b2a12; background: none; filter: none; text-shadow: 0 1px 0 rgba(255,240,210,.6); }
+.ui-kit .chip { background: var(--ui-tile) center / 100% 100% no-repeat; box-shadow: none; }
+.ui-kit .chip b { color: #2b2214; text-shadow: 0 1px 0 rgba(255,240,210,.6); }
+.ui-kit .chip.done { filter: drop-shadow(0 0 8px rgba(63,216,204,.8)); }
+.ui-kit .chip.done b { color: #0f6f6a; }
+.ui-kit .starbar { height: 18px; background: var(--ui-bar) center / 100% 100% no-repeat; box-shadow: none; }
+.ui-kit #starfill { inset: 5px auto 5px 9px; max-width: calc(100% - 18px); background: linear-gradient(90deg, #0f6f6a, #3fd8cc, #c9fff8); box-shadow: 0 0 10px rgba(63,216,204,.8); }
+.ui-kit .icon-btn { background: var(--ui-round) center / 100% 100% no-repeat; box-shadow: none; width: 48px; height: 48px; }
+.ui-kit .icon-btn svg { fill: #3b2a12; filter: none; }
+.ui-kit .orn { height: 26px; background: var(--ui-divider) center / auto 100% no-repeat; }
+.ui-kit .orn::before, .ui-kit .orn::after, .ui-kit .orn i { display: none; }
+.ui-kit .goal-row, .ui-kit .tut { background: rgba(0,0,0,.35); box-shadow: inset 0 0 0 1px rgba(63,216,204,.25); }
+.ui-kit .boost.on { background: rgba(63,216,204,.16); box-shadow: inset 0 0 0 2px #3fd8cc, 0 0 14px rgba(63,216,204,.4); }
+.ui-kit .coin-pill i, .ui-kit .shop-item small { background: none; }
+.ui-kit .coin-pill i { background: #3fd8cc; color: #062a28; }
+.ui-kit .shop-item small { color: #3fd8cc; }
