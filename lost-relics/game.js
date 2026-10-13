@@ -1155,55 +1155,45 @@
   }
   function buildMap() {
     const inner = $('mapInner'), scroll = $('mapScroll');
-    const n = LEVELS.length, gap = 122, padTop = 190, padBottom = 140;
-    const h = padTop + (n - 1) * gap + padBottom;
-    inner.style.height = h + 'px';
-    const w = inner.clientWidth || Math.min(480, W);
-    const pts = LEVELS.map((L, i) => [w * (0.5 + Math.sin(i * 0.9 + 0.4) * 0.26), padTop + (n - 1 - i) * gap]);
-    const curve = (P) => {
-      let d = 'M' + P[0][0].toFixed(1) + ' ' + P[0][1].toFixed(1);
-      for (let i = 0; i < P.length - 1; i++) {
-        const p0 = P[i - 1] || P[i], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || p2;
-        const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-        d += ' C' + c1.map((v) => v.toFixed(1)).join(' ') + ' ' + c2.map((v) => v.toFixed(1)).join(' ') + ' ' + p2.map((v) => v.toFixed(1)).join(' ');
-      }
-      return d;
-    };
-    const done = Math.min(save.unlocked, n);
+    const n = LEVELS.length, D = window.ART_DATA || {};
     let totalStars = 0;
     for (let i = 1; i <= n; i++) totalStars += save.stars[i] || 0;
-    // trilha: sulco escuro + pontos de luz (dourados no caminho já feito, verde-água no que falta)
-    let html = '<svg class="trail" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' +
-      '<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
-      '<path d="' + curve(pts) + '" fill="none" stroke="rgba(6,8,6,0.7)" stroke-width="26" stroke-linecap="round"/>' +
-      '<path d="' + curve(pts) + '" fill="none" stroke="rgba(110,220,200,0.55)" stroke-width="5" stroke-dasharray="0 15" stroke-linecap="round" filter="url(#glow)"/>' +
-      (done > 1 ? '<path d="' + curve(pts.slice(0, done)) + '" fill="none" stroke="#ffd36a" stroke-width="7" stroke-dasharray="0 15" stroke-linecap="round" filter="url(#glow)"/>' : '') +
-      '</svg>';
+    // pintura do mapa cobrindo a área; os medalhões ficam em cima do caminho pintado
+    const w = scroll.clientWidth || W, h = scroll.clientHeight || H;
+    const IW = 832, IH = 1248, s = Math.max(w / IW, h / IH);
+    const offX = (w - IW * s) / 2, offY = h - IH * s;
+    inner.style.height = h + 'px'; inner.style.width = w + 'px';
+    inner.style.backgroundImage = D.map ? 'url("' + D.map + '")' : 'none';
+    inner.style.backgroundSize = IW * s + 'px ' + IH * s + 'px';
+    inner.style.backgroundPosition = offX + 'px ' + offY + 'px';
+    // espalha as fases por igual ao longo do caminho (comprimento do traçado)
+    const P = (D.mapPath || [[416, 1200], [416, 150]]).map(([x, y]) => [offX + x * s, offY + y * s]);
+    const seg = []; let tot = 0;
+    for (let i = 0; i < P.length - 1; i++) { const l = Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]); seg.push(l); tot += l; }
+    const at = (d) => { for (let i = 0; i < seg.length; i++) { if (d <= seg[i] || i === seg.length - 1) { const k = Math.min(1, d / seg[i]); return [P[i][0] + (P[i + 1][0] - P[i][0]) * k, P[i][1] + (P[i + 1][1] - P[i][1]) * k]; } d -= seg[i]; } return P[P.length - 1]; };
+    const pts = LEVELS.map((L, i) => at((tot * (i + 0.5)) / n));
     const lock = '<svg class="lock" viewBox="0 0 20 20"><path d="M6 8V6a4 4 0 1 1 8 0v2h1v10H5V8zm2 0h4V6a2 2 0 1 0-4 0z"/></svg>';
+    let html = '';
     LEVELS.forEach((L, i) => {
       const id = i + 1, st = save.stars[id] || 0;
       const locked = id > save.unlocked, current = id === save.unlocked && !st;
-      const gem = locked ? (L.boss ? 'g-amethyst' : 'g-night') : current ? 'g-emerald' : 'g-emerald';
+      const gem = locked ? (L.boss ? 'g-amethyst' : 'g-night') : 'g-emerald';
       const cls = 'node' + (st ? ' done' : '') + (L.boss ? ' boss' : '') + (locked ? ' locked' : '') + (current ? ' current' : '');
-      const stars = locked ? '' : '<span class="st">' + [0, 1, 2].map((k) => '<img alt="" src="' + ART.icon(k < st ? 'star' : 'star0', 40) + '">').join('') + '</span>';
+      const stars = locked || current ? '' : '<span class="st">' + [0, 1, 2].map((k) => '<img alt="" src="' + ART.icon(k < st ? 'star' : 'star0', 40) + '">').join('') + '</span>';
       const face = locked ? (L.boss ? '<img class="scarab" alt="" src="' + ART.icon('scarab', 80) + '">' : lock) : '<span class="num">' + id + '</span>';
-      html += '<button type="button" class="' + cls + '" data-id="' + id + '" style="left:' + pts[i][0].toFixed(1) + 'px;top:' + pts[i][1].toFixed(1) + 'px"' +
+      html += '<button type="button" class="' + cls + '" data-id="' + id + '" style="left:' + pts[i][0].toFixed(1) + 'px;top:' + pts[i][1].toFixed(1) + 'px;z-index:' + (current ? 30 : 10 + i) + '"' +
         (locked ? ' disabled' : '') + ' aria-label="' + T('level') + ' ' + id + (locked ? ' (bloqueada)' : '') + '">' +
         (current ? '<span class="cur-label">' + T('level') + '</span>' : '') +
         '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face +
-        (current ? '<span class="cur-bar"><i style="width:' + Math.round((totalStars / (n * 3)) * 100) + '%"></i></span>' : stars) + '</button>';
+        (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
     });
-    html += '<div class="map-end" style="top:46px"><strong>' + T('map.soon').split(':')[0] + '</strong>' + (T('map.soon').split(':')[1] || '') + '</div>';
     inner.innerHTML = html;
     $('mapStars').textContent = totalStars + '/' + n * 3;
     $('mapStarIc').src = ART.icon('star', 44);
     $('mapCoinIc').src = ART.icon('coin', 64);
     paintWallet();
     inner.querySelectorAll('.node:not(.locked)').forEach((b) => { b.onclick = () => { Sound.init(); Sound.play('click'); openPre(+b.dataset.id); }; });
-    const cur = Math.min(save.unlocked, n) - 1;
-    requestAnimationFrame(() => { scroll.scrollTop = Math.max(0, pts[cur][1] - scroll.clientHeight * 0.6); });
-  }
-  $('btnShop').onclick = () => { Sound.init(); openShop(); };
+  }  $('btnShop').onclick = () => { Sound.init(); openShop(); };
   // ---------- laço principal ----------
   let last = performance.now(), lastDt = 0.016;
   function frame(t) {
