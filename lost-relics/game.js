@@ -874,7 +874,7 @@
     for (const f of floats) {
       const q = f.t / 0.9;
       ctx.globalAlpha = q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3;
-      ctx.font = '700 ' + Math.round(cs * 0.42) + 'px Cinzel, Georgia, serif';
+      ctx.font = '700 ' + Math.round(cs * 0.42) + 'px "Uncial Antiqua", Georgia, serif';
       const y = f.y - q * cs * 0.9;
       ctx.lineWidth = Math.max(2, cs * 0.08); ctx.strokeStyle = 'rgba(10,8,4,0.85)'; ctx.strokeText(f.text, f.x, y);
       ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, y);
