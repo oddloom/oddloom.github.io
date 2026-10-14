@@ -1065,7 +1065,10 @@
       (ART.nodeImg('vtitle') && I18N.lang === 'pt' ? '' : '<div class="eyebrow">' + T('level') + ' ' + id + '</div>') +
       (ART.nodeImg('vtitle') && I18N.lang === 'pt' ? '<h2 class="win-word"><img alt="' + T('win.title') + '" src="' + ART.nodeImg('vtitle') + '"></h2>' : '<h2 class="metal">' + T('win.title') + '</h2><div class="orn"><i></i></div>') +
       '<div class="stars-big"><img alt=""><img alt=""><img alt=""></div>' +
-      '<div class="final-score"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '">+<span id="mScore">0</span></div>' +
+      // moedas ganhas: mesma placa de moeda pintada do placar, número em dígitos Solar
+      (ART.uiImages().coinbar && ART.nodeImg('s0')
+        ? '<div class="final-score painted"><span id="mScore" class="digits"></span></div>'
+        : '<div class="final-score"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '">+<span id="mScore">0</span></div>') +
       '<div class="best' + (isNew ? ' new' : '') + '">' + (isNew ? T('win.new') + ' · ' : '') + T('wallet', { n: save.coins.toLocaleString() }) + '</div>' +
       (last ? '<p>' + T('map.soon') + '</p>' : '') +
       '<div class="btns">' + (last ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
@@ -1080,7 +1083,11 @@
     const sc = { v: 0 }, target = earned;
     tween(sc, { v: target }, 1, 'out').then(() => {});
     const scoreEl = card.querySelector('#mScore');
-    const iv = setInterval(() => { scoreEl.textContent = Math.round(sc.v).toLocaleString(); if (sc.v >= target) clearInterval(iv); }, 40);
+    const paintedScore = scoreEl.classList.contains('digits');
+    let shownScore = -1;
+    const showScore = (n) => { if (n === shownScore) return; shownScore = n; if (paintedScore) scoreEl.innerHTML = digitsHTML(n); else scoreEl.textContent = n.toLocaleString(); };
+    showScore(0);
+    const iv = setInterval(() => { showScore(Math.round(sc.v)); if (sc.v >= target) clearInterval(iv); }, 40);
     const next = card.querySelector('#mNext');
     if (next) next.onclick = () => {
       Sound.play('click'); closeModal();
