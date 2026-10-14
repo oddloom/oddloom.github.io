@@ -12,8 +12,10 @@
     { moves: 15, colors: 5, goals: [{ type: 'sand' }], tut: 'sand', layout: [
       '........', '........', '........', '..ssss..', '..ssss..', '........', '........', '........'] },
     // fase 5 = 1º chefe (14/10, ideia dele): Escaravelho Dourado, 3 golpes. Antes era "35 esmeraldas + 35 safiras".
-    // 16 movimentos: jogador médio vence ~77% (simulação 14/10, 120 sementes), sobram ~7 movimentos
-    { moves: 16, colors: 5, goals: [{ type: 'boss', target: 3 }], scarab: 3, boss: true, tut: 'boss', layout: FULL },
+    // 3 escaravelhos x 3 vidas, 24 movimentos (pedido dele 14/10: com 1 escaravelho de 3 vidas ficou fácil e rápido).
+    // Simulação (120 sementes, jogador médio): vence ~61%, quem vence leva ~10 jogadas (antes: 77% em 5 jogadas).
+    // Com 2 vidas cada ainda morria em ~7 jogadas; só a própria joia valer golpe ficou impossível (<20%).
+    { moves: 24, colors: 5, goals: [{ type: 'boss', target: 3 }], scarab: 3, scarabHp: 3, boss: true, tut: 'boss', layout: FULL },
     { moves: 17, colors: 5, goals: [{ type: 'sand' }], tut: 'barrel', layout: [
       'xx....xx', 'x.ssss.x', '..s..s..', '.ss..ss.', '.ss..ss.', '..s..s..', 'x.ssss.x', 'xx....xx'] },
     { moves: 15, colors: 5, goals: [{ type: 'artifact', target: 1 }], artifacts: 1, artifactMax: 1, tut: 'artifact', layout: [
@@ -45,7 +47,7 @@
   // estrelas: [1, 2, 3] em pontos — calibradas pelo tools/simular.js (13/10/2026, 60 partidas por fase)
   // ganhar já dá 1 estrela; 2 = pontuação mediana de quem ganha; 3 = os 20% melhores
   const STARS = [
-    [4500, 12500, 18500], [7000, 21000, 27500], [5000, 16000, 21000], [4500, 13500, 24500], [2000, 9500, 14500], // fase 5 recalibrada pro escaravelho (14/10)
+    [4500, 12500, 18500], [7000, 21000, 27500], [5000, 16000, 21000], [4500, 13500, 24500], [3000, 13500, 19500], // fase 5 recalibrada pros 3 escaravelhos (14/10)
     [5000, 17500, 27500], [4500, 14500, 24000], [7500, 19000, 24500], [5500, 18500, 26500], [10000, 32000, 41000],
     [3500, 15500, 22000], [5000, 18000, 28500], [4500, 12500, 16500], [5000, 15500, 21500], [3500, 11500, 15000],
     [7500, 20500, 24500], [5000, 15000, 21000], [4000, 12000, 14500], [3000, 12000, 15500], [8500, 23500, 32500],

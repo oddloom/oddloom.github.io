@@ -66,23 +66,37 @@
     for (const k of vines) s.grid[Math.floor(k / W)][k % W].vine = true;
     for (const g of s.goals) if (g.type === 'sand') g.target = s.sandTotal;
     if (!findMove(s)) shuffle(s);
-    // chefe (escaravelho): não ocupa casa, "monta" numa joia e cai junto com ela (s.boss.id = id da joia)
-    if (level.scarab) s.boss = { hp: level.scarab, max: level.scarab, id: pickHost(s, [Math.floor(W / 2), Math.floor(H / 2)], 0) };
+    // chefes (escaravelhos): não ocupam casa, "montam" numa joia e caem junto com ela (b.id = id da joia).
+    // level.scarab = quantos escaravelhos, level.scarabHp = vidas de cada. Começam espalhados.
+    s.bosses = [];
+    if (level.scarab) {
+      const spots = [[2, 2], [W - 3, Math.floor(H / 2)], [2, H - 3], [W - 3, 1], [Math.floor(W / 2), H - 2]];
+      for (let i = 0; i < level.scarab; i++) {
+        const hp = level.scarabHp || 3;
+        s.bosses.push({ hp, max: hp, id: pickHost(s, spots[i % spots.length], 0), idle: 0, hitThisMove: false });
+      }
+    }
     return s;
   }
 
-  // ---------- chefe ----------
-  function bossPos(s) {
-    if (!s.boss || s.boss.hp <= 0) return null;
-    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) { const p = s.grid[y][x]; if (p && p.id === s.boss.id) return [x, y]; }
+  // ---------- chefes ----------
+  // regras (14/10, depois do 1º teste dele: "fácil e rápido"): 1 golpe por jogada em cada escaravelho (cascata não
+  // repete), e se ficar 3 jogadas seguidas sem apanhar ele foge pra outra joia
+  const BOSS_FLEE = 3;
+  const aliveBosses = (s) => (s.bosses || []).filter((b) => b.hp > 0);
+  function bossPos(s, b) {
+    b = b || aliveBosses(s)[0];
+    if (!b || b.hp <= 0) return null;
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) { const p = s.grid[y][x]; if (p && p.id === b.id) return [x, y]; }
     return null;
   }
-  // escolhe a joia onde o chefe pousa: joia comum (sem especial, sem cipó), de preferência a pelo menos minDist casas de 'from'
+  // escolhe a joia onde o chefe pousa: joia comum (sem especial, sem cipó, sem outro escaravelho),
+  // de preferência a pelo menos minDist casas de 'from'
   function pickHost(s, from, minDist) {
-    const all = [], far = [];
+    const all = [], far = [], taken = new Set((s.bosses || []).filter((b) => b.hp > 0).map((b) => b.id));
     for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
       const p = s.grid[y][x];
-      if (!p || p.kind !== 'gem' || p.special || p.vine) continue;
+      if (!p || p.kind !== 'gem' || p.special || p.vine || taken.has(p.id)) continue;
       all.push(p);
       if (!from || Math.abs(x - from[0]) + Math.abs(y - from[1]) >= minDist) far.push(p);
     }
@@ -111,7 +125,7 @@
     c.grid = s.grid.map((row) => row.map((p) => (p ? Object.assign({}, p) : null)));
     c.sand = s.sand.map((row) => row.slice());
     c.goals = s.goals.map((g) => Object.assign({}, g));
-    c.boss = s.boss ? Object.assign({}, s.boss) : null;
+    c.bosses = (s.bosses || []).map((b) => Object.assign({}, b));
     return c;
   }
 
@@ -250,7 +264,7 @@
     const done = new Set();
     const res = { removed: [], sand: [], rocks: [], vines: [], blasts: [], created: [], score: 0 };
     const mult = Math.max(1, s.cascade);
-    const bpos = bossPos(s); // onde o chefe estava antes deste acerto
+    const bpos = aliveBosses(s).map((b) => [b, bossPos(s, b)]); // onde cada chefe estava antes deste acerto
     let cur = hits, wave = 0;
     while (cur.length) {
       const next = [];
@@ -296,13 +310,19 @@
       }
       cur = next; wave++;
     }
-    // chefe: quebrou a joia dele ou uma encostada nele (cima/baixo/lados) = 1 golpe; ele voa pra outra joia longe
-    if (bpos && res.removed.some((r) => Math.abs(r.x - bpos[0]) + Math.abs(r.y - bpos[1]) <= 1)) {
-      s.boss.hp--;
-      bump(s, 'boss');
+    // chefes: quebrou a joia dele ou uma encostada nele (cima/baixo/lados) = 1 golpe (no máximo 1 por jogada);
+    // ele voa pra outra joia longe. Morreu = conta na meta.
+    res.bosses = [];
+    for (const [b, pos] of bpos) {
+      if (!pos || b.hitThisMove) continue;
+      const reach = s.level.scarabReach == null ? 1 : s.level.scarabReach; // 1 = joia dele ou encostada; 0 = só a joia dele
+      if (!res.removed.some((r) => Math.abs(r.x - pos[0]) + Math.abs(r.y - pos[1]) <= reach)) continue;
+      b.hp--; b.hitThisMove = true; b.idle = 0;
       res.score += SCORE.boss;
-      res.boss = { from: bpos, hp: s.boss.hp, dead: s.boss.hp <= 0, fromId: s.boss.id };
-      if (s.boss.hp > 0) { s.boss.id = pickHost(s, bpos, 3); res.boss.toId = s.boss.id; }
+      const ev = { idx: s.bosses.indexOf(b), from: pos, hp: b.hp, dead: b.hp <= 0 };
+      if (b.hp <= 0) bump(s, 'boss');
+      else { b.id = pickHost(s, pos, 3); ev.toId = b.id; }
+      res.bosses.push(ev);
     }
     for (const c of creates || []) {
       if (!inside(s, c.x, c.y) || s.grid[c.y][c.x]) continue;
@@ -463,6 +483,7 @@
   // ---------- resolução completa (gerador: o jogo anima cada passo) ----------
   function* resolve(s, start) {
     s.cascade = 0;
+    for (const b of s.bosses || []) b.hitThisMove = false; // cada jogada nova pode dar 1 golpe em cada escaravelho
     let first = start && start.hits ? start : null;
     let prefer = start && start.prefer ? start.prefer : null;
     for (let guard = 0; guard < 60; guard++) {
@@ -503,8 +524,18 @@
         if (!col.length) break;
         yield { type: 'collect', items: col };
       }
-      // segurança: se o chefe ficou sem joia (ex.: pousou numa que virou especial), pousa em outra
-      if (s.boss && s.boss.hp > 0 && !bossPos(s)) { s.boss.id = pickHost(s, null, 0); yield { type: 'bossland', toId: s.boss.id }; }
+      // segurança: se um chefe ficou sem joia (ex.: a dele foi levada sem ser golpe), pousa em outra
+      for (const b of aliveBosses(s)) if (!bossPos(s, b)) { b.id = pickHost(s, null, 0); yield { type: 'bossland', idx: s.bosses.indexOf(b), toId: b.id }; }
+    }
+    // fim da jogada: quem ficou 3 jogadas seguidas sem apanhar foge pra outra joia longe
+    for (const b of aliveBosses(s)) {
+      if (b.hitThisMove) continue;
+      b.idle++;
+      if (b.idle >= BOSS_FLEE) {
+        const from = bossPos(s, b);
+        b.id = pickHost(s, from, 3); b.idle = 0;
+        yield { type: 'bossflee', idx: s.bosses.indexOf(b), from, toId: b.id };
+      }
     }
     if (!findMove(s)) { shuffle(s); yield { type: 'shuffle' }; }
   }

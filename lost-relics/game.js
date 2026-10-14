@@ -112,7 +112,7 @@
     state = LR.createState(level, ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
     applyBoosts(boosts || {});
     hammerMode = false;
-    vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnim = null;
+    vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = [];
     hint = null; selected = null; drag = null; usedExtra = false; idle = 0; shake = 0;
     scene = 'play';
     $('screen-map').hidden = true; $('screen-menu').hidden = true; $('hud').hidden = false;
@@ -233,7 +233,8 @@
     if (ev.type === 'collect') return onCollect(ev);
     if (ev.type === 'shuffle') return onShuffle();
     if (ev.type === 'convert') return onConvert(ev);
-    if (ev.type === 'bossland') { bossAnim = null; return Promise.resolve(); }
+    if (ev.type === 'bossland') { bossAnims[ev.idx] = null; return Promise.resolve(); }
+    if (ev.type === 'bossflee') return onBossFlee(ev);
     return Promise.resolve();
   }
 
@@ -272,42 +273,53 @@
       floats.push({ x: cellX(sx / ev.removed.length), y: cellY(sy / ev.removed.length), text: '+' + ev.score, num: ev.score, color: g ? ART.hsl(g.h, g.s, Math.max(62, g.l + 22)) : '#ffe08a', t: 0 });
     }
     if (ev.cascade >= 7) praise(3); else if (ev.cascade >= 5) praise(2); else if (ev.cascade >= 3) praise(1);
-    if (ev.boss) bossHit(ev.boss);
+    for (const b of ev.bosses || []) bossHit(b);
     later(0.12, renderHUD);
-    await wait(0.2 + ev.waves * WAVE + (ev.boss ? 0.35 : 0));
+    await wait(0.2 + ev.waves * WAVE + ((ev.bosses || []).length ? 0.35 : 0));
   }
 
-  // ---------- chefe (escaravelho) ----------
-  // bossAnim: null = parado na joia | hit (racha no lugar) → fly (voa até a joia nova) | dead (quebra)
-  let bossAnim = null;
+  // ---------- chefes (escaravelhos) ----------
+  // bossAnims[i]: null = parado na joia | hit (racha no lugar) → fly (voa até a joia nova) | dead (quebra) | gone
+  let bossAnims = [];
   function bossHit(b) {
-    const [fx, fy] = b.from;
+    const [fx, fy] = b.from, from = [cellX(fx), cellY(fy)];
     Sound.play('rock'); buzz([40, 30, 60]); addShake(0.5);
     ring(fx, fy, 'rgba(255,215,110,0.95)', 1.4);
-    bossAnim = { type: 'hit', t0: now, from: [cellX(fx), cellY(fy)], dead: b.dead };
-    if (b.dead) { later(0.35, () => { bossAnim = { type: 'dead', t0: now, from: [cellX(fx), cellY(fy)] }; Sound.play('glass', 3); praise(3); }); later(1.4, () => { if (bossAnim && bossAnim.type === 'dead') bossAnim = { type: 'gone' }; }); }
-    else later(0.35, () => { bossAnim = { type: 'fly', t0: now, from: [cellX(fx), cellY(fy)] }; Sound.play('create'); });
+    bossAnims[b.idx] = { type: 'hit', t0: now, from };
+    if (b.dead) {
+      later(0.35, () => { bossAnims[b.idx] = { type: 'dead', t0: now, from }; Sound.play('glass', 3); praise(state.bosses.every((x) => x.hp <= 0) ? 3 : 2); });
+      later(1.4, () => { if (bossAnims[b.idx] && bossAnims[b.idx].type === 'dead') bossAnims[b.idx] = { type: 'gone' }; });
+    } else later(0.35, () => { bossAnims[b.idx] = { type: 'fly', t0: now, from }; Sound.play('create'); });
+  }
+  // escaravelho que ficou 3 jogadas sem apanhar foge voando
+  function onBossFlee(ev) {
+    if (!ev.from) return Promise.resolve();
+    bossAnims[ev.idx] = { type: 'fly', t0: now, from: [cellX(ev.from[0]), cellY(ev.from[1])] };
+    Sound.play('create');
+    return wait(0.45);
   }
   // posição na tela da joia onde o chefe está montado (acompanha a joia caindo)
-  function bossHostXY() {
-    const pos = LR.bossPos(state);
+  function bossHostXY(b) {
+    const pos = LR.bossPos(state, b);
     if (!pos) return null;
     const v = vis.get(state.grid[pos[1]][pos[0]].id);
     return v ? [cellX(v.x), cellY(v.y)] : [cellX(pos[0]), cellY(pos[1])];
   }
-  function drawBoss() {
-    if (!state.boss || (bossAnim && bossAnim.type === 'gone')) return;
-    const sz = cs * 1.3, bob = Math.sin(now * 3.2) * cs * 0.04;
+  function drawBosses() { state.bosses.forEach((b, i) => drawBoss(b, i)); }
+  function drawBoss(boss, i) {
+    const an = bossAnims[i];
+    if (an && an.type === 'gone') return;
+    const sz = cs * 1.3, bob = Math.sin(now * 3.2 + i * 2.1) * cs * 0.04;
     let key = 'bidle', x, y, a = 1, sc = 1;
-    const host = bossHostXY();
-    if (bossAnim && bossAnim.type === 'hit') { key = 'bhit'; [x, y] = bossAnim.from; sc = 1 + 0.12 * Math.sin(Math.min(1, (now - bossAnim.t0) / 0.35) * Math.PI); }
-    else if (bossAnim && bossAnim.type === 'fly') {
-      const q = Math.min(1, (now - bossAnim.t0) / 0.6), e = q < 0.5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2;
-      const to = host || bossAnim.from;
-      key = 'bfly'; x = bossAnim.from[0] + (to[0] - bossAnim.from[0]) * e; y = bossAnim.from[1] + (to[1] - bossAnim.from[1]) * e - Math.sin(q * Math.PI) * cs * 1.2; sc = 1.15;
-      if (q >= 1) bossAnim = null;
-    } else if (bossAnim && bossAnim.type === 'dead') { key = 'bdead'; [x, y] = bossAnim.from; const q = Math.min(1, (now - bossAnim.t0) / 1); a = 1 - q * q; sc = 1 + q * 0.25; }
-    else { if (!host || state.boss.hp <= 0) return; [x, y] = host; y += bob; }
+    const host = bossHostXY(boss);
+    if (an && an.type === 'hit') { key = 'bhit'; [x, y] = an.from; sc = 1 + 0.12 * Math.sin(Math.min(1, (now - an.t0) / 0.35) * Math.PI); }
+    else if (an && an.type === 'fly') {
+      const q = Math.min(1, (now - an.t0) / 0.6), e = q < 0.5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2;
+      const to = host || an.from;
+      key = 'bfly'; x = an.from[0] + (to[0] - an.from[0]) * e; y = an.from[1] + (to[1] - an.from[1]) * e - Math.sin(q * Math.PI) * cs * 1.2; sc = 1.15;
+      if (q >= 1) bossAnims[i] = null;
+    } else if (an && an.type === 'dead') { key = 'bdead'; [x, y] = an.from; const q = Math.min(1, (now - an.t0) / 1); a = 1 - q * q; sc = 1 + q * 0.25; }
+    else { if (!host || boss.hp <= 0) return; [x, y] = host; y += bob; }
     const im = nodeImgObj(key) || nodeImgObj('bidle');
     if (!im) return;
     const w = sz * sc, h = w * im.naturalHeight / im.naturalWidth;
@@ -318,7 +330,7 @@
     ctx.restore();
     // vidas em cima dele: carapaças de ouro (cheia / rachada / quebrada)
     if (key === 'bdead') return;
-    const hp = Math.max(0, state.boss.hp), max = state.boss.max, ls = cs * 0.3;
+    const hp = Math.max(0, boss.hp), max = boss.max, ls = cs * 0.3;
     for (let i = 0; i < max; i++) {
       const lim = nodeImgObj(i < hp ? 'blife3' : 'blife1');
       if (!lim) continue;
@@ -765,7 +777,7 @@
       else { v.s = d.v.s * (q < 0.3 ? 1 + q * 0.8 : 1.24 * (1 - (q - 0.3) / 0.7)); v.a = 1 - q * q; }
       drawPiece(d.p, v, 1);
     }
-    if (state.boss) drawBoss();
+    if (state.bosses && state.bosses.length) drawBosses();
     drawParts();
     ctx.restore();
     drawFloats();
@@ -1440,7 +1452,7 @@
     else if (location.hash === '#loja') { openMap(); openShop(); }
     else if (/^#anuncio\d+$/.test(location.hash)) { const n = +location.hash.slice(8); startLevel(n); setTimeout(() => { announceLevel(LEVELS[n - 1]); const a = document.querySelector('.announce:last-of-type'); if (a) { a.style.animation = 'none'; a.remove = () => {}; } }, 600); }
     else if (location.hash === '#placardemo') { startLevel(3); setTimeout(() => { state.score = Math.round((level.stars[1] + level.stars[2]) / 2); renderHUD(); }, 900); }
-    else if (location.hash === '#chefedemo') { startLevel(5); setTimeout(() => { vis = new Map(); state.boss.hp = 2; state.goals[0].count = 1; renderHUD(); }, 1500); }
+    else if (location.hash === '#chefedemo') { startLevel(5); setTimeout(() => { vis = new Map(); state.bosses[0].hp = 0; state.bosses[1].hp = 1; state.goals[0].count = 1; renderHUD(); }, 1500); }
     else if (location.hash === '#derrotademo') { startLevel(1); setTimeout(() => { showLose(); const x = document.getElementById('mExtra'); if (x) x.hidden = false; }, 900); }
     else if (location.hash === '#pontosdemo') { startLevel(1); setTimeout(() => { state.score = 1290; renderHUD(); floats.push({ x: cellX(3), y: cellY(4), text: '+90', num: 90, color: '#ffe08a', t: 0, hold: true }); }, 900); }
     else if (location.hash === '#vitoriademo') { startLevel(1); setTimeout(() => { state.score = 16900; showWin(); }, 1200); setTimeout(() => document.querySelectorAll('.stars-big img').forEach((im, i) => { if (i < 2) { im.src = ART.nodeImg('vstar') || im.src; im.classList.add('on'); } }), 2600); }
