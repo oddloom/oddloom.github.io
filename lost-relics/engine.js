@@ -7,7 +7,7 @@
 (function (root) {
   'use strict';
 
-  const SCORE = { gem: 30, line: 120, barrel: 200, idol: 300, rock: 40, sand: 60, vine: 40, artifact: 1000, treasure: 250 };
+  const SCORE = { gem: 30, line: 120, barrel: 200, idol: 300, rock: 40, sand: 60, vine: 40, artifact: 1000, treasure: 250, boss: 500 };
   const GEM_NAMES = ['ruby', 'emerald', 'sapphire', 'topaz', 'amethyst', 'diamond'];
 
   // ---------- sorteio com semente (estado copiável) ----------
@@ -66,7 +66,33 @@
     for (const k of vines) s.grid[Math.floor(k / W)][k % W].vine = true;
     for (const g of s.goals) if (g.type === 'sand') g.target = s.sandTotal;
     if (!findMove(s)) shuffle(s);
+    // chefe (escaravelho): não ocupa casa, "monta" numa joia e cai junto com ela (s.boss.id = id da joia)
+    if (level.scarab) s.boss = { hp: level.scarab, max: level.scarab, id: pickHost(s, [Math.floor(W / 2), Math.floor(H / 2)], 0) };
     return s;
+  }
+
+  // ---------- chefe ----------
+  function bossPos(s) {
+    if (!s.boss || s.boss.hp <= 0) return null;
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) { const p = s.grid[y][x]; if (p && p.id === s.boss.id) return [x, y]; }
+    return null;
+  }
+  // escolhe a joia onde o chefe pousa: joia comum (sem especial, sem cipó), de preferência a pelo menos minDist casas de 'from'
+  function pickHost(s, from, minDist) {
+    const all = [], far = [];
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+      const p = s.grid[y][x];
+      if (!p || p.kind !== 'gem' || p.special || p.vine) continue;
+      all.push(p);
+      if (!from || Math.abs(x - from[0]) + Math.abs(y - from[1]) >= minDist) far.push(p);
+    }
+    const pool = far.length ? far : all;
+    if (!minDist && from) { // no começo: a joia mais perto do centro
+      let best = null, bd = 1e9;
+      for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) { const p = s.grid[y][x]; if (pool.includes(p)) { const d = Math.abs(x - from[0]) + Math.abs(y - from[1]); if (d < bd) { bd = d; best = p; } } }
+      return best ? best.id : null;
+    }
+    return pool.length ? pool[randInt(s, pool.length)].id : null;
   }
 
   function safeColor(s, x, y) {
@@ -85,6 +111,7 @@
     c.grid = s.grid.map((row) => row.map((p) => (p ? Object.assign({}, p) : null)));
     c.sand = s.sand.map((row) => row.slice());
     c.goals = s.goals.map((g) => Object.assign({}, g));
+    c.boss = s.boss ? Object.assign({}, s.boss) : null;
     return c;
   }
 
@@ -223,6 +250,7 @@
     const done = new Set();
     const res = { removed: [], sand: [], rocks: [], vines: [], blasts: [], created: [], score: 0 };
     const mult = Math.max(1, s.cascade);
+    const bpos = bossPos(s); // onde o chefe estava antes deste acerto
     let cur = hits, wave = 0;
     while (cur.length) {
       const next = [];
@@ -267,6 +295,14 @@
         res.score += SCORE.gem * mult;
       }
       cur = next; wave++;
+    }
+    // chefe: quebrou a joia dele ou uma encostada nele (cima/baixo/lados) = 1 golpe; ele voa pra outra joia longe
+    if (bpos && res.removed.some((r) => Math.abs(r.x - bpos[0]) + Math.abs(r.y - bpos[1]) <= 1)) {
+      s.boss.hp--;
+      bump(s, 'boss');
+      res.score += SCORE.boss;
+      res.boss = { from: bpos, hp: s.boss.hp, dead: s.boss.hp <= 0, fromId: s.boss.id };
+      if (s.boss.hp > 0) { s.boss.id = pickHost(s, bpos, 3); res.boss.toId = s.boss.id; }
     }
     for (const c of creates || []) {
       if (!inside(s, c.x, c.y) || s.grid[c.y][c.x]) continue;
@@ -467,6 +503,8 @@
         if (!col.length) break;
         yield { type: 'collect', items: col };
       }
+      // segurança: se o chefe ficou sem joia (ex.: pousou numa que virou especial), pousa em outra
+      if (s.boss && s.boss.hp > 0 && !bossPos(s)) { s.boss.id = pickHost(s, null, 0); yield { type: 'bossland', toId: s.boss.id }; }
     }
     if (!findMove(s)) { shuffle(s); yield { type: 'shuffle' }; }
   }
@@ -564,7 +602,7 @@
   const api = {
     SCORE, GEM_NAMES, rand, createState, cloneState, findGroups, groupSpecial, applyHits, gravity, gravityStep,
     collectArtifacts, doSwap, swapIsValid, resolve, runAll, allMoves, findMove, shuffle, treasureRush,
-    isWon, goalDone, sandLeft, stars, colorAt, inside, swappable, isExit,
+    isWon, goalDone, sandLeft, stars, colorAt, inside, swappable, isExit, bossPos,
   };
   root.LR = api;
   if (typeof module !== 'undefined') module.exports = api;

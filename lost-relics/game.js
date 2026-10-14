@@ -112,7 +112,7 @@
     state = LR.createState(level, ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
     applyBoosts(boosts || {});
     hammerMode = false;
-    vis = new Map(); dying = []; parts = []; floats = []; glints = [];
+    vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnim = null;
     hint = null; selected = null; drag = null; usedExtra = false; idle = 0; shake = 0;
     scene = 'play';
     $('screen-map').hidden = true; $('screen-menu').hidden = true; $('hud').hidden = false;
@@ -233,6 +233,7 @@
     if (ev.type === 'collect') return onCollect(ev);
     if (ev.type === 'shuffle') return onShuffle();
     if (ev.type === 'convert') return onConvert(ev);
+    if (ev.type === 'bossland') { bossAnim = null; return Promise.resolve(); }
     return Promise.resolve();
   }
 
@@ -271,8 +272,59 @@
       floats.push({ x: cellX(sx / ev.removed.length), y: cellY(sy / ev.removed.length), text: '+' + ev.score, num: ev.score, color: g ? ART.hsl(g.h, g.s, Math.max(62, g.l + 22)) : '#ffe08a', t: 0 });
     }
     if (ev.cascade >= 7) praise(3); else if (ev.cascade >= 5) praise(2); else if (ev.cascade >= 3) praise(1);
+    if (ev.boss) bossHit(ev.boss);
     later(0.12, renderHUD);
-    await wait(0.2 + ev.waves * WAVE);
+    await wait(0.2 + ev.waves * WAVE + (ev.boss ? 0.35 : 0));
+  }
+
+  // ---------- chefe (escaravelho) ----------
+  // bossAnim: null = parado na joia | hit (racha no lugar) → fly (voa até a joia nova) | dead (quebra)
+  let bossAnim = null;
+  function bossHit(b) {
+    const [fx, fy] = b.from;
+    Sound.play('rock'); buzz([40, 30, 60]); addShake(0.5);
+    ring(fx, fy, 'rgba(255,215,110,0.95)', 1.4);
+    bossAnim = { type: 'hit', t0: now, from: [cellX(fx), cellY(fy)], dead: b.dead };
+    if (b.dead) { later(0.35, () => { bossAnim = { type: 'dead', t0: now, from: [cellX(fx), cellY(fy)] }; Sound.play('glass', 3); praise(3); }); later(1.4, () => { if (bossAnim && bossAnim.type === 'dead') bossAnim = { type: 'gone' }; }); }
+    else later(0.35, () => { bossAnim = { type: 'fly', t0: now, from: [cellX(fx), cellY(fy)] }; Sound.play('create'); });
+  }
+  // posição na tela da joia onde o chefe está montado (acompanha a joia caindo)
+  function bossHostXY() {
+    const pos = LR.bossPos(state);
+    if (!pos) return null;
+    const v = vis.get(state.grid[pos[1]][pos[0]].id);
+    return v ? [cellX(v.x), cellY(v.y)] : [cellX(pos[0]), cellY(pos[1])];
+  }
+  function drawBoss() {
+    if (!state.boss || (bossAnim && bossAnim.type === 'gone')) return;
+    const sz = cs * 1.3, bob = Math.sin(now * 3.2) * cs * 0.04;
+    let key = 'bidle', x, y, a = 1, sc = 1;
+    const host = bossHostXY();
+    if (bossAnim && bossAnim.type === 'hit') { key = 'bhit'; [x, y] = bossAnim.from; sc = 1 + 0.12 * Math.sin(Math.min(1, (now - bossAnim.t0) / 0.35) * Math.PI); }
+    else if (bossAnim && bossAnim.type === 'fly') {
+      const q = Math.min(1, (now - bossAnim.t0) / 0.6), e = q < 0.5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2;
+      const to = host || bossAnim.from;
+      key = 'bfly'; x = bossAnim.from[0] + (to[0] - bossAnim.from[0]) * e; y = bossAnim.from[1] + (to[1] - bossAnim.from[1]) * e - Math.sin(q * Math.PI) * cs * 1.2; sc = 1.15;
+      if (q >= 1) bossAnim = null;
+    } else if (bossAnim && bossAnim.type === 'dead') { key = 'bdead'; [x, y] = bossAnim.from; const q = Math.min(1, (now - bossAnim.t0) / 1); a = 1 - q * q; sc = 1 + q * 0.25; }
+    else { if (!host || state.boss.hp <= 0) return; [x, y] = host; y += bob; }
+    const im = nodeImgObj(key) || nodeImgObj('bidle');
+    if (!im) return;
+    const w = sz * sc, h = w * im.naturalHeight / im.naturalWidth;
+    ctx.save(); ctx.globalAlpha = a;
+    // brilho dourado pulsando em volta: marca que é o chefe
+    ctx.shadowColor = 'rgba(255,196,70,' + (0.65 + 0.25 * Math.sin(now * 4)) + ')'; ctx.shadowBlur = cs * 0.35;
+    ctx.drawImage(im, x - w / 2, y - h * 0.55, w, h);
+    ctx.restore();
+    // vidas em cima dele: carapaças de ouro (cheia / rachada / quebrada)
+    if (key === 'bdead') return;
+    const hp = Math.max(0, state.boss.hp), max = state.boss.max, ls = cs * 0.3;
+    for (let i = 0; i < max; i++) {
+      const lim = nodeImgObj(i < hp ? 'blife3' : 'blife1');
+      if (!lim) continue;
+      const lx = x - (max * ls * 0.9) / 2 + i * ls * 0.9, ly = y - h * 0.55 - ls * 0.45;
+      ctx.drawImage(lim, lx, ly, ls, ls * lim.naturalHeight / lim.naturalWidth);
+    }
   }
 
   async function onFall(ev) {
@@ -713,6 +765,7 @@
       else { v.s = d.v.s * (q < 0.3 ? 1 + q * 0.8 : 1.24 * (1 - (q - 0.3) / 0.7)); v.a = 1 - q * q; }
       drawPiece(d.p, v, 1);
     }
+    if (state.boss) drawBoss();
     drawParts();
     ctx.restore();
     drawFloats();
@@ -927,6 +980,8 @@
   }
 
   // ---------- painel do jogo ----------
+  // ícone da meta: o chefe usa o próprio sprite pintado
+  const goalIcon = (g, size) => (g.type === 'boss' && ART.nodeImg('bidle')) || ART.icon(goalIconKey(g), size);
   const goalIconKey = (g) => (g.type === 'score' ? 'star' : g.type === 'collect' ? 'gem' + g.color : g.type === 'sand' ? 'sand' : g.type === 'rock' ? 'rock' : g.type === 'vine' ? 'vine' : 'chest');
   function goalLeft(g) {
     if (g.type === 'score') return Math.max(0, g.target - state.score);
@@ -940,7 +995,7 @@
     chipEls = state.goals.map((g) => {
       const el = document.createElement('div');
       el.className = 'chip';
-      el.innerHTML = '<img alt="" src="' + ART.icon(goalIconKey(g), 64) + '"><b></b>';
+      el.innerHTML = '<img alt="" src="' + goalIcon(g, 64) + '"><b></b>';
       box.appendChild(el);
       return el;
     });
@@ -948,12 +1003,13 @@
     for (const k of ['mk1', 'mk2', 'mk3']) { $(k).classList.remove('on'); $(k).style.opacity = ''; $(k).src = paintedBar() ? ART.nodeImg('vstar') : ART.icon('star0', 48); }
   }
   // dígitos Solar sem halo como imagem, pra desenhar no canvas (pontos que sobem do tabuleiro)
-  const digitImgs = {};
-  function digitImg(d) {
-    let im = digitImgs[d];
-    if (!im) { const src = ART.nodeImg('s' + d); if (!src) return null; im = digitImgs[d] = new Image(); im.src = src; }
+  const nodeImgs = {};
+  function nodeImgObj(key) {
+    let im = nodeImgs[key];
+    if (!im) { const src = ART.nodeImg(key); if (!src) return null; im = nodeImgs[key] = new Image(); im.src = src; }
     return im.complete && im.naturalWidth ? im : null;
   }
+  const digitImg = (d) => nodeImgObj('s' + d);
   // placar v2 pintado: barra com 3 encaixes fixos e números em dígitos Solar
   const paintedBar = () => !!(ART.uiImages().bar && ART.uiImages().barfill && ART.nodeImg('vstar'));
   const SOCK = [12.1, 51.6, 87.7]; // centro dos encaixes na arte da barra (% da largura)
@@ -1024,7 +1080,7 @@
     const rows = L.goals.map((g) => {
       const gg = Object.assign({}, g);
       if (g.type === 'sand') { gg.target = L.layout.join('').split('').reduce((n, c) => n + (c === 's' || c === 'w' ? 1 : c === 'S' || c === 'W' ? 2 : 0), 0); }
-      return '<div class="goal-row"><img alt="" src="' + ART.icon(goalIconKey(g), 80) + '"><span>' + goalText(gg) + '</span></div>';
+      return '<div class="goal-row"><img alt="" src="' + goalIcon(g, 80) + '"><span>' + goalText(gg) + '</span></div>';
     }).join('');
     const card = openModal(
       '<div class="eyebrow">' + T('map.title').toUpperCase() + '</div>' +
@@ -1032,7 +1088,7 @@
       (L.boss ? '<div class="boss-tag">' + T('boss') + '</div>' : '') +
       '<div class="goal-list">' + rows + '</div>' +
       '<div class="moves-line">' + T('moves') + ': <b>' + L.moves + '</b></div>' +
-      (tutKey ? '<div class="tut"><img alt="" src="' + ART.icon(TUT_ICON[L.tut] || 'barrel', 108) + '"><p>' + T(tutKey) + '</p></div>' : '') +
+      (tutKey ? '<div class="tut"><img alt="" src="' + (L.tut === 'boss' && ART.nodeImg('bidle')) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108) + '"><p>' + T(tutKey) + '</p></div>' : '') +
       boostPicker() +
       '<div class="btns"><button class="btn" id="mPlay" type="button">' + T('play') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
@@ -1103,7 +1159,7 @@
     Sound.play('lose');
     const id = level.id;
     const rows = state.goals.filter((g) => !LR.goalDone(state, g)).map((g) =>
-      '<div class="goal-row"><img alt="" src="' + ART.icon(goalIconKey(g), 80) + '"><span>' + goalText(g) + '</span><b>' + (g.type === 'score' ? goalLeft(g).toLocaleString() : goalLeft(g)) + '</b></div>').join('');
+      '<div class="goal-row"><img alt="" src="' + goalIcon(g, 80) + '"><span>' + goalText(g) + '</span><b>' + (g.type === 'score' ? goalLeft(g).toLocaleString() : goalLeft(g)) + '</b></div>').join('');
     const card = openModal(
       '<div class="eyebrow">' + T('level') + ' ' + id + '</div>' +
       '<h2 class="metal">' + T('lose.title') + '</h2><div class="orn"><i></i></div>' +
@@ -1364,6 +1420,7 @@
     else if (location.hash === '#loja') { openMap(); openShop(); }
     else if (/^#anuncio\d+$/.test(location.hash)) { const n = +location.hash.slice(8); startLevel(n); setTimeout(() => { announceLevel(LEVELS[n - 1]); const a = document.querySelector('.announce:last-of-type'); if (a) { a.style.animation = 'none'; a.remove = () => {}; } }, 600); }
     else if (location.hash === '#placardemo') { startLevel(3); setTimeout(() => { state.score = Math.round((level.stars[1] + level.stars[2]) / 2); renderHUD(); }, 900); }
+    else if (location.hash === '#chefedemo') { startLevel(5); setTimeout(() => { vis = new Map(); state.boss.hp = 2; state.goals[0].count = 1; renderHUD(); }, 1500); }
     else if (location.hash === '#derrotademo') { startLevel(1); setTimeout(() => { showLose(); const x = document.getElementById('mExtra'); if (x) x.hidden = false; }, 900); }
     else if (location.hash === '#pontosdemo') { startLevel(1); setTimeout(() => { state.score = 1290; renderHUD(); floats.push({ x: cellX(3), y: cellY(4), text: '+90', num: 90, color: '#ffe08a', t: 0, hold: true }); }, 900); }
     else if (location.hash === '#vitoriademo') { startLevel(1); setTimeout(() => { state.score = 16900; showWin(); }, 1200); setTimeout(() => document.querySelectorAll('.stars-big img').forEach((im, i) => { if (i < 2) { im.src = ART.nodeImg('vstar') || im.src; im.classList.add('on'); } }), 2600); }
