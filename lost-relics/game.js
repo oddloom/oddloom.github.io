@@ -145,7 +145,13 @@
   function announceLevel(L) {
     const el = document.createElement('div');
     el.className = 'announce' + (L.boss ? ' boss' : '');
-    el.innerHTML = '<span class="metal">' + T('announce', { n: L.id }) + '</span>' + (L.boss ? '<small>' + T('boss') + '</small>' : '');
+    // em português: "FASE" + número pintados (estilo Solar); senão, texto
+    const painted = I18N.lang === 'pt' && ART.nodeImg('fase') && ART.nodeImg('n0');
+    const word = painted
+      ? '<div class="ann-art"><img class="ann-fase" alt="" src="' + ART.nodeImg('fase') + '">' + String(L.id).split('').map((d) => '<img class="ann-num" alt="" src="' + ART.nodeImg('n' + d) + '">').join('') + '</div>'
+      : '<span class="metal">' + T('announce', { n: L.id }) + '</span>';
+    el.innerHTML = word + (L.boss ? '<small>' + T('boss') + '</small>' : '');
+    if (painted) el.setAttribute('aria-label', T('announce', { n: L.id }));
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 2300);
     Sound.play('announce');
@@ -376,7 +382,8 @@
   async function treasureRush() {
     await wait(0.25);
     if (state.moves > 0) {
-      showPraise(T('rush'), 'banner');
+      const rushArt = I18N.lang === 'pt' && ART.nodeImg('rush');
+      showPraise(T('rush'), rushArt ? 'art rush' : 'banner', rushArt);
       Sound.play('rush');
       Sound.voice('rush', I18N.lang);
       await wait(0.7);
@@ -410,13 +417,15 @@
   function praise(n) {
     if (n <= praiseLevel) return;
     praiseLevel = n;
-    showPraise(T('praise.' + n));
+    // em português: palavra pintada estilo Solar (Ótimo/Incrível/Lendário); senão, texto
+    const art = I18N.lang === 'pt' && ART.nodeImg('p' + n);
+    showPraise(T('praise.' + n), art ? 'art p' + n : '', art);
     Sound.voice('p' + n, I18N.lang);
   }
-  function showPraise(text, cls) {
+  function showPraise(text, cls, img) {
     const el = document.createElement('div');
     el.className = 'praise' + (cls ? ' ' + cls : '');
-    el.textContent = text;
+    if (img) { el.innerHTML = '<img alt="" src="' + img + '">'; el.setAttribute('aria-label', text); } else el.textContent = text;
     document.body.appendChild(el);
     setTimeout(() => { if (!/^#evento-/.test(location.hash)) el.remove(); }, 1150);
   }
@@ -926,22 +935,42 @@
       return el;
     });
     lastLeft = state.goals.map(() => null);
-    for (const k of ['mk1', 'mk2', 'mk3']) { $(k).classList.remove('on'); $(k).src = ART.icon('star0', 48); }
+    for (const k of ['mk1', 'mk2', 'mk3']) { $(k).classList.remove('on'); $(k).style.opacity = ''; $(k).src = paintedBar() ? ART.nodeImg('vstar') : ART.icon('star0', 48); }
+  }
+  // placar v2 pintado: barra com 3 encaixes fixos e números em dígitos Solar
+  const paintedBar = () => !!(ART.uiImages().bar && ART.uiImages().barfill && ART.nodeImg('vstar'));
+  const SOCK = [12.1, 51.6, 87.7]; // centro dos encaixes na arte da barra (% da largura)
+  const digitsHTML = (n) => String(n).split('').map((d) => '<img alt="" src="' + (ART.nodeImg('s' + d) || ART.nodeImg('n' + d)) + '">').join('');
+  const lastShown = {};
+  function setNum(id, n) {
+    if (lastShown[id] === n) return;
+    lastShown[id] = n;
+    const el = $(id);
+    if (ART.nodeImg('n0')) { el.innerHTML = digitsHTML(n); el.setAttribute('aria-label', String(n)); el.classList.add('digits'); }
+    else el.textContent = n;
   }
   function renderHUD() {
     if (!state) return;
     const mv = $('moves');
-    mv.textContent = state.moves;
+    setNum('moves', state.moves);
     mv.classList.toggle('low', state.moves <= 5 && state.moves > 0 && !LR.isWon(state));
-    $('score').innerHTML = '<img class="coin" alt="" src="' + ART.icon('coin', 48) + '">' + coinsOf(state.score).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
+    if (ART.nodeImg('n0') && ART.uiImages().coinbar) setNum('score', coinsOf(state.score));
+    else { lastShown.score = null; $('score').innerHTML = '<img class="coin" alt="" src="' + ART.icon('coin', 48) + '">' + coinsOf(state.score).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US'); }
     updateHammerBtn();
     const top = level.stars[2];
-    $('starfill').style.width = Math.min(100, (state.score / top) * 100) + '%';
+    if (paintedBar()) {
+      // o ouro sai do 1º encaixe e chega em cada encaixe exatamente na pontuação daquela estrela
+      const [s1, s2, s3] = level.stars, sc = state.score;
+      const w = sc <= s1 ? 0 : sc <= s2 ? (sc - s1) / (s2 - s1) * (SOCK[1] - SOCK[0]) : (SOCK[1] - SOCK[0]) + Math.min(1, (sc - s2) / (s3 - s2)) * (SOCK[2] - SOCK[1]);
+      $('starfill').style.width = w + '%';
+    } else $('starfill').style.width = Math.min(100, (state.score / top) * 100) + '%';
     level.stars.forEach((v, i) => {
       const el = $('mk' + (i + 1));
-      el.style.left = Math.min(100, (v / top) * 100) - (i === 2 ? 4 : 0) + '%';
+      el.style.left = paintedBar() ? SOCK[i] + '%' : Math.min(100, (v / top) * 100) - (i === 2 ? 4 : 0) + '%';
       const on = state.score >= v;
-      if (on !== el.classList.contains('on')) { el.classList.toggle('on', on); el.src = ART.icon(on ? 'star' : 'star0', 48); if (on && scene === 'play') Sound.play('star', i); }
+      // antes da 1ª estrela a barra não anda: a estrela do 1º encaixe vai aparecendo aos poucos
+      if (paintedBar() && i === 0 && !on) el.style.opacity = (0.5 * state.score / v).toFixed(2);
+      if (on !== el.classList.contains('on')) { el.classList.toggle('on', on); if (on) el.style.opacity = ''; if (!paintedBar()) el.src = ART.icon(on ? 'star' : 'star0', 48); if (on && scene === 'play') Sound.play('star', i); }
     });
     state.goals.forEach((g, i) => {
       const left = goalLeft(g), el = chipEls[i];
@@ -1015,8 +1044,8 @@
     setTimeout(() => Sound.voice('win', I18N.lang), 350);
     const last = id === LEVELS.length;
     const card = openModal(
-      '<div class="eyebrow">' + T('level') + ' ' + id + '</div>' +
-      '<h2 class="metal">' + T('win.title') + '</h2><div class="orn"><i></i></div>' +
+      (ART.nodeImg('vtitle') && I18N.lang === 'pt' ? '' : '<div class="eyebrow">' + T('level') + ' ' + id + '</div>') +
+      (ART.nodeImg('vtitle') && I18N.lang === 'pt' ? '<h2 class="win-word"><img alt="' + T('win.title') + '" src="' + ART.nodeImg('vtitle') + '"></h2>' : '<h2 class="metal">' + T('win.title') + '</h2><div class="orn"><i></i></div>') +
       '<div class="stars-big"><img alt=""><img alt=""><img alt=""></div>' +
       '<div class="final-score"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '">+<span id="mScore">0</span></div>' +
       '<div class="best' + (isNew ? ' new' : '') + '">' + (isNew ? T('win.new') + ' · ' : '') + T('wallet', { n: save.coins.toLocaleString() }) + '</div>' +
@@ -1024,7 +1053,12 @@
       '<div class="btns">' + (last ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
     const imgs = card.querySelectorAll('.stars-big img');
-    imgs.forEach((im) => { im.src = ART.icon('star', 128); });
+    // estrelas pintadas: começa no encaixe de pedra vazio e troca pela estrela Solar ao acender
+    const vOn = ART.nodeImg('vstar'), vOff = ART.nodeImg('vstar0');
+    imgs.forEach((im) => { im.src = vOff || vOn || ART.icon('star', 128); });
+    if (vOn) card.querySelector('.stars-big').classList.add('painted');
+    if (vOn && vOff) card.querySelector('.stars-big').classList.add('slots');
+    const lightStar = (im) => { if (vOn) im.src = vOn; im.classList.add('on'); };
     const sc = { v: 0 }, target = earned;
     tween(sc, { v: target }, 1, 'out').then(() => {});
     const scoreEl = card.querySelector('#mScore');
@@ -1036,7 +1070,7 @@
       if (save.wins % 3 === 0) Ads.interstitial(go); else go();
     };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
-    for (let i = 0; i < stars; i++) { await wait(0.35); imgs[i].classList.add('on'); Sound.play('star', i); }
+    for (let i = 0; i < stars; i++) { await wait(0.35); lightStar(imgs[i]); Sound.play('star', i); }
   }
 
   function showLose() {
@@ -1221,8 +1255,10 @@
       const face = locked ? (L.boss ? '<img class="scarab" alt="" src="' + ART.icon('scarab', 80) + '">' : lock) : '<span class="num">' + id + '</span>';
       html += '<button type="button" class="' + cls + '" data-id="' + id + '" style="left:' + pts[i][0].toFixed(1) + 'px;top:' + pts[i][1].toFixed(1) + 'px;z-index:' + (current ? 30 : 10 + i) + '"' +
         (locked ? ' disabled' : '') + ' aria-label="' + T('level') + ' ' + id + (locked ? ' (bloqueada)' : '') + '">' +
-        (current ? '<span class="cur-label">' + T('level') + '</span>' : '') +
-        (NI('done') ? '<img class="node-img" alt="" src="' + NI(current ? 'current' : locked ? (L.boss ? 'boss' : 'locked') : L.boss ? 'boss' : 'done') + '">' + (locked ? '' : '<span class="num">' + id + '</span>') : '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face) +
+        // 14/10: sem rótulo "FASE" em cima da fase atual (pedido dele: o sol e o número já bastam)
+        // fase atual = medalhão limpo + aura solar pintada atrás (a arte "current" tinha brilho verde que serrilhava no recorte)
+        (current && NI('aura') ? '<img class="node-aura" alt="" src="' + NI('aura') + '"><img class="node-aura b" alt="" src="' + NI('aura') + '">' : '') +
+        (NI('done') ? '<img class="node-img" alt="" src="' + NI(locked ? (L.boss ? 'boss' : 'locked') : L.boss ? 'boss' : 'done') + '">' + (locked ? '' : '<span class="num">' + id + '</span>') : '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face) +
         (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
     });
     html += '<div class="map-fog" style="height:' + fogAt(fogPrevIdx).toFixed(0) + 'px"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>';
@@ -1296,10 +1332,13 @@
     if (m && LEVELS[+m[1] - 1]) { openMap(); openPre(+m[1]); }
     else if (/^#jogar\d+$/.test(location.hash)) startLevel(+location.hash.slice(6));
     else if (location.hash === '#fxdemo') { startLevel(5); setTimeout(() => { state.grid[3][2].special = 'lineH'; state.grid[5][5].special = 'barrel'; state.grid[6][1] = { id: 9997, kind: 'gem', color: null, special: 'idol', armed: false, vine: false }; setInterval(() => { if (Math.random() < 0.34) blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); else if (Math.random() < 0.5) blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); else blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 1400); if (0) setInterval(() => { blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 900); }, 1500); }
-    else if (/^#evento-/.test(location.hash)) { if (location.hash === '#evento-anton') document.documentElement.classList.add('ev-anton'); startLevel(3); setTimeout(() => { showPraise(T('praise.3')); const b = document.createElement('div'); b.className = 'praise banner'; b.textContent = T('rush'); b.style.top = '62%'; b.style.animation = 'none'; b.style.transform = 'translate(-50%,-50%)'; document.body.appendChild(b); const a = document.querySelector('.praise:not(.banner)'); if (a) { a.style.animation = 'none'; a.style.transform = 'translate(-50%,-50%)'; a.style.opacity = '1'; a.style.top = '40%'; setTimeout(() => document.body.appendChild(a), 1); } }, 2600); }
+    else if (/^#evento-/.test(location.hash)) { if (location.hash === '#evento-anton') document.documentElement.classList.add('ev-anton'); startLevel(3); setTimeout(() => { const p3 = I18N.lang === 'pt' && ART.nodeImg('p3'); showPraise(T('praise.3'), p3 ? 'art p3' : '', p3); const b = document.createElement('div'); const ra = I18N.lang === 'pt' && ART.nodeImg('rush'); b.className = 'praise ' + (ra ? 'art rush' : 'banner'); if (ra) b.innerHTML = '<img alt="" src="' + ra + '">'; else b.textContent = T('rush'); b.style.top = '62%'; b.style.animation = 'none'; b.style.transform = 'translate(-50%,-50%)'; document.body.appendChild(b); const a = document.querySelector('.praise:not(.banner)'); if (a) { a.style.animation = 'none'; a.style.transform = 'translate(-50%,-50%)'; a.style.opacity = '1'; a.style.top = '40%'; setTimeout(() => document.body.appendChild(a), 1); } }, 2600); }
     else if (location.hash === '#mapa') openMap();
     else if (location.hash === '#mapademo') { save.unlocked = 7; save.fogShown = 5; for (let i = 1; i <= 6; i++) save.stars[i] = (i % 3) + 1; openMap(); }
     else if (location.hash === '#loja') { openMap(); openShop(); }
+    else if (/^#anuncio\d+$/.test(location.hash)) { const n = +location.hash.slice(8); startLevel(n); setTimeout(() => { announceLevel(LEVELS[n - 1]); const a = document.querySelector('.announce:last-of-type'); if (a) { a.style.animation = 'none'; a.remove = () => {}; } }, 600); }
+    else if (location.hash === '#placardemo') { startLevel(3); setTimeout(() => { state.score = Math.round((level.stars[1] + level.stars[2]) / 2); renderHUD(); }, 900); }
+    else if (location.hash === '#vitoriademo') { startLevel(1); setTimeout(() => { state.score = 16900; showWin(); }, 1200); setTimeout(() => document.querySelectorAll('.stars-big img').forEach((im, i) => { if (i < 2) { im.src = ART.nodeImg('vstar') || im.src; im.classList.add('on'); } }), 2600); }
     else openMenu();
     requestAnimationFrame(frame);
   }

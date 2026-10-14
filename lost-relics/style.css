@@ -251,6 +251,18 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .stars-big img { width: 66px; height: 66px; opacity: .18; transform: scale(.7); filter: grayscale(1); transition: transform .4s cubic-bezier(.2,1.6,.4,1), opacity .2s, filter .3s; }
 .stars-big img:nth-child(2) { width: 84px; height: 84px; }
 .stars-big img.on { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 16px rgba(247,226,161,.75)); }
+/* estrelas pintadas (Solar com gema): a arte já traz os raios, então a caixa é maior e elas se encostam */
+.stars-big.painted { gap: 0; height: 112px; margin: -6px 0 -4px; }
+.stars-big.painted img { width: 92px; height: 92px; margin: 0 -10px; filter: grayscale(1) brightness(.5); }
+.stars-big.painted img:nth-child(2) { width: 116px; height: 116px; }
+.stars-big.painted img.on { filter: none; }
+/* "FASE CONCLUÍDA!" pintado no lugar do título em texto */
+.win-word { margin: 0; line-height: 0; }
+.win-word img { width: 100%; max-width: 330px; height: auto; }
+/* com a moldura pintada, o título sobe e brilha em cima da placa lisa do topo */
+.ui-kit .win-word { margin: calc(var(--cw) * -.1945 - 6px) calc(var(--cw) * -.05) 0; }
+.ui-kit .win-word img { width: calc(var(--cw) * .62); max-width: none; }
+.stars-big.painted.slots img:not(.on) { filter: none; opacity: 1; transform: scale(.86); }
 .final-score { font-family: var(--f-display); font-size: 42px; font-weight: 900; font-variant-numeric: tabular-nums; }
 .best { font-style: italic; font-size: 17px; color: var(--bone-dim); }
 .best.new { color: var(--gold-hi); text-shadow: 0 0 12px rgba(247,226,161,.5); }
@@ -308,20 +320,25 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 }
 .ui-kit .btn:hover { filter: drop-shadow(0 8px 14px rgba(0,0,0,.6)) brightness(1.08); }
 .ui-kit .btn:active { transform: translateY(2px) scale(.98); filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)) brightness(.95); }
+/* secundário v2 (Gemini, 14/10): pedra com musgo, centro liso. 3 fatias: pontas com raízes ficam intactas, só o meio liso estica */
 .ui-kit .btn.dark {
-  background: var(--ui-btn2) center / 100% 100% no-repeat; color: #f7e2a1;
-  text-shadow: 0 0 10px rgba(63,216,204,.35), 0 2px 0 #000; min-height: 52px; padding: 0 28px;
+  background: none; border: 0; color: #f7e2a1;
+  border-image: var(--ui-btn2) 0 24% 0 24% fill / 0 46px 0 46px stretch;
+  text-shadow: 0 0 10px rgba(63,216,204,.35), 0 2px 0 #000, 0 0 4px #000; min-height: 56px; padding: 0 46px;
 }
 .ui-kit .btn.small { min-height: 48px; }
+/* moldura pintada v2 (Gemini, 14/10, vertical, 687x1024): 9 fatias = cantos intactos, laterais repetem/esticam.
+   Fatias = bordas da abertura na arte (x 185..503, y 212..848). Interior já é pedra escura, sem painel por trás. */
 .ui-kit .card {
-  background: var(--ui-frame) center / 100% 100% no-repeat; box-shadow: none; border: 0;
+  background: none; box-shadow: none; border: 0;
   --cw: min(440px, calc(100vw - 32px)); width: var(--cw); max-width: 100%;
-  padding: calc(var(--cw) * .17) calc(var(--cw) * .13) calc(var(--cw) * .23); max-height: none; overflow: visible; filter: drop-shadow(0 24px 40px rgba(0,0,0,.75));
+  border-image-source: var(--ui-frame); border-image-slice: 20.7% 26.8% 17.2% 27% fill; border-image-repeat: stretch round;
+  border-image-width: calc(var(--cw) * .229) calc(var(--cw) * .2) calc(var(--cw) * .19) calc(var(--cw) * .2);
+  padding: calc(var(--cw) * .229 + 6px) calc(var(--cw) * .18) calc(var(--cw) * .19 + 4px); max-height: none; overflow: visible; filter: drop-shadow(0 24px 40px rgba(0,0,0,.75));
 }
 .ui-kit .card::before { display: none; }
 .ui-kit .modal { display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding-block: 28px; }
 .ui-kit .modal .card { margin: auto 0; flex: none; }
-.ui-kit .card::after { content: ''; position: absolute; inset: 13.5% 9.5% 16%; z-index: -1; background: rgba(12,16,13,.9); }
 .ui-kit .btn:focus-visible { outline: none; filter: drop-shadow(0 0 12px rgba(63,216,204,.9)) drop-shadow(0 8px 14px rgba(0,0,0,.6)); }
 .ui-kit .shop-item { grid-template-columns: 40px minmax(0, 1fr); gap: 8px 10px; padding: 10px; }
 .ui-kit .shop-item > img { width: 40px; height: 40px; grid-row: span 2; }
@@ -342,19 +359,62 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .ui-kit .orn { height: 26px; background: var(--ui-divider) center / auto 100% no-repeat; }
 .ui-kit .orn::before, .ui-kit .orn::after, .ui-kit .orn i { display: none; }
 .ui-kit .goal-row, .ui-kit .tut { background: rgba(0,0,0,.35); box-shadow: inset 0 0 0 1px rgba(63,216,204,.25); }
+/* ===== placar v2 pintado (Gemini, 14/10): sem rótulos escritos, número no espaço liso reservado ===== */
+.ui-kit #hud .lbl { display: none; }
+/* números em dígitos Solar pintados (a arte tem folga de brilho, por isso a margem negativa) */
+.digits { display: inline-flex; align-items: center; justify-content: center; line-height: 0; }
+.digits img { height: 100%; width: auto; margin: 0 -.06em; filter: drop-shadow(0 1px 1px #000) drop-shadow(0 0 4px rgba(255,190,80,.45)); }
+/* movimentos: medalhão de runas, número no centro escuro */
+.ui-kit .hud-moves { width: 86px; height: 86px; background: var(--ui-medal) center / contain no-repeat; filter: drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
+.ui-kit #moves.digits { height: 40px; font-size: 40px; -webkit-text-fill-color: initial; text-shadow: none; }
+/* objetivo: joia no nicho escuro de cima, número na faixa clara de baixo */
+.ui-kit .chip { width: 60px; height: 64px; padding: 0; display: block; background: var(--ui-tile) center / 100% 100% no-repeat; filter: drop-shadow(0 3px 5px rgba(0,0,0,.6)); }
+.ui-kit .chip img { position: absolute; left: 50%; top: 11%; width: 30px; height: 30px; margin-left: -15px; }
+.ui-kit .chip b { position: absolute; left: 12%; right: 12%; top: 58%; height: 27%; display: grid; place-items: center; margin: 0; font-family: var(--f-body); font-weight: 800; font-size: 14px; color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.5); }
+.ui-kit .chip.done b { color: #0f6f6a; }
+/* moedas + barra de estrelas */
+.ui-kit .hud-score { width: clamp(124px, 34vw, 190px); min-width: 0; text-align: left; }
+.ui-kit #score.digits { display: flex; justify-content: flex-start; width: 100%; aspect-ratio: 381 / 145; height: auto; padding: 0 8% 0 36%; box-sizing: border-box; background: var(--ui-coinbar) center / 100% 100% no-repeat; filter: drop-shadow(0 3px 5px rgba(0,0,0,.6)); }
+.ui-kit #score.digits img { height: 58%; }
+.ui-kit .starbar { height: auto; aspect-ratio: 593 / 135; margin-top: 2px; border-radius: 0; background: none; box-shadow: none; }
+/* canal escuro por trás, ouro líquido no meio, arte da barra (com o canal vazado) por cima */
+.ui-kit .starbar::before { content: ''; position: absolute; left: 12%; right: 12%; top: 32.6%; bottom: 31.1%; background: #0b0f14; z-index: 0; }
+.ui-kit #starfill { inset: 32.6% auto 31.1% 12.1%; max-width: none; border-radius: 0; z-index: 1; background: var(--ui-barfill) left center / auto 100% repeat-x; box-shadow: 0 0 10px rgba(255,200,80,.6); }
+.ui-kit .starbar::after { content: ''; position: absolute; inset: 0; background: var(--ui-bar) center / 100% 100% no-repeat; z-index: 2; pointer-events: none; }
+.ui-kit .starbar img { z-index: 3; width: 34%; height: auto; aspect-ratio: 1; top: 50%; margin: 0; transform: translate(-50%, -50%) scale(.55); opacity: 0; }
+.ui-kit .starbar img.on { opacity: 1; transform: translate(-50%, -50%) scale(.62); filter: none; }
 .ui-kit .boost.on { background: rgba(63,216,204,.16); box-shadow: inset 0 0 0 2px #3fd8cc, 0 0 14px rgba(63,216,204,.4); }
 .ui-kit .coin-pill i, .ui-kit .shop-item small { background: none; }
 .ui-kit .coin-pill i { background: #3fd8cc; color: #062a28; }
 .ui-kit .shop-item small { color: #3fd8cc; }
 /* medalhões pintados das fases (Gemini) */
 .node .node-img { position: absolute; inset: -12% -10%; width: 120%; height: 124%; object-fit: contain; filter: drop-shadow(0 5px 6px rgba(0,0,0,.75)); }
-.node.current .node-img { inset: -30% -34%; width: 168%; height: 160%; animation: nodeBreath 2.4s ease-in-out infinite; filter: drop-shadow(0 0 18px rgba(70,255,140,.55)) drop-shadow(0 6px 8px rgba(0,0,0,.7)); }
-@keyframes nodeBreath { 50% { transform: scale(1.06); filter: drop-shadow(0 0 30px rgba(70,255,140,.9)) drop-shadow(0 6px 8px rgba(0,0,0,.7)); } }
+.node.current .node-img { inset: -22% -22%; width: 144%; height: 144%; animation: nodeBreath 2.4s ease-in-out infinite; filter: drop-shadow(0 6px 8px rgba(0,0,0,.7)); }
+@keyframes nodeBreath { 50% { transform: scale(1.05); } }
+/* aura solar pintada atrás da fase atual: duas camadas girando em sentidos opostos = raios tremulando */
+.node .node-aura { position: absolute; left: 50%; top: 50%; width: 190px; height: 190px; margin: -95px 0 0 -95px; max-width: none; pointer-events: none; animation: auraSpin 14s linear infinite, auraPulse 1.8s ease-in-out infinite; }
+.node .node-aura.b { width: 170px; height: 170px; margin: -85px 0 0 -85px; animation: auraSpin 9s linear infinite reverse, auraPulse 2.6s ease-in-out -1.3s infinite; }
+@keyframes auraSpin { to { rotate: 360deg; } }
+@keyframes auraPulse { 0%, 100% { scale: .9; opacity: .55; } 50% { scale: 1.06; opacity: .95; } }
+@media (prefers-reduced-motion: reduce) { .node .node-aura { animation: none; } }
+/* anúncio FASE N pintado: --L = altura da letra; as imagens têm folga de brilho em volta, por isso os fatores */
+.announce .ann-art { --L: min(54px, 12vw); display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 4px 0 rgba(40,18,0,.7)) drop-shadow(0 0 30px rgba(255,190,90,.6)); }
+.announce .ann-fase { height: calc(var(--L) * 2.33); width: auto; margin-right: calc(var(--L) * .1); }
+.announce .ann-num { height: calc(var(--L) * 2); width: auto; margin: 0 calc(var(--L) * -.15); transform: translateY(calc(var(--L) * .14)); }
+/* elogios pintados (Solar): cada nível maior que o anterior */
+.praise.art { background: none; -webkit-text-stroke: 0; color: inherit; line-height: 0; filter: drop-shadow(0 3px 0 rgba(40,18,0,.55)) drop-shadow(0 0 24px rgba(255,180,70,.45)); }
+.praise.art img { display: block; height: auto; }
+.praise.art.p1 img { width: min(250px, 62vw); }
+.praise.art.p2 img { width: min(310px, 78vw); }
+.praise.art.p3 img { width: min(370px, 92vw); }
+.praise.art.rush img { width: min(340px, 86vw); }
+/* palavra FASE pintada (estilo Solar) em cima da fase atual — não usada desde 14/10 (ele pediu sem rótulo) */
+.node .cur-word { position: absolute; left: 50%; top: -78px; width: 108px; margin-left: -54px; max-width: none; pointer-events: none; z-index: 2; filter: drop-shadow(0 2px 2px rgba(40,18,0,.85)) drop-shadow(0 0 6px rgba(0,0,0,.55)); }
 .node:has(.node-img) .num { font-family: var(--f-display); color: #fff3c4; text-shadow: 0 2px 0 #3a2504, 0 0 8px rgba(0,0,0,.9), 0 0 2px #000; z-index: 1; }
 .node.current:has(.node-img) .num { font-size: 30px; }
 .node.locked .node-img { filter: drop-shadow(0 5px 6px rgba(0,0,0,.75)) brightness(.85); }
 .node .st img { width: 15px; height: 15px; filter: drop-shadow(0 1px 1px #000); }
-.node .cur-label { font-family: var(--f-display); font-size: 18px; top: -40px; }
+.node .cur-label { font-family: var(--f-display); font-size: 18px; top: -66px; z-index: 2; text-shadow: 0 2px 0 #3a2504, 0 0 6px #000, 0 0 12px #000; }
 .node .cur-bar { bottom: -34px; }
 
 /* som e música como ícones */

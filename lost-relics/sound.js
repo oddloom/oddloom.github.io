@@ -129,8 +129,10 @@
 
   // locutor gravado (audio-data.js): decodifica uma vez e toca pelo canal de efeitos; a música abaixa enquanto ele fala
   const voiceBufs = {};
+  // 14/10: locutor desligado a pedido dele (voz do Windows soava robótica mesmo tratada). Pra religar, apague esta linha.
+  const VOICE_OFF = true;
   function voice(id, lang) {
-    if (!ctx || !sfxOn) return;
+    if (VOICE_OFF || !ctx || !sfxOn) return;
     const L = root.VOICE_DATA && (root.VOICE_DATA[lang] || root.VOICE_DATA.pt);
     const src = L && L[id];
     if (!src) return;
