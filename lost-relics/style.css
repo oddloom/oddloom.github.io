@@ -107,7 +107,12 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .coin-pill i { font-style: normal; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; margin-left: 2px; background: var(--jade); color: #0d1f12; font-size: 14px; line-height: 1; }
 #mapScroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; z-index: 1; -webkit-overflow-scrolling: touch; }
 #mapScroll::-webkit-scrollbar { display: none; }
-#mapInner { position: relative; background-repeat: no-repeat; }
+#mapInner { position: relative; background-repeat: no-repeat; overflow-x: clip; transition: background-position .2s ease-out; }
+/* camada que desliza de lado junto com o desenho do mapa (câmera segue o caminho ao rolar) */
+.map-pan { position: absolute; inset: 0; transition: transform .2s ease-out; pointer-events: none; }
+.map-pan.fx { z-index: 5; }
+.map-pan.nodes { z-index: 26; } /* acima da névoa (25), como as fases eram antes */
+.map-pan.nodes .node { pointer-events: auto; }
 #mapInner svg.trail { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .node { position: absolute; width: 44px; height: 49px; margin: -25px 0 0 -22px; padding: 0; border: 0; background: none; display: grid; place-items: center; transition: transform .15s ease; }
 .node:not(.locked):hover { transform: scale(1.06); }

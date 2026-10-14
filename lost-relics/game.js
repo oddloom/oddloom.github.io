@@ -1343,7 +1343,7 @@
         (NI('done') ? '<img class="node-img" alt="" src="' + NI(locked ? (L.boss ? 'boss' : 'locked') : L.boss ? 'boss' : 'done') + '">' + (locked ? '' : NI('s0') ? '<span class="num digits">' + digitsHTML(id) + '</span>' : '<span class="num">' + id + '</span>') : '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face) +
         (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
     });
-    html += '<div class="map-fog" style="height:' + fogAt(fogPrevIdx).toFixed(0) + 'px"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>';
+    const fogHtml = '<div class="map-fog" style="height:' + fogAt(fogPrevIdx).toFixed(0) + 'px"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>';
     const FX = D.mapFx || {}, pos = (p) => 'left:' + (offX + p[0] * s).toFixed(1) + 'px;top:' + (offY + p[1] * s).toFixed(1) + 'px';
     let fx = '';
     (FX.torch || []).forEach((p, k) => { fx += '<i class="fx-torch" style="' + pos(p) + ';--d:' + (k * 0.37) + 's;--r:' + (60 * s * 1.9) + 'px"></i>'; });
@@ -1360,7 +1360,27 @@
         setTimeout(() => { fog.style.height = fogAt(curIdx).toFixed(0) + 'px'; Sound.play('idol'); scroll.scrollTo({ top: camY(pts[curIdx][1]), behavior: 'smooth' }); }, 600);
       }
       save.fogShown = curIdx; persist();
-    });    inner.innerHTML = '<div class="map-fx" aria-hidden="true">' + fx + '</div>' + html;
+    });
+    // tudo que acompanha o desenho (efeitos + fases) fica numa camada que desliza de lado; a névoa não
+    // duas camadas que deslizam juntas: efeitos por baixo da névoa, fases por cima (como era o z-index antes)
+    inner.innerHTML = '<div class="map-pan fx"><div class="map-fx" aria-hidden="true">' + fx + '</div></div>' + fogHtml + '<div class="map-pan nodes">' + html + '</div>';
+    // câmera segue o caminho (14/10, ele não achava as fases 6-8 no celular): o mapa é mais largo que a tela,
+    // então ao rolar ele desliza de lado pra manter o caminho no meio, na altura de ~62% da tela
+    const PR = RP.map(([x, y]) => [x * s, y * s]); // caminho em px do mapa, de baixo pra cima (y sempre diminui)
+    const pathX = (y) => {
+      if (y >= PR[0][1]) return PR[0][0];
+      for (let i = 0; i < PR.length - 1; i++) if (y <= PR[i][1] && y >= PR[i + 1][1]) { const k = (PR[i][1] - y) / (PR[i][1] - PR[i + 1][1] || 1); return PR[i][0] + (PR[i + 1][0] - PR[i][0]) * k; }
+      return PR[PR.length - 1][0];
+    };
+    const pans = inner.querySelectorAll('.map-pan');
+    const applyPan = () => {
+      const O = Math.max(w - mapW, Math.min(0, w / 2 - pathX(scroll.scrollTop + h * 0.62)));
+      pans.forEach((p) => { p.style.transform = 'translateX(' + (O - offX).toFixed(1) + 'px)'; });
+      inner.style.backgroundPosition = O.toFixed(1) + 'px ' + offY + 'px';
+    };
+    let panRaf = 0;
+    scroll.onscroll = () => { if (!panRaf) panRaf = requestAnimationFrame(() => { panRaf = 0; applyPan(); }); };
+    applyPan();
     $('mapStars').textContent = totalStars + '/' + n * 3;
     $('mapStarIc').src = ART.icon('star', 44);
     $('mapCoinIc').src = ART.icon('coin', 64);
