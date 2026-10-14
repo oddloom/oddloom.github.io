@@ -1183,26 +1183,35 @@
     const n = LEVELS.length, D = window.ART_DATA || {};
     let totalStars = 0;
     for (let i = 1; i <= n; i++) totalStars += save.stars[i] || 0;
-    // pintura do mapa cobrindo a área; os medalhões ficam em cima do caminho pintado
+    // câmera de jornada (estilo Mario/DK/Crash): o mapa fica ~1,9x a altura da tela e rola;
+    // só o caminho até a fase atual aparece, o resto fica escondido na névoa
     const fullW = scroll.clientWidth || W, h = scroll.clientHeight || H;
-    // tela larga: o mapa (vertical) fica numa coluna no centro, sem ampliar a pintura além do necessário
     const w = Math.min(fullW, Math.round(h * 0.72));
-    const IW = 832, IH = 1248, s = Math.max(w / IW, h / IH);
-    const offX = (w - IW * s) / 2, offY = h - IH * s;
-    inner.style.height = h + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
-    scroll.style.backgroundImage = D.map && fullW > w ? 'url("' + D.map + '")' : 'none';
+    const IW = 832, IH = 1248, mapH = Math.round(h * 1.9), s = mapH / IH, mapW = IW * s;
+    // centraliza na horizontal na fase atual (o caminho serpenteia de um lado pro outro)
+    const RP = (D.mapPath || [[416, 1200], [416, 150]]); let rTot = 0; const rSeg = [];
+    for (let i = 0; i < RP.length - 1; i++) { const l = Math.hypot(RP[i + 1][0] - RP[i][0], RP[i + 1][1] - RP[i][1]); rSeg.push(l); rTot += l; }
+    const rAt = (dd) => { for (let i = 0; i < rSeg.length; i++) { if (dd <= rSeg[i] || i === rSeg.length - 1) { const k = Math.min(1, dd / rSeg[i]); return [RP[i][0] + (RP[i + 1][0] - RP[i][0]) * k, RP[i][1] + (RP[i + 1][1] - RP[i][1]) * k]; } dd -= rSeg[i]; } return RP[RP.length - 1]; };
+    const curRaw = rAt((rTot * (Math.min(save.unlocked, n) - 0.5)) / n);
+    const offX = Math.max(w - mapW, Math.min(0, w / 2 - curRaw[0] * s)), offY = 0;
+    inner.style.height = mapH + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
+    $('screen-map').style.backgroundImage = D.map ? 'url("' + D.map + '")' : 'none';
     inner.style.backgroundImage = D.map ? 'url("' + D.map + '")' : 'none';
-    inner.style.backgroundSize = IW * s + 'px ' + IH * s + 'px';
+    inner.style.backgroundSize = mapW + 'px ' + mapH + 'px';
     inner.style.backgroundPosition = offX + 'px ' + offY + 'px';
-    // espalha as fases por igual ao longo do caminho (comprimento do traçado)
     const P = (D.mapPath || [[416, 1200], [416, 150]]).map(([x, y]) => [offX + x * s, offY + y * s]);
     const seg = []; let tot = 0;
     for (let i = 0; i < P.length - 1; i++) { const l = Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]); seg.push(l); tot += l; }
     const at = (d) => { for (let i = 0; i < seg.length; i++) { if (d <= seg[i] || i === seg.length - 1) { const k = Math.min(1, d / seg[i]); return [P[i][0] + (P[i + 1][0] - P[i][0]) * k, P[i][1] + (P[i + 1][1] - P[i][1]) * k]; } d -= seg[i]; } return P[P.length - 1]; };
     const pts = LEVELS.map((L, i) => at((tot * (i + 0.5)) / n));
+    const curIdx = Math.min(save.unlocked, n) - 1;
+    // borda da névoa: no meio do caminho entre a fase atual e a próxima
+    const fogAt = (i) => (i >= n - 1 ? pts[n - 1][1] - 90 * s : (pts[i][1] + pts[i + 1][1]) / 2 + 10);
+    const fogPrevIdx = Math.min(curIdx, save.fogShown == null ? curIdx : save.fogShown);
     const lock = '<svg class="lock" viewBox="0 0 20 20"><path d="M6 8V6a4 4 0 1 1 8 0v2h1v10H5V8zm2 0h4V6a2 2 0 1 0-4 0z"/></svg>';
     let html = '';
     LEVELS.forEach((L, i) => {
+      if (i > curIdx) return;   // fases à frente: mistério
       const id = i + 1, st = save.stars[id] || 0;
       const locked = id > save.unlocked, current = id === save.unlocked && !st;
       const gem = locked ? (L.boss ? 'g-amethyst' : 'g-night') : 'g-emerald';
@@ -1216,21 +1225,31 @@
         (NI('done') ? '<img class="node-img" alt="" src="' + NI(current ? 'current' : locked ? (L.boss ? 'boss' : 'locked') : L.boss ? 'boss' : 'done') + '">' + (locked ? '' : '<span class="num">' + id + '</span>') : '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face) +
         (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
     });
-    // animações do mapa: tochas tremulando, porta do templo pulsando, joias piscando, calendário girando a luz, vaga-lumes
+    html += '<div class="map-fog" style="height:' + fogAt(fogPrevIdx).toFixed(0) + 'px"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>';
     const FX = D.mapFx || {}, pos = (p) => 'left:' + (offX + p[0] * s).toFixed(1) + 'px;top:' + (offY + p[1] * s).toFixed(1) + 'px';
     let fx = '';
     (FX.torch || []).forEach((p, k) => { fx += '<i class="fx-torch" style="' + pos(p) + ';--d:' + (k * 0.37) + 's;--r:' + (60 * s * 1.9) + 'px"></i>'; });
     if (FX.door) fx += '<i class="fx-door" style="' + pos(FX.door) + ';--r:' + (130 * s) + 'px"></i>';
     (FX.gems || []).forEach((p, k) => { fx += '<i class="fx-gem" style="' + pos(p) + ';--d:' + ((k * 0.73) % 4) + 's"></i>'; });
     if (FX.disc) fx += '<i class="fx-disc" style="' + pos(FX.disc) + ';--r:' + (300 * s) + 'px"></i>';
-    for (let k = 0; k < 28; k++) fx += '<i class="fx-fly" style="left:' + (Math.random() * w).toFixed(0) + 'px;top:' + (h * 0.25 + Math.random() * h * 0.75).toFixed(0) + 'px;--d:' + (Math.random() * 8).toFixed(2) + 's;--t:' + (6 + Math.random() * 6).toFixed(2) + 's"></i>';
-    inner.innerHTML = '<div class="map-fx" aria-hidden="true">' + fx + '</div>' + html;
+    for (let k = 0; k < 40; k++) fx += '<i class="fx-fly" style="left:' + (Math.random() * w).toFixed(0) + 'px;top:' + (Math.random() * mapH).toFixed(0) + 'px;--d:' + (Math.random() * 8).toFixed(2) + 's;--t:' + (6 + Math.random() * 6).toFixed(2) + 's"></i>';
+    // câmera: começa na fase atual; se abriu fase nova, a névoa recua revelando o próximo trecho
+    const camY = (y) => Math.max(0, Math.min(mapH - h, y - h * 0.62));
+    requestAnimationFrame(() => {
+      scroll.scrollTop = camY(pts[curIdx][1] + (fogPrevIdx < curIdx ? 60 : 0));
+      if (fogPrevIdx < curIdx) {
+        const fog = inner.querySelector('.map-fog');
+        setTimeout(() => { fog.style.height = fogAt(curIdx).toFixed(0) + 'px'; Sound.play('idol'); scroll.scrollTo({ top: camY(pts[curIdx][1]), behavior: 'smooth' }); }, 600);
+      }
+      save.fogShown = curIdx; persist();
+    });    inner.innerHTML = '<div class="map-fx" aria-hidden="true">' + fx + '</div>' + html;
     $('mapStars').textContent = totalStars + '/' + n * 3;
     $('mapStarIc').src = ART.icon('star', 44);
     $('mapCoinIc').src = ART.icon('coin', 64);
     paintWallet();
     inner.querySelectorAll('.node:not(.locked)').forEach((b) => { b.onclick = () => { Sound.init(); Sound.play('click'); openPre(+b.dataset.id); }; });
-  }  $('btnShop').onclick = () => { Sound.init(); openShop(); };
+  }
+  $('btnShop').onclick = () => { Sound.init(); openShop(); };
   // ---------- laço principal ----------
   let last = performance.now(), lastDt = 0.016;
   function frame(t) {
@@ -1279,7 +1298,7 @@
     else if (location.hash === '#fxdemo') { startLevel(5); setTimeout(() => { state.grid[3][2].special = 'lineH'; state.grid[5][5].special = 'barrel'; state.grid[6][1] = { id: 9997, kind: 'gem', color: null, special: 'idol', armed: false, vine: false }; setInterval(() => { if (Math.random() < 0.34) blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); else if (Math.random() < 0.5) blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); else blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 1400); if (0) setInterval(() => { blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 900); }, 1500); }
     else if (/^#evento-/.test(location.hash)) { if (location.hash === '#evento-anton') document.documentElement.classList.add('ev-anton'); startLevel(3); setTimeout(() => { showPraise(T('praise.3')); const b = document.createElement('div'); b.className = 'praise banner'; b.textContent = T('rush'); b.style.top = '62%'; b.style.animation = 'none'; b.style.transform = 'translate(-50%,-50%)'; document.body.appendChild(b); const a = document.querySelector('.praise:not(.banner)'); if (a) { a.style.animation = 'none'; a.style.transform = 'translate(-50%,-50%)'; a.style.opacity = '1'; a.style.top = '40%'; setTimeout(() => document.body.appendChild(a), 1); } }, 2600); }
     else if (location.hash === '#mapa') openMap();
-    else if (location.hash === '#mapademo') { save.unlocked = 7; for (let i = 1; i <= 6; i++) save.stars[i] = (i % 3) + 1; openMap(); }
+    else if (location.hash === '#mapademo') { save.unlocked = 7; save.fogShown = 5; for (let i = 1; i <= 6; i++) save.stars[i] = (i % 3) + 1; openMap(); }
     else if (location.hash === '#loja') { openMap(); openShop(); }
     else openMenu();
     requestAnimationFrame(frame);
