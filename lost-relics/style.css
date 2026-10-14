@@ -16,7 +16,7 @@
   --jade: #7fc79a;
   --f-logo: 'Uncial Antiqua', Georgia, serif;
   --f-display: 'Uncial Antiqua', Georgia, 'Times New Roman', serif;
-  --f-body: 'Spectral', Georgia, serif;
+  --f-body: 'Switzer', 'Segoe UI', system-ui, sans-serif;
   --tex-dark: none; --tex-slab: none; --tex-temple: none; --tex-sandstone: none;
   --gold-metal: linear-gradient(180deg, #fff3c4 0%, #f0cf7a 22%, #c7943a 48%, #8e6420 62%, #d9ae58 80%, #fbe7a8 100%);
   --hairline: 1px solid rgba(212,168,75,.55);
@@ -358,7 +358,7 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 
 /* som e música como ícones */
 .icon-btn.toggle { width: 60px; height: 60px; }
-.icon-btn.toggle svg { width: 34px; height: 34px; fill: #23160a; stroke: #23160a; filter: drop-shadow(0 1px 0 rgba(255,240,210,.7)) drop-shadow(0 0 3px rgba(255,240,210,.5)); }
+.icon-btn.toggle svg { width: 30px; height: 30px; margin-left: -1px; fill: #23160a; stroke: #23160a; filter: drop-shadow(0 1px 0 rgba(255,240,210,.7)) drop-shadow(0 0 3px rgba(255,240,210,.5)); }
 .icon-btn.toggle .slash { display: none; stroke: #b3261e; }
 .icon-btn.toggle.off svg { opacity: .55; }
 .icon-btn.toggle.off .slash { display: block; opacity: 1; }
