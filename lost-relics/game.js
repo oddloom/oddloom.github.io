@@ -81,7 +81,9 @@
       const L = (G.x - G.visX0) / px, R = (G.visX1 - G.x - G.w) / px, T = (G.y - G.visY0) / py, B = (G.visY1 - G.y - G.h) / py;
       // em tela estreita a moldura pode passar um pouco da borda (até 0,7 casa de cada lado); em cima ela entra por baixo do painel
       const needH = 8 + T * 0.45 + B * 0.9;
-      cs = Math.max(20, Math.floor(Math.min(W / (8 + L + R - 1.4), availH / needH, 80)));
+      // tela estreita (celular): a pedra de fora da moldura pode sair da tela; ficam o filete de ouro e a faixa de glifos (~0,55 casa de cada lado)
+      const crop = W < 560 ? Math.max(1.4, L + R - 1.1) : 1.4;
+      cs = Math.max(20, Math.floor(Math.min(W / (8 + L + R - crop), availH / needH, 80)));
       ox = Math.round((W - cs * 8) / 2);
       oy = Math.round(top + T * 0.45 * cs + Math.max(0, (availH - needH * cs) * 0.35));
     } else {
@@ -1267,7 +1269,7 @@
     $('hammerIc').src = ART.icon('hammer', 80);
     if (!window.ART_DATA) GEM3D.init();
     ART.clearCache();
-    $('loading').remove();
+    const ld = $('loading'); ld.classList.add('done'); setTimeout(() => ld.remove(), 700);
     const m = /^#fase(\d+)$/.exec(location.hash || '');
     if (m && LEVELS[+m[1] - 1]) { openMap(); openPre(+m[1]); }
     else if (/^#jogar\d+$/.test(location.hash)) startLevel(+location.hash.slice(6));
@@ -1279,7 +1281,7 @@
     else openMenu();
     requestAnimationFrame(frame);
   }
-  $('loading').textContent = T('loading');
+  $('loadingTxt').textContent = T('loading');
   const fontsReady = document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1500))]) : Promise.resolve();
   fontsReady.then(() => ART.loadAI(boot));
 })();

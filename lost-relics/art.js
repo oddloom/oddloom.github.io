@@ -196,7 +196,7 @@
       const sh = ctx.createRadialGradient(0, R * 0.72, 0, 0, R * 0.72, R * 0.9);
       sh.addColorStop(0, 'rgba(0,0,0,0.5)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = sh; ctx.beginPath(); ctx.ellipse(0, R * 0.8, R * 0.85, R * 0.28, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.drawImage(ai, -R * 1.42, -R * 1.42, R * 2.84, R * 2.84);
+      ctx.drawImage(ai, -R * 1.5, -R * 1.5, R * 3, R * 3);
       ctx.restore();
       return;
     }    const img = root.GEM3D && root.GEM3D.image(g.key, f);

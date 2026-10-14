@@ -381,3 +381,16 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .announce span { font-size: clamp(64px, 17vw, 120px); -webkit-text-stroke: 2px #3a2208; }
 html.ev-anton { --f-event: 'Anton', 'Switzer', sans-serif; }
 html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; text-transform: uppercase; }
+
+/* tela de carregamento: logo com faixa de luz passando + barra de ouro com brilho turquesa */
+.loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding-inline: 16px; background: radial-gradient(ellipse at 50% 45%, #1d1912, #070605 70%); transition: opacity .6s ease; }
+.loading.done { opacity: 0; pointer-events: none; }
+.ld-logo { position: relative; width: min(460px, 86vw); -webkit-mask: url('assets/logo.png') center / contain no-repeat; mask: url('assets/logo.png') center / contain no-repeat; }
+.ld-logo img { display: block; width: 100%; height: auto; animation: ldIn 1.4s cubic-bezier(.2,.8,.2,1) both; }
+.ld-shine { position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,240,190,.55) 48%, rgba(127,255,240,.35) 52%, transparent 65%); background-size: 250% 100%; animation: ldShine 2.2s ease-in-out infinite; mix-blend-mode: screen; }
+@keyframes ldIn { from { opacity: 0; transform: scale(.9); filter: blur(6px) brightness(.4); } }
+@keyframes ldShine { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+.ld-bar { width: min(260px, 60vw); height: 8px; border-radius: 6px; background: rgba(0,0,0,.6); box-shadow: inset 0 0 0 1px rgba(212,168,75,.6); overflow: hidden; }
+.ld-bar i { display: block; height: 100%; width: 40%; border-radius: 6px; background: linear-gradient(90deg, #8e6420, #ffd36a, #3fd8cc); box-shadow: 0 0 10px rgba(63,216,204,.8); animation: ldBar 1.4s ease-in-out infinite; }
+@keyframes ldBar { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
+.loading p { margin: 0; font-family: var(--f-body); font-size: 13px; letter-spacing: .35em; text-transform: uppercase; color: #a89c84; }
