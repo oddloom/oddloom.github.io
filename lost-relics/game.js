@@ -1184,10 +1184,13 @@
     let totalStars = 0;
     for (let i = 1; i <= n; i++) totalStars += save.stars[i] || 0;
     // pintura do mapa cobrindo a área; os medalhões ficam em cima do caminho pintado
-    const w = scroll.clientWidth || W, h = scroll.clientHeight || H;
+    const fullW = scroll.clientWidth || W, h = scroll.clientHeight || H;
+    // tela larga: o mapa (vertical) fica numa coluna no centro, sem ampliar a pintura além do necessário
+    const w = Math.min(fullW, Math.round(h * 0.72));
     const IW = 832, IH = 1248, s = Math.max(w / IW, h / IH);
     const offX = (w - IW * s) / 2, offY = h - IH * s;
-    inner.style.height = h + 'px'; inner.style.width = w + 'px';
+    inner.style.height = h + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
+    scroll.style.backgroundImage = D.map && fullW > w ? 'url("' + D.map + '")' : 'none';
     inner.style.backgroundImage = D.map ? 'url("' + D.map + '")' : 'none';
     inner.style.backgroundSize = IW * s + 'px ' + IH * s + 'px';
     inner.style.backgroundPosition = offX + 'px ' + offY + 'px';

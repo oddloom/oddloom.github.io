@@ -394,3 +394,8 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .ld-bar i { display: block; height: 100%; width: 40%; border-radius: 6px; background: linear-gradient(90deg, #8e6420, #ffd36a, #3fd8cc); box-shadow: 0 0 10px rgba(63,216,204,.8); animation: ldBar 1.4s ease-in-out infinite; }
 @keyframes ldBar { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
 .loading p { margin: 0; font-family: var(--f-body); font-size: 13px; letter-spacing: .35em; text-transform: uppercase; color: #a89c84; }
+
+/* mapa em tela larga: laterais com a pintura desfocada e escurecida */
+#mapScroll { background: #0a0907 center / cover no-repeat; }
+#mapScroll::before { content: ''; position: absolute; inset: 0; backdrop-filter: blur(18px) brightness(.45); -webkit-backdrop-filter: blur(18px) brightness(.45); pointer-events: none; }
+#mapInner { box-shadow: 0 0 60px rgba(0,0,0,.8); }
