@@ -314,11 +314,12 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .ui-kit .btn.small { min-height: 48px; }
 .ui-kit .card {
   background: var(--ui-frame) center / 100% 100% no-repeat; box-shadow: none; border: 0;
-  width: min(440px, 100%); padding: 17% 13% 23%; max-height: none; overflow: visible; filter: drop-shadow(0 24px 40px rgba(0,0,0,.75));
+  --cw: min(440px, calc(100vw - 32px)); width: var(--cw); max-width: 100%;
+  padding: calc(var(--cw) * .17) calc(var(--cw) * .13) calc(var(--cw) * .23); max-height: none; overflow: visible; filter: drop-shadow(0 24px 40px rgba(0,0,0,.75));
 }
 .ui-kit .card::before { display: none; }
-.ui-kit .modal { overflow-y: auto; place-items: start center; padding-block: 28px; }
-.ui-kit .modal .card { margin: auto 0; }
+.ui-kit .modal { display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding-block: 28px; }
+.ui-kit .modal .card { margin: auto 0; flex: none; }
 .ui-kit .card::after { content: ''; position: absolute; inset: 13.5% 9.5% 16%; z-index: -1; background: rgba(12,16,13,.9); }
 .ui-kit .btn:focus-visible { outline: none; filter: drop-shadow(0 0 12px rgba(63,216,204,.9)) drop-shadow(0 8px 14px rgba(0,0,0,.6)); }
 .ui-kit .shop-item { grid-template-columns: 40px minmax(0, 1fr); gap: 8px 10px; padding: 10px; }
