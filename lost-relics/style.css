@@ -16,6 +16,7 @@
   --jade: #7fc79a;
   --f-logo: 'Uncial Antiqua', Georgia, serif;
   --f-display: 'Uncial Antiqua', Georgia, 'Times New Roman', serif;
+  --f-event: 'Comico', 'Switzer', sans-serif;
   --f-body: 'Switzer', 'Segoe UI', system-ui, sans-serif;
   --tex-dark: none; --tex-slab: none; --tex-temple: none; --tex-sandstone: none;
   --gold-metal: linear-gradient(180deg, #fff3c4 0%, #f0cf7a 22%, #c7943a 48%, #8e6420 62%, #d9ae58 80%, #fbe7a8 100%);
@@ -372,3 +373,11 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .ui-kit .icon-btn::before { content: ''; position: absolute; inset: 20%; border-radius: 50%; background: radial-gradient(circle at 40% 32%, #ddd2b6, #b3a685 62%, #8a7e63); box-shadow: inset 0 2px 5px rgba(0,0,0,.5), inset 0 -1px 2px rgba(255,245,220,.35), 0 1px 0 rgba(255,245,220,.35); }
 .ui-kit .icon-btn svg { position: relative; z-index: 1; }
 .ui-kit .icon-btn.toggle.off::before { background: radial-gradient(circle at 40% 32%, #b9ae95, #8f8469 62%, #6b614c); }
+
+/* palavras de evento (Ótimo, Incrível, Lendário, Corrida do Tesouro, Fase N) */
+.praise, .announce span { font-family: var(--f-event); font-weight: 400; letter-spacing: .03em; text-transform: none; }
+.praise { font-size: clamp(46px, 12vw, 76px); background: linear-gradient(180deg,#fff6d0 0%,#ffd76a 30%,#e0a23a 55%,#9a5f12 72%,#ffd98a 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 2px #3a2208; paint-order: stroke fill; filter: drop-shadow(0 4px 0 #2a1604) drop-shadow(0 0 18px rgba(255,200,90,.6)); }
+.praise.banner { font-size: clamp(28px, 7.4vw, 48px); max-width: 94vw; white-space: normal; text-align: center; line-height: 1.05; }
+.announce span { font-size: clamp(64px, 17vw, 120px); -webkit-text-stroke: 2px #3a2208; }
+html.ev-anton { --f-event: 'Anton', 'Switzer', sans-serif; }
+html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; text-transform: uppercase; }

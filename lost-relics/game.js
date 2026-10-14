@@ -416,7 +416,7 @@
     el.className = 'praise' + (cls ? ' ' + cls : '');
     el.textContent = text;
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 1150);
+    setTimeout(() => { if (!/^#evento-/.test(location.hash)) el.remove(); }, 1150);
   }
   function beam(dir, at) { parts.push({ type: 'beam', dir, at, life: 0, max: 0.38 }); }
   function ring(x, y, color, r) { parts.push({ type: 'ring', x: cellX(x), y: cellY(y), r: r * cs, color, life: 0, max: 0.45 }); }
@@ -1272,6 +1272,7 @@
     if (m && LEVELS[+m[1] - 1]) { openMap(); openPre(+m[1]); }
     else if (/^#jogar\d+$/.test(location.hash)) startLevel(+location.hash.slice(6));
     else if (location.hash === '#fxdemo') { startLevel(5); setTimeout(() => { state.grid[3][2].special = 'lineH'; state.grid[5][5].special = 'barrel'; state.grid[6][1] = { id: 9997, kind: 'gem', color: null, special: 'idol', armed: false, vine: false }; setInterval(() => { if (Math.random() < 0.34) blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); else if (Math.random() < 0.5) blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); else blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 1400); if (0) setInterval(() => { blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 900); }, 1500); }
+    else if (/^#evento-/.test(location.hash)) { if (location.hash === '#evento-anton') document.documentElement.classList.add('ev-anton'); startLevel(3); setTimeout(() => { showPraise(T('praise.3')); const b = document.createElement('div'); b.className = 'praise banner'; b.textContent = T('rush'); b.style.top = '62%'; b.style.animation = 'none'; b.style.transform = 'translate(-50%,-50%)'; document.body.appendChild(b); const a = document.querySelector('.praise:not(.banner)'); if (a) { a.style.animation = 'none'; a.style.transform = 'translate(-50%,-50%)'; a.style.opacity = '1'; a.style.top = '40%'; setTimeout(() => document.body.appendChild(a), 1); } }, 2600); }
     else if (location.hash === '#mapa') openMap();
     else if (location.hash === '#mapademo') { save.unlocked = 7; for (let i = 1; i <= 6; i++) save.stars[i] = (i % 3) + 1; openMap(); }
     else if (location.hash === '#loja') { openMap(); openShop(); }
