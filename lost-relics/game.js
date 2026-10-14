@@ -112,7 +112,12 @@
     state = LR.createState(level, ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
     applyBoosts(boosts || {});
     hammerMode = false;
-    vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = [];
+    vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = [];
+    // fase de chefe: já carrega toda a arte dele (vidas, golpe, morte), senão o 1º golpe aparece sem desenho
+    if (level.boss && (level.bossKind || level.scarab)) {
+      for (const k of Object.values(BOSS_SPR[bossKindOf(level)])) if (typeof k === 'string') nodeImgObj(k);
+      nodeImgObj('sshield'); nodeImgObj('jstone');
+    }
     hint = null; selected = null; drag = null; usedExtra = false; idle = 0; shake = 0;
     scene = 'play';
     $('screen-map').hidden = true; $('screen-menu').hidden = true; $('hud').hidden = false;
@@ -235,6 +240,8 @@
     if (ev.type === 'convert') return onConvert(ev);
     if (ev.type === 'bossland') { bossAnims[ev.idx] = null; return Promise.resolve(); }
     if (ev.type === 'bossflee') return onBossFlee(ev);
+    if (ev.type === 'bossclaw') return onBossClaw(ev);
+    if (ev.type === 'bossmove') return onBossMove(ev);
     return Promise.resolve();
   }
 
@@ -274,21 +281,34 @@
     }
     if (ev.cascade >= 7) praise(3); else if (ev.cascade >= 5) praise(2); else if (ev.cascade >= 3) praise(1);
     for (const b of ev.bosses || []) bossHit(b);
+    // ídolo: combinação comum ou golpe durante o escudo só faz o escudo de runas brilhar
+    for (const im of ev.immune || []) { bossFlash[im.idx] = now; later(0.05, () => Sound.play('click')); }
     later(0.12, renderHUD);
     await wait(0.2 + ev.waves * WAVE + ((ev.bosses || []).length ? 0.35 : 0));
   }
 
-  // ---------- chefes (escaravelhos) ----------
-  // bossAnims[i]: null = parado na joia | hit (racha no lugar) → fly (voa até a joia nova) | dead (quebra) | gone
-  let bossAnims = [];
+  // ---------- chefes (escaravelho, onça, ídolo, serpente) ----------
+  // bossAnims[i]: null = parado | hit (golpe no lugar) → fly (vai até a joia nova) | dead (quebra) | gone
+  //               claw (onça cravando a garra) | slide (serpente rastejando 1 casa)
+  // bossFlash[i] = instante em que o escudo de runas do ídolo brilhou (golpe que não pegou)
+  let bossAnims = [], bossFlash = [];
+  // centro de um grupo de pontos já em coordenadas de tela
+  const midOf = (pts) => [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length];
+  // brilho em volta de cada chefe (marca que é o chefe)
+  const BOSS_GLOW = { scarab: '255,196,70', jaguar: '90,255,150', statue: '70,235,220', serpent: '80,240,200' };
   function bossHit(b) {
-    const [fx, fy] = b.from, from = [cellX(fx), cellY(fy)];
-    Sound.play('rock'); buzz([40, 30, 60]); addShake(0.5);
-    ring(fx, fy, 'rgba(255,215,110,0.95)', 1.4);
+    const boss = state.bosses[b.idx], kind = (boss && boss.kind) || 'scarab';
+    const cells = b.cells && b.cells.length ? b.cells : [b.from];
+    const from = midOf(cells.map(([x, y]) => [cellX(x), cellY(y)]));
+    Sound.play('rock'); buzz([40, 30, 60]); addShake(kind === 'statue' ? 0.8 : 0.5);
+    for (const [cx, cy] of cells) ring(cx, cy, 'rgba(255,215,110,0.95)', 1.4);
     bossAnims[b.idx] = { type: 'hit', t0: now, from };
     if (b.dead) {
       later(0.35, () => { bossAnims[b.idx] = { type: 'dead', t0: now, from }; Sound.play('glass', 3); praise(state.bosses.every((x) => x.hp <= 0) ? 3 : 2); });
       later(1.4, () => { if (bossAnims[b.idx] && bossAnims[b.idx].type === 'dead') bossAnims[b.idx] = { type: 'gone' }; });
+    } else if (kind === 'statue') {
+      // o ídolo não sai do lugar: depois do golpe ergue o escudo de runas
+      later(0.4, () => { if (bossAnims[b.idx] && bossAnims[b.idx].type === 'hit') bossAnims[b.idx] = null; bossFlash[b.idx] = now; Sound.play('create'); });
     } else later(0.35, () => { bossAnims[b.idx] = { type: 'fly', t0: now, from }; Sound.play('create'); });
   }
   // escaravelho que ficou 3 jogadas sem apanhar foge voando
@@ -298,44 +318,97 @@
     Sound.play('create');
     return wait(0.45);
   }
-  // posição na tela da joia onde o chefe está montado (acompanha a joia caindo)
-  function bossHostXY(b) {
-    const pos = LR.bossPos(state, b);
-    if (!pos) return null;
-    const v = vis.get(state.grid[pos[1]][pos[0]].id);
-    return v ? [cellX(v.x), cellY(v.y)] : [cellX(pos[0]), cellY(pos[1])];
+  // onça crava a garra: as joias perto dela viram pedra com a marca verde
+  async function onBossClaw(ev) {
+    bossAnims[ev.idx] = { type: 'claw', t0: now, from: ev.from ? [cellX(ev.from[0]), cellY(ev.from[1])] : null };
+    Sound.play('rock'); buzz([30, 40, 30]); addShake(0.45);
+    ev.cells.forEach(([x, y], k) => {
+      const p = state.grid[y][x];
+      if (!p) return;
+      const v = V(p, x, y); v.s = 0;
+      later(0.15 + k * 0.12, () => { tween(v, { s: 1 }, 0.3, 'back'); ring(x, y, 'rgba(90,255,140,0.95)', 1.2); dust(x, y); Sound.play('rock'); });
+    });
+    later(0.55, () => { if (bossAnims[ev.idx] && bossAnims[ev.idx].type === 'claw') bossAnims[ev.idx] = null; });
+    await wait(0.75);
+  }
+  // serpente rasteja: anima da posição antiga (cabeça, cauda) até a nova
+  function onBossMove(ev) {
+    bossAnims[ev.idx] = { type: 'slide', t0: now, from: ev.from.map(([x, y]) => [cellX(x), cellY(y)]) };
+    return wait(0.32);
+  }
+  // casas do chefe na tela (acompanham as joias caindo); a serpente vem como [cabeça, cauda]
+  function bossScreenCells(b) {
+    return LR.bossCells(state, b).map(([x, y]) => {
+      const p = state.grid[y][x], v = p && vis.get(p.id);
+      return v ? [cellX(v.x), cellY(v.y)] : [cellX(x), cellY(y)];
+    });
   }
   function drawBosses() { state.bosses.forEach((b, i) => drawBoss(b, i)); }
   function drawBoss(boss, i) {
     const an = bossAnims[i];
     if (an && an.type === 'gone') return;
-    const sz = cs * 1.3, bob = Math.sin(now * 3.2 + i * 2.1) * cs * 0.04;
-    let key = 'bidle', x, y, a = 1, sc = 1;
-    const host = bossHostXY(boss);
-    if (an && an.type === 'hit') { key = 'bhit'; [x, y] = an.from; sc = 1 + 0.12 * Math.sin(Math.min(1, (now - an.t0) / 0.35) * Math.PI); }
+    const kind = boss.kind || 'scarab', K = BOSS_SPR[kind];
+    const cells = boss.hp > 0 ? bossScreenCells(boss) : [];
+    const bob = kind === 'statue' ? 0 : Math.sin(now * 3.2 + i * 2.1) * cs * 0.04;
+    let key = K.idle, x = null, y = null, a = 1, sc = 1, dir = null; // dir = cabeça - cauda (serpente)
+    if (cells.length) [x, y] = midOf(cells);
+    if (kind === 'serpent' && cells.length === 2) dir = [cells[0][0] - cells[1][0], cells[0][1] - cells[1][1]];
+    if (an && an.type === 'hit') { key = K.hit; [x, y] = an.from; sc = 1 + 0.12 * Math.sin(Math.min(1, (now - an.t0) / 0.35) * Math.PI); }
     else if (an && an.type === 'fly') {
       const q = Math.min(1, (now - an.t0) / 0.6), e = q < 0.5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2;
-      const to = host || an.from;
-      key = 'bfly'; x = an.from[0] + (to[0] - an.from[0]) * e; y = an.from[1] + (to[1] - an.from[1]) * e - Math.sin(q * Math.PI) * cs * 1.2; sc = 1.15;
+      const to = cells.length ? midOf(cells) : an.from;
+      key = K.move; x = an.from[0] + (to[0] - an.from[0]) * e; y = an.from[1] + (to[1] - an.from[1]) * e - Math.sin(q * Math.PI) * cs * 1.2; sc = 1.15;
+      if (kind === 'serpent') { dir = null; sc = 0.7; } // mergulha enrolada e reaparece longe
       if (q >= 1) bossAnims[i] = null;
-    } else if (an && an.type === 'dead') { key = 'bdead'; [x, y] = an.from; const q = Math.min(1, (now - an.t0) / 1); a = 1 - q * q; sc = 1 + q * 0.25; }
-    else { if (!host || boss.hp <= 0) return; [x, y] = host; y += bob; }
-    const im = nodeImgObj(key) || nodeImgObj('bidle');
+    } else if (an && an.type === 'slide') {
+      const q = Math.min(1, (now - an.t0) / 0.3), e = q * q * (3 - 2 * q);
+      if (cells.length === 2 && an.from.length === 2) {
+        const h = [an.from[0][0] + (cells[0][0] - an.from[0][0]) * e, an.from[0][1] + (cells[0][1] - an.from[0][1]) * e];
+        const t = [an.from[1][0] + (cells[1][0] - an.from[1][0]) * e, an.from[1][1] + (cells[1][1] - an.from[1][1]) * e];
+        x = (h[0] + t[0]) / 2; y = (h[1] + t[1]) / 2; dir = [h[0] - t[0], h[1] - t[1]];
+      }
+      if (q >= 1) bossAnims[i] = null;
+    } else if (an && an.type === 'claw') {
+      key = K.move; sc = 1.05 + 0.15 * Math.sin(Math.min(1, (now - an.t0) / 0.5) * Math.PI);
+      if (an.from && !cells.length) [x, y] = an.from;
+    } else if (an && an.type === 'dead') { key = K.dead; [x, y] = an.from; const q = Math.min(1, (now - an.t0) / 1); a = 1 - q * q; sc = 1 + q * 0.25; dir = null; }
+    else { if (!cells.length || boss.hp <= 0) return; y += bob; }
+    if (x == null) return;
+    const im = nodeImgObj(key) || nodeImgObj(K.idle);
     if (!im) return;
-    const w = sz * sc, h = w * im.naturalHeight / im.naturalWidth;
-    ctx.save(); ctx.globalAlpha = a;
-    // brilho dourado pulsando em volta: marca que é o chefe
-    ctx.shadowColor = 'rgba(255,196,70,' + (0.65 + 0.25 * Math.sin(now * 4)) + ')'; ctx.shadowBlur = cs * 0.35;
-    ctx.drawImage(im, x - w / 2, y - h * 0.55, w, h);
+    const w = cs * K.size * sc, h = w * im.naturalHeight / im.naturalWidth;
+    const vert = !!dir && Math.abs(dir[1]) > Math.abs(dir[0]);
+    const anchor = kind === 'statue' || kind === 'serpent' ? 0.5 : 0.55;
+    ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y);
+    // a arte da serpente olha pra direita: espelha ou gira pra cabeça ficar do lado certo
+    if (dir) { if (vert) ctx.rotate(dir[1] > 0 ? Math.PI / 2 : -Math.PI / 2); else if (dir[0] < 0) ctx.scale(-1, 1); }
+    ctx.shadowColor = 'rgba(' + BOSS_GLOW[kind] + ',' + (0.65 + 0.25 * Math.sin(now * 4)) + ')'; ctx.shadowBlur = cs * 0.35;
+    ctx.drawImage(im, -w / 2, -h * anchor, w, h);
     ctx.restore();
-    // vidas em cima dele: carapaças de ouro (cheia / rachada / quebrada)
-    if (key === 'bdead') return;
-    const hp = Math.max(0, boss.hp), max = boss.max, ls = cs * 0.3;
-    for (let i = 0; i < max; i++) {
-      const lim = nodeImgObj(i < hp ? 'blife3' : 'blife1');
+    // ídolo: escudo de runas girando enquanto protegido, e piscando quando um golpe não pega
+    if (kind === 'statue' && key !== K.dead) {
+      const fl = bossFlash[i] != null ? Math.max(0, 1 - (now - bossFlash[i]) / 0.8) : 0;
+      const sa = Math.max(boss.shield > 0 ? 0.7 + 0.2 * Math.sin(now * 5) : 0, fl);
+      const sh = nodeImgObj('sshield');
+      if (sa > 0.01 && sh) {
+        const sw = cs * 2.55;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = sa; ctx.translate(x, y); ctx.rotate(now * 0.3);
+        ctx.drawImage(sh, -sw / 2, -sw / 2, sw, sw); ctx.restore();
+      }
+    }
+    // vidas em cima: carapaças (escaravelho), garras (onça), máscaras (ídolo), penas (serpente)
+    if (key === K.dead) return;
+    const hp = Math.max(0, boss.hp), max = boss.max, ls = cs * (max > 4 ? 0.3 : 0.34);
+    const top = y - (vert ? w / 2 : h * anchor) - ls * 1.05;
+    // faixa escura atrás das vidas: lê de longe e não se mistura com o desenho do chefe
+    const rowW = max * ls * 0.9 + ls * 0.3;
+    ctx.save(); ctx.globalAlpha = 0.55; ctx.fillStyle = '#0b0f0c';
+    ART.roundRect(ctx, x - rowW / 2, top - ls * 0.12, rowW, ls * 1.24, ls * 0.5); ctx.fill(); ctx.restore();
+    for (let k = 0; k < max; k++) {
+      const lim = nodeImgObj(k < hp ? K.l3 : K.l1);
       if (!lim) continue;
-      const lx = x - (max * ls * 0.9) / 2 + i * ls * 0.9, ly = y - h * 0.55 - ls * 0.45;
-      ctx.drawImage(lim, lx, ly, ls, ls * lim.naturalHeight / lim.naturalWidth);
+      const lw = kind === 'serpent' ? ls * 0.8 : ls, lh = lw * lim.naturalHeight / lim.naturalWidth;
+      ctx.drawImage(lim, x - (max * ls * 0.9) / 2 + k * ls * 0.9 + (ls - lw) / 2, top - (lh - ls) / 2, lw, lh);
     }
   }
 
@@ -784,11 +857,15 @@
   }
 
   function drawPiece(p, v, extra, glintT) {
+    if (p.kind === 'statue') return; // o ídolo inteiro (2x2) é desenhado em drawBoss
     const s = v.s * (extra || 1);
     if (s <= 0.01 || v.a <= 0.01) return;
     const cx = ox + (v.x + 0.5) * cs, cy = oy + (v.y + 0.5) * cs;
     const w = cs * s * (1 + v.sq), h = cs * s * (1 - v.sq);
     ctx.globalAlpha = v.a;
+    // joia que a onça transformou em pedra: pedra pintada com a marca verde da garra
+    const stoneIm = p.claw && nodeImgObj('jstone');
+    if (stoneIm) { ctx.drawImage(stoneIm, cx - w * 0.48, cy - h * 0.48, w * 0.96, h * 0.96); ctx.globalAlpha = 1; return; }
     // feitiço: aura da cor da pedra que "respira" devagar, cada joia no seu ritmo
     if (p.kind === 'gem' && !p.special && p.color != null && ART.hasAI) {
       const gg = ART.GEMS[p.color], pulse = 0.5 + 0.5 * Math.sin(now * 2.1 + p.id * 1.7);
@@ -993,7 +1070,16 @@
 
   // ---------- painel do jogo ----------
   // ícone da meta: o chefe usa o próprio sprite pintado
-  const goalIcon = (g, size) => (g.type === 'boss' && ART.nodeImg('bidle')) || ART.icon(goalIconKey(g), size);
+  // sprites de cada chefe (art-data.js, folhas do Gemini em assets\boss): parado, golpe, movimento, morte, vida cheia/perdida.
+  // size = largura do desenho em casas do tabuleiro
+  const BOSS_SPR = {
+    scarab: { idle: 'bidle', hit: 'bhit', move: 'bfly', dead: 'bdead', l3: 'blife3', l1: 'blife1', size: 1.3 },
+    jaguar: { idle: 'jidle', hit: 'jhit', move: 'jleap', dead: 'jdead', l3: 'jlife3', l1: 'jlife1', size: 1.95 },
+    statue: { idle: 'sidle', hit: 'shit', move: 'sidle', dead: 'sdead', l3: 'slife3', l1: 'slife1', size: 2.05 },
+    serpent: { idle: 'kidle', hit: 'khit', move: 'kcoil', dead: 'kdead', l3: 'klife3', l1: 'klife1', size: 2.3 },
+  };
+  const bossKindOf = (L) => (L && (L.bossKind || (L.scarab ? 'scarab' : null))) || 'scarab';
+  const goalIcon = (g, size, L) => (g.type === 'boss' && ART.nodeImg(BOSS_SPR[bossKindOf(L || level)].idle)) || ART.icon(goalIconKey(g), size);
   const goalIconKey = (g) => (g.type === 'score' ? 'star' : g.type === 'collect' ? 'gem' + g.color : g.type === 'sand' ? 'sand' : g.type === 'rock' ? 'rock' : g.type === 'vine' ? 'vine' : 'chest');
   function goalLeft(g) {
     if (g.type === 'score') return Math.max(0, g.target - state.score);
@@ -1079,8 +1165,9 @@
     return card;
   }
   function closeModal() { $('modal').hidden = true; }
-  const goalText = (g) => {
+  const goalText = (g, L) => {
     if (g.type === 'collect') return T('goal.collect', { n: g.target }) + ' ' + I18N.gem(g.color);
+    if (g.type === 'boss' && bossKindOf(L || level) !== 'scarab') return T('goal.' + bossKindOf(L || level));
     const s = T('goal.' + g.type, { n: g.type === 'score' ? g.target.toLocaleString() : g.target });
     return s.replace('baú(s)', g.target === 1 ? 'baú' : 'baús').replace('chest(s)', g.target === 1 ? 'chest' : 'chests');
   };
@@ -1092,7 +1179,7 @@
     const rows = L.goals.map((g) => {
       const gg = Object.assign({}, g);
       if (g.type === 'sand') { gg.target = L.layout.join('').split('').reduce((n, c) => n + (c === 's' || c === 'w' ? 1 : c === 'S' || c === 'W' ? 2 : 0), 0); }
-      return '<div class="goal-row"><img alt="" src="' + goalIcon(g, 80) + '"><span>' + goalText(gg) + '</span></div>';
+      return '<div class="goal-row"><img alt="" src="' + goalIcon(g, 80, L) + '"><span>' + goalText(gg, L) + '</span></div>';
     }).join('');
     const card = openModal(
       '<div class="eyebrow">' + T('map.title').toUpperCase() + '</div>' +
@@ -1100,7 +1187,8 @@
       (L.boss ? '<div class="boss-tag">' + T('boss') + '</div>' : '') +
       '<div class="goal-list">' + rows + '</div>' +
       '<div class="moves-line">' + T('moves') + ': <b>' + L.moves + '</b></div>' +
-      (tutKey ? '<div class="tut"><img alt="" src="' + (L.tut === 'boss' && ART.nodeImg('bidle')) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108) + '"><p>' + T(tutKey) + '</p></div>' : '') +
+      // (os parênteses importam: sem eles, com a arte do chefe carregada, o texto do tutorial sumia)
+      (tutKey ? '<div class="tut"><img alt="" src="' + ((L.boss && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><p>' + T(tutKey) + '</p></div>' : '') +
       boostPicker() +
       '<div class="btns"><button class="btn" id="mPlay" type="button">' + T('play') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');

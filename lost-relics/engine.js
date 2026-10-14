@@ -65,38 +65,100 @@
     }
     for (const k of vines) s.grid[Math.floor(k / W)][k % W].vine = true;
     for (const g of s.goals) if (g.type === 'sand') g.target = s.sandTotal;
-    if (!findMove(s)) shuffle(s);
-    // chefes (escaravelhos): não ocupam casa, "montam" numa joia e caem junto com ela (b.id = id da joia).
-    // level.scarab = quantos escaravelhos, level.scarabHp = vidas de cada. Começam espalhados.
     s.bosses = [];
-    if (level.scarab) {
+    const B = bossConfig(level);
+    // Ídolo de Pedra: bloco 2x2 fixo (4 peças 'statue' que não caem nem trocam), entra antes de conferir jogada
+    if (B && B.kind === 'statue') {
+      const [sx, sy] = level.statueAt || [Math.floor(W / 2) - 1, Math.floor(H / 2) - 1];
+      const cells = [[sx, sy], [sx + 1, sy], [sx, sy + 1], [sx + 1, sy + 1]];
+      s.bosses.push({ kind: 'statue', hp: B.hp, max: B.hp, cells, shield: 0, idle: 0, hitThisMove: false });
+      for (const [x, y] of cells) s.grid[y][x] = { id: s.nextId++, kind: 'statue', boss: 0 };
+    }
+    if (!findMove(s)) shuffle(s);
+    // chefes que "montam" numa joia (escaravelho, onça, serpente): não ocupam casa e caem junto com ela (b.id = id da joia).
+    // A serpente monta em duas joias vizinhas (b.id = cabeça, b.id2 = cauda). Começam espalhados.
+    if (B && B.kind !== 'statue') {
       const spots = [[2, 2], [W - 3, Math.floor(H / 2)], [2, H - 3], [W - 3, 1], [Math.floor(W / 2), H - 2]];
-      for (let i = 0; i < level.scarab; i++) {
-        const hp = level.scarabHp || 3;
-        s.bosses.push({ hp, max: hp, id: pickHost(s, spots[i % spots.length], 0), idle: 0, hitThisMove: false });
+      if (B.count === 1) spots.unshift([Math.floor(W / 2), Math.floor(H / 2) - 1]);
+      for (let i = 0; i < B.count; i++) {
+        const b = { kind: B.kind, hp: B.hp, max: B.hp, id: pickHost(s, spots[i % spots.length], 0), idle: 0, hitThisMove: false, claw: 0 };
+        s.bosses.push(b);
+        if (B.kind === 'serpent') placeSerpent(s, b, spots[i % spots.length], 0);
       }
     }
     return s;
+  }
+  // level.scarab/scarabHp (fase 5) ou level.bossKind/bossCount/bossHp (onça, ídolo, serpente)
+  function bossConfig(level) {
+    if (level.bossKind) return { kind: level.bossKind, count: level.bossCount || 1, hp: level.bossHp || 3 };
+    if (level.scarab) return { kind: 'scarab', count: level.scarab, hp: level.scarabHp || 3 };
+    return null;
   }
 
   // ---------- chefes ----------
   // regras (14/10, depois do 1º teste dele: "fácil e rápido"): 1 golpe por jogada em cada escaravelho (cascata não
   // repete), e se ficar 3 jogadas seguidas sem apanhar ele foge pra outra joia
   const BOSS_FLEE = 3;
+  // Onça de Jade (fase 10): a cada JAG_CLAW jogadas crava a garra e vira JAG_STONES joias perto dela em pedra
+  const JAG_CLAW = 3, JAG_STONES = 2;
   const aliveBosses = (s) => (s.bosses || []).filter((b) => b.hp > 0);
+  function idPos(s, id) {
+    if (id == null) return null;
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) { const p = s.grid[y][x]; if (p && p.id === id) return [x, y]; }
+    return null;
+  }
+  // posição "principal" do chefe (a joia dele, a cabeça da serpente ou o canto do ídolo)
   function bossPos(s, b) {
     b = b || aliveBosses(s)[0];
     if (!b || b.hp <= 0) return null;
-    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) { const p = s.grid[y][x]; if (p && p.id === b.id) return [x, y]; }
-    return null;
+    if (b.kind === 'statue') return b.cells[0];
+    return idPos(s, b.id);
   }
-  // escolhe a joia onde o chefe pousa: joia comum (sem especial, sem cipó, sem outro escaravelho),
+  // todas as casas que o chefe ocupa
+  function bossCells(s, b) {
+    if (!b || b.hp <= 0) return [];
+    if (b.kind === 'statue') return b.cells.slice();
+    const out = [], a = idPos(s, b.id);
+    if (a) out.push(a);
+    if (b.kind === 'serpent') { const t = idPos(s, b.id2); if (t) out.push(t); }
+    return out;
+  }
+  const plainGem = (p) => !!p && p.kind === 'gem' && !p.special && !p.vine;
+  function takenIds(s) {
+    const t = new Set();
+    for (const b of s.bosses || []) if (b.hp > 0) { if (b.id != null) t.add(b.id); if (b.id2 != null) t.add(b.id2); }
+    return t;
+  }
+  // cauda da serpente: joia comum encostada na cabeça, de preferência deitada (esquerda/direita)
+  function pickTail(s, headId) {
+    const h = idPos(s, headId);
+    if (!h) return null;
+    const taken = takenIds(s), opts = [];
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      const x = h[0] + dx, y = h[1] + dy;
+      if (!inside(s, x, y)) continue;
+      const p = s.grid[y][x];
+      if (plainGem(p) && !taken.has(p.id)) opts.push({ p, flat: dy === 0 });
+    }
+    const flat = opts.filter((o) => o.flat), pool = flat.length ? flat : opts;
+    return pool.length ? pool[randInt(s, pool.length)].p.id : null;
+  }
+  // posiciona a serpente (cabeça + cauda) a pelo menos minDist casas de 'from'
+  function placeSerpent(s, b, from, minDist) {
+    for (let tries = 0; tries < 12; tries++) {
+      b.id2 = null;
+      b.id = pickHost(s, tries ? null : from, tries ? 0 : minDist);
+      b.id2 = pickTail(s, b.id);
+      if (b.id2 != null) return;
+    }
+  }
+  // escolhe a joia onde o chefe pousa: joia comum (sem especial, sem cipó, sem outro chefe),
   // de preferência a pelo menos minDist casas de 'from'
   function pickHost(s, from, minDist) {
-    const all = [], far = [], taken = new Set((s.bosses || []).filter((b) => b.hp > 0).map((b) => b.id));
+    const all = [], far = [], taken = takenIds(s);
     for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
       const p = s.grid[y][x];
-      if (!p || p.kind !== 'gem' || p.special || p.vine || taken.has(p.id)) continue;
+      if (!plainGem(p) || taken.has(p.id)) continue;
       all.push(p);
       if (!from || Math.abs(x - from[0]) + Math.abs(y - from[1]) >= minDist) far.push(p);
     }
@@ -136,7 +198,7 @@
     const p = s.grid[y][x];
     return p && p.kind === 'gem' && p.special !== 'idol' && p.color != null ? p.color : -1;
   }
-  const movable = (p) => !!p && p.kind !== 'rock' && !p.vine;
+  const movable = (p) => !!p && p.kind !== 'rock' && p.kind !== 'statue' && !p.vine;
   const swappable = (p) => !!p && (p.kind === 'gem' || p.kind === 'artifact') && !p.vine;
   const isSpecial = (p) => !!p && p.kind === 'gem' && !!p.special;
 
@@ -264,7 +326,8 @@
     const done = new Set();
     const res = { removed: [], sand: [], rocks: [], vines: [], blasts: [], created: [], score: 0 };
     const mult = Math.max(1, s.cascade);
-    const bpos = aliveBosses(s).map((b) => [b, bossPos(s, b)]); // onde cada chefe estava antes deste acerto
+    const bpos = aliveBosses(s).map((b) => [b, bossCells(s, b)]); // onde cada chefe estava antes deste acerto
+    const blasted = new Set(); // ídolos atingidos por explosão de especial nesta chamada
     let cur = hits, wave = 0;
     while (cur.length) {
       const next = [];
@@ -283,6 +346,8 @@
           continue;
         }
         if (p && p.kind === 'artifact') continue;
+        // Ídolo de Pedra: só explosão de joia especial machuca; combinação comum não faz nada nele
+        if (p && p.kind === 'statue') { if (h.src === 'blast') blasted.add(p.boss); continue; }
         if (p && p.vine) {
           p.vine = false; bump(s, 'vine'); res.score += SCORE.vine;
           res.vines.push({ x, y, wave });
@@ -304,7 +369,7 @@
           }
         }
         s.grid[y][x] = null;
-        res.removed.push({ piece: p, x, y, wave });
+        res.removed.push({ piece: p, x, y, wave, src: h.src });
         if (p.color != null) bump(s, 'collect', p.color);
         res.score += SCORE.gem * mult;
       }
@@ -313,15 +378,32 @@
     // chefes: quebrou a joia dele ou uma encostada nele (cima/baixo/lados) = 1 golpe (no máximo 1 por jogada);
     // ele voa pra outra joia longe. Morreu = conta na meta.
     res.bosses = [];
-    for (const [b, pos] of bpos) {
-      if (!pos || b.hitThisMove) continue;
-      const reach = s.level.scarabReach == null ? 1 : s.level.scarabReach; // 1 = joia dele ou encostada; 0 = só a joia dele
-      if (!res.removed.some((r) => Math.abs(r.x - pos[0]) + Math.abs(r.y - pos[1]) <= reach)) continue;
+    res.immune = []; // ídolo que levou combinação comum ou estava de escudo: o jogo mostra o escudo brilhando
+    const near = (cells, r, reach) => cells.some((c) => Math.abs(r.x - c[0]) + Math.abs(r.y - c[1]) <= reach);
+    for (const [b, cells] of bpos) {
+      if (!cells.length) continue;
+      const idx = s.bosses.indexOf(b);
+      let hit;
+      if (b.kind === 'statue') {
+        const touched = blasted.has(idx) || res.removed.some((r) => near(cells, r, 1));
+        hit = blasted.has(idx) && !b.shield && !b.hitThisMove;
+        if (!hit) { if (touched) res.immune.push({ idx, shield: b.shield > 0 }); continue; }
+      } else {
+        if (b.hitThisMove) continue;
+        // 1 = joia dele ou encostada; 0 = só a joia dele. A serpente já ocupa 2 casas: só acertando o corpo dela.
+        const reach = s.level.scarabReach != null ? s.level.scarabReach : b.kind === 'serpent' ? 0 : 1;
+        hit = res.removed.some((r) => near(cells, r, reach));
+        if (!hit) continue;
+      }
       b.hp--; b.hitThisMove = true; b.idle = 0;
       res.score += SCORE.boss;
-      const ev = { idx: s.bosses.indexOf(b), from: pos, hp: b.hp, dead: b.hp <= 0 };
-      if (b.hp <= 0) bump(s, 'boss');
-      else { b.id = pickHost(s, pos, 3); ev.toId = b.id; }
+      const ev = { idx, kind: b.kind || 'scarab', from: cells[0], cells, hp: b.hp, dead: b.hp <= 0 };
+      if (b.hp <= 0) {
+        bump(s, 'boss');
+        if (b.kind === 'statue') for (const [x, y] of b.cells) s.grid[y][x] = null; // desmorona: as joias de cima caem no lugar
+      } else if (b.kind === 'statue') b.shield = 2; // escudo de runas na próxima jogada
+      else if (b.kind === 'serpent') { placeSerpent(s, b, cells[0], 3); ev.toId = b.id; }
+      else { b.id = pickHost(s, cells[0], 3); ev.toId = b.id; }
       res.bosses.push(ev);
     }
     for (const c of creates || []) {
@@ -483,7 +565,10 @@
   // ---------- resolução completa (gerador: o jogo anima cada passo) ----------
   function* resolve(s, start) {
     s.cascade = 0;
-    for (const b of s.bosses || []) b.hitThisMove = false; // cada jogada nova pode dar 1 golpe em cada escaravelho
+    for (const b of s.bosses || []) {
+      b.hitThisMove = false; // cada jogada nova pode dar 1 golpe em cada chefe
+      if (b.shield > 0) b.shield--; // escudo do ídolo: dura a jogada seguinte ao golpe
+    }
     let first = start && start.hits ? start : null;
     let prefer = start && start.prefer ? start.prefer : null;
     for (let guard = 0; guard < 60; guard++) {
@@ -525,19 +610,90 @@
         yield { type: 'collect', items: col };
       }
       // segurança: se um chefe ficou sem joia (ex.: a dele foi levada sem ser golpe), pousa em outra
-      for (const b of aliveBosses(s)) if (!bossPos(s, b)) { b.id = pickHost(s, null, 0); yield { type: 'bossland', idx: s.bosses.indexOf(b), toId: b.id }; }
+      for (const b of aliveBosses(s)) {
+        if (b.kind === 'statue') continue;
+        if (!bossPos(s, b)) {
+          if (b.kind === 'serpent') placeSerpent(s, b, null, 0); else b.id = pickHost(s, null, 0);
+          yield { type: 'bossland', idx: s.bosses.indexOf(b), toId: b.id };
+        } else if (b.kind === 'serpent' && !serpentTogether(s, b)) {
+          b.id2 = pickTail(s, b.id); // a cauda se soltou na queda: encolhe de volta do lado da cabeça
+          if (b.id2 == null) placeSerpent(s, b, null, 0);
+          yield { type: 'bossland', idx: s.bosses.indexOf(b), toId: b.id };
+        }
+      }
     }
-    // fim da jogada: quem ficou 3 jogadas seguidas sem apanhar foge pra outra joia longe
+    // fim da jogada: regra de cada chefe
     for (const b of aliveBosses(s)) {
+      const idx = s.bosses.indexOf(b);
+      if (b.kind === 'statue') continue;
+      if (b.kind === 'jaguar') {
+        // garra a cada 3 jogadas, tenha apanhado ou não: o tabuleiro vai endurecendo
+        b.claw = (b.claw || 0) + 1;
+        if (b.claw >= JAG_CLAW) {
+          b.claw = 0;
+          const from = bossPos(s, b), cells = petrify(s, from, JAG_STONES);
+          if (cells.length) yield { type: 'bossclaw', idx, from, cells };
+        }
+        continue;
+      }
+      if (b.kind === 'serpent') {
+        if (b.hitThisMove) continue;
+        const from = bossCells(s, b);
+        if (slither(s, b)) yield { type: 'bossmove', idx, from, to: bossCells(s, b) };
+        continue;
+      }
+      // escaravelho: quem ficou 3 jogadas seguidas sem apanhar foge pra outra joia longe
       if (b.hitThisMove) continue;
       b.idle++;
       if (b.idle >= BOSS_FLEE) {
         const from = bossPos(s, b);
         b.id = pickHost(s, from, 3); b.idle = 0;
-        yield { type: 'bossflee', idx: s.bosses.indexOf(b), from, toId: b.id };
+        yield { type: 'bossflee', idx, from, toId: b.id };
       }
     }
     if (!findMove(s)) { shuffle(s); yield { type: 'shuffle' }; }
+  }
+
+  function serpentTogether(s, b) {
+    const a = idPos(s, b.id), t = idPos(s, b.id2);
+    return !!a && !!t && Math.abs(a[0] - t[0]) + Math.abs(a[1] - t[1]) === 1;
+  }
+  // serpente rasteja 1 casa: a cabeça vai pra uma joia comum vizinha (de preferência seguindo em frente),
+  // a cauda ocupa onde a cabeça estava. Sem saída, ela vira (cabeça e cauda trocam).
+  function slither(s, b) {
+    const h = idPos(s, b.id), t = idPos(s, b.id2);
+    if (!h || !t) return false;
+    const fwd = [h[0] - t[0], h[1] - t[1]], taken = takenIds(s), opts = [];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const x = h[0] + dx, y = h[1] + dy;
+      if (!inside(s, x, y) || (x === t[0] && y === t[1])) continue;
+      const p = s.grid[y][x];
+      if (!plainGem(p) || taken.has(p.id)) continue;
+      opts.push({ p, w: dx === fwd[0] && dy === fwd[1] ? 3 : 1 });
+    }
+    if (!opts.length) { const k = b.id; b.id = b.id2; b.id2 = k; return true; }
+    let r = rand(s) * opts.reduce((a, o) => a + o.w, 0), pick = opts[0];
+    for (const o of opts) { r -= o.w; if (r <= 0) { pick = o; break; } }
+    b.id2 = b.id; b.id = pick.p.id;
+    return true;
+  }
+  // garra da onça: vira em pedra as n joias comuns mais perto dela (não a joia onde ela está)
+  function petrify(s, from, n) {
+    if (!from) return [];
+    const taken = takenIds(s), cand = [];
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+      const p = s.grid[y][x];
+      if (!plainGem(p) || taken.has(p.id)) continue;
+      const d = Math.abs(x - from[0]) + Math.abs(y - from[1]);
+      if (d >= 1 && d <= 3) cand.push({ x, y, d: d + rand(s) * 0.9 });
+    }
+    cand.sort((a, b) => a.d - b.d);
+    const out = [];
+    for (const c of cand.slice(0, n)) {
+      s.grid[c.y][c.x] = { id: s.nextId++, kind: 'rock', hp: 1, claw: true };
+      out.push([c.x, c.y]);
+    }
+    return out;
   }
 
   function runAll(gen) { const out = []; for (const e of gen) out.push(e); return out; }
@@ -633,7 +789,7 @@
   const api = {
     SCORE, GEM_NAMES, rand, createState, cloneState, findGroups, groupSpecial, applyHits, gravity, gravityStep,
     collectArtifacts, doSwap, swapIsValid, resolve, runAll, allMoves, findMove, shuffle, treasureRush,
-    isWon, goalDone, sandLeft, stars, colorAt, inside, swappable, isExit, bossPos,
+    isWon, goalDone, sandLeft, stars, colorAt, inside, swappable, isExit, bossPos, bossCells,
   };
   root.LR = api;
   if (typeof module !== 'undefined') module.exports = api;
