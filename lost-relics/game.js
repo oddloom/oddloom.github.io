@@ -268,7 +268,7 @@
       for (const r of ev.removed) { sx += r.x; sy += r.y; if (r.piece.color != null) colorCount[r.piece.color] = (colorCount[r.piece.color] || 0) + 1; }
       const top = Object.keys(colorCount).sort((a, b) => colorCount[b] - colorCount[a])[0];
       const g = top != null ? ART.GEMS[+top] : null;
-      floats.push({ x: cellX(sx / ev.removed.length), y: cellY(sy / ev.removed.length), text: '+' + ev.score, color: g ? ART.hsl(g.h, g.s, Math.max(62, g.l + 22)) : '#ffe08a', t: 0 });
+      floats.push({ x: cellX(sx / ev.removed.length), y: cellY(sy / ev.removed.length), text: '+' + ev.score, num: ev.score, color: g ? ART.hsl(g.h, g.s, Math.max(62, g.l + 22)) : '#ffe08a', t: 0 });
     }
     if (ev.cascade >= 7) praise(3); else if (ev.cascade >= 5) praise(2); else if (ev.cascade >= 3) praise(1);
     later(0.12, renderHUD);
@@ -306,7 +306,7 @@
       vis.delete(it.piece.id);
       dying.push({ p: it.piece, v: { x: it.x, y: it.y, s: 1, a: 1, sq: 0 }, t: 0, dur: 0.45, kind: 'collect' });
       sparks(it.x, it.y, 18, '#ffd76a');
-      floats.push({ x: cellX(it.x), y: cellY(it.y), text: '+' + LR.SCORE.artifact, color: '#ffe08a', t: 0 });
+      floats.push({ x: cellX(it.x), y: cellY(it.y), text: '+' + LR.SCORE.artifact, num: LR.SCORE.artifact, color: '#ffe08a', t: 0 });
     }
     Sound.play('chest');
     praise(2);
@@ -609,7 +609,7 @@
         if (p.rot != null) p.rot += p.vr * dt;
       }
     }
-    for (let i = floats.length - 1; i >= 0; i--) { floats[i].t += dt; if (floats[i].t > 0.9) floats.splice(i, 1); }
+    for (let i = floats.length - 1; i >= 0; i--) { if (floats[i].hold) continue; floats[i].t += dt; if (floats[i].t > 0.9) floats.splice(i, 1); }
     for (let i = dying.length - 1; i >= 0; i--) { dying[i].t += dt; if (dying[i].t >= dying[i].dur) dying.splice(i, 1); }
     for (let i = glints.length - 1; i >= 0; i--) { glints[i].t += dt; if (glints[i].t > 0.7) glints.splice(i, 1); }
     shake = Math.max(0, shake - dt * 1.6);
@@ -908,8 +908,18 @@
     for (const f of floats) {
       const q = f.t / 0.9;
       ctx.globalAlpha = q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3;
-      ctx.font = '700 ' + Math.round(cs * 0.42) + 'px "Uncial Antiqua", Georgia, serif';
       const y = f.y - q * cs * 0.9;
+      // pontos em dígitos Solar pintados (os mesmos do placar); sem a arte, cai no texto
+      const ims = f.num != null ? String(f.num).split('').map(digitImg) : null;
+      if (ims && ims.every(Boolean)) {
+        const h = cs * 0.78, ws = ims.map((im) => h * im.naturalWidth / im.naturalHeight), gap = -h * 0.2;
+        let x = f.x - (ws.reduce((a, b) => a + b, 0) + gap * (ws.length - 1)) / 2;
+        ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = cs * 0.14; ctx.shadowOffsetY = cs * 0.03;
+        ims.forEach((im, k) => { ctx.drawImage(im, x, y - h / 2, ws[k], h); x += ws[k] + gap; });
+        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        continue;
+      }
+      ctx.font = '700 ' + Math.round(cs * 0.42) + 'px "Uncial Antiqua", Georgia, serif';
       ctx.lineWidth = Math.max(2, cs * 0.08); ctx.strokeStyle = 'rgba(10,8,4,0.85)'; ctx.strokeText(f.text, f.x, y);
       ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, y);
     }
@@ -936,6 +946,13 @@
     });
     lastLeft = state.goals.map(() => null);
     for (const k of ['mk1', 'mk2', 'mk3']) { $(k).classList.remove('on'); $(k).style.opacity = ''; $(k).src = paintedBar() ? ART.nodeImg('vstar') : ART.icon('star0', 48); }
+  }
+  // dígitos Solar sem halo como imagem, pra desenhar no canvas (pontos que sobem do tabuleiro)
+  const digitImgs = {};
+  function digitImg(d) {
+    let im = digitImgs[d];
+    if (!im) { const src = ART.nodeImg('s' + d); if (!src) return null; im = digitImgs[d] = new Image(); im.src = src; }
+    return im.complete && im.naturalWidth ? im : null;
   }
   // placar v2 pintado: barra com 3 encaixes fixos e números em dígitos Solar
   const paintedBar = () => !!(ART.uiImages().bar && ART.uiImages().barfill && ART.nodeImg('vstar'));
@@ -977,7 +994,8 @@
       if (!el) return;
       const done = LR.goalDone(state, g);
       el.classList.toggle('done', done);
-      el.querySelector('b').textContent = done ? '✓' : (g.type === 'score' ? g.target.toLocaleString() : left);
+      // meta de pontos mostra quanto FALTA (desce a cada jogada), como as outras metas
+      el.querySelector('b').textContent = done ? '✓' : left.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
       if (lastLeft[i] != null && left !== lastLeft[i]) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
       lastLeft[i] = left;
     });
@@ -1338,6 +1356,8 @@
     else if (location.hash === '#loja') { openMap(); openShop(); }
     else if (/^#anuncio\d+$/.test(location.hash)) { const n = +location.hash.slice(8); startLevel(n); setTimeout(() => { announceLevel(LEVELS[n - 1]); const a = document.querySelector('.announce:last-of-type'); if (a) { a.style.animation = 'none'; a.remove = () => {}; } }, 600); }
     else if (location.hash === '#placardemo') { startLevel(3); setTimeout(() => { state.score = Math.round((level.stars[1] + level.stars[2]) / 2); renderHUD(); }, 900); }
+    else if (location.hash === '#derrotademo') { startLevel(1); setTimeout(() => { showLose(); const x = document.getElementById('mExtra'); if (x) x.hidden = false; }, 900); }
+    else if (location.hash === '#pontosdemo') { startLevel(1); setTimeout(() => { state.score = 1290; renderHUD(); floats.push({ x: cellX(3), y: cellY(4), text: '+90', num: 90, color: '#ffe08a', t: 0, hold: true }); }, 900); }
     else if (location.hash === '#vitoriademo') { startLevel(1); setTimeout(() => { state.score = 16900; showWin(); }, 1200); setTimeout(() => document.querySelectorAll('.stars-big img').forEach((im, i) => { if (i < 2) { im.src = ART.nodeImg('vstar') || im.src; im.classList.add('on'); } }), 2600); }
     else openMenu();
     requestAnimationFrame(frame);
