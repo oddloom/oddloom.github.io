@@ -231,6 +231,7 @@
   const WAVE = 0.085;
   async function onClear(ev) {
     if (ev.kind !== 'armed') Sound.play('match', ev.cascade);
+    if (ev.removed.length) Sound.play('glass', Math.min(3, 1 + Math.floor(ev.removed.length / 6) + (ev.blasts.length ? 1 : 0)));
     buzz(ev.blasts.length ? 35 : 12);
     for (const b of ev.blasts) later(b.wave * WAVE, () => blastFx(b));
     for (const r of ev.removed) {
@@ -349,11 +350,16 @@
   function blastFx(b) {
     if (b.special === 'lineH' || b.special === 'lineV') {
       Sound.play('line'); beam(b.special === 'lineH' ? 'h' : 'v', b.special === 'lineH' ? b.y : b.x); addShake(0.15);
+      // dardo do templo: sai da moldura e atravessa a fileira (os dois sentidos)
+      if (ART.fx('dart')) for (const dir of [1, -1]) parts.push({ type: 'dart', h: b.special === 'lineH', at: b.special === 'lineH' ? b.y : b.x, dir, life: 0, max: 0.42 });
     } else if (b.special === 'barrel') {
-      Sound.play('barrel'); ring(b.x, b.y, 'rgba(255,150,50,0.95)', 1.7); fire(b.x, b.y, 22); addShake(0.35);
+      Sound.play('barrel'); addShake(0.35);
+      if (ART.fx('shock')) { parts.push({ type: 'fxsprite', key: 'shock', x: cellX(b.x), y: cellY(b.y), s0: 0.6, s1: 3.6, life: 0, max: 0.55 }); sparks(b.x, b.y, 14, '#7ff3ea'); }
+      else { ring(b.x, b.y, 'rgba(255,150,50,0.95)', 1.7); fire(b.x, b.y, 22); }
     } else if (b.special === 'idol') {
       Sound.play('idol');
-      for (const [x, y] of b.area) parts.push({ type: 'bolt', x1: cellX(b.x), y1: cellY(b.y), x2: cellX(x), y2: cellY(y), life: 0, max: 0.4 });
+      if (ART.fx('sunbeam')) { b.area.forEach(([x, y], k) => parts.push({ type: 'fxsprite', key: 'sunbeam', x: cellX(x), y: cellY(y) - cs * 1.4, s0: 1, s1: 1, tall: true, life: -k * 0.02, max: 0.6 })); parts.push({ type: 'fxsprite', key: 'flare2', x: cellX(b.x), y: cellY(b.y), s0: 1, s1: 2.6, life: 0, max: 0.5 }); }
+      else for (const [x, y] of b.area) parts.push({ type: 'bolt', x1: cellX(b.x), y1: cellY(b.y), x2: cellX(x), y2: cellY(y), life: 0, max: 0.4 });
       addShake(0.25);
     }
   }
@@ -723,6 +729,11 @@
       for (let i = 0; i < 6; i++) { ctx.rotate(Math.PI / 3); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(cs * 0.62 * s, -cs * 0.1); ctx.lineTo(cs * 0.62 * s, cs * 0.1); ctx.closePath(); ctx.fill(); }
       ctx.restore();
     }
+    if (p.special === 'barrel' && ART.fx('runering')) {   // Joia Selo: anel de runas girando em volta
+      const r = ART.fx('runering'), sz = cs * s * 1.12;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(now * 0.9); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = v.a * (0.8 + 0.2 * Math.sin(now * 5));
+      ctx.drawImage(r, -sz / 2, -sz / 2, sz, sz); ctx.restore();
+    }
     if (p.armed) {
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, cs * 0.6);
       g.addColorStop(0, 'rgba(255,90,40,' + (0.5 + 0.3 * Math.sin(now * 20)) + ')'); g.addColorStop(1, 'rgba(255,90,40,0)');
@@ -860,6 +871,18 @@
           ctx.lineTo(p.x1 + (p.x2 - p.x1) * t + (Math.random() - 0.5) * cs * 0.35, p.y1 + (p.y2 - p.y1) * t + (Math.random() - 0.5) * cs * 0.35);
         }
         ctx.lineTo(p.x2, p.y2); ctx.stroke();
+      } else if (p.type === 'dart' && p.life >= 0) {
+        const im = ART.fx('dart'), q2 = EASE.inout(q), L = cs * 1.9, Hh = L * im.height / im.width;
+        const span = (p.h ? state.W : state.H) * cs + cs * 2, start = -cs + (p.dir > 0 ? 0 : span), pos = start + p.dir * q2 * span;
+        const x = p.h ? ox + pos : cellX(p.at), y = p.h ? cellY(p.at) : oy + pos;
+        ctx.save(); ctx.globalAlpha = 1 - Math.max(0, (q - 0.8) / 0.2); ctx.translate(x, y); ctx.rotate((p.h ? 0 : Math.PI / 2) + (p.dir < 0 ? Math.PI : 0));
+        ctx.drawImage(im, -L * 0.8, -Hh / 2, L, Hh); ctx.restore();
+      } else if (p.type === 'fxsprite' && p.life >= 0) {
+        const im = ART.fx(p.key); if (im) {
+          const sc = p.s0 + (p.s1 - p.s0) * EASE.out(q), w0 = p.tall ? cs * 0.75 : cs * sc, h0 = p.tall ? cs * 2.6 : w0 * im.height / im.width;
+          const peak = { sunbeam: 0.42, flare2: 0.6, shock: 0.8 }[p.key] || 0.8;
+          ctx.globalAlpha = peak * (1 - q) * (q < 0.15 ? q / 0.15 : 1); ctx.drawImage(im, p.x - w0 / 2, p.y - h0 / 2, w0, h0);
+        }
       } else if (p.type === 'flash') {
         ctx.globalAlpha = 0.5 * (1 - q); ctx.fillStyle = '#fff4cc';
         ctx.fillRect(ox - cs, oy - cs, cs * (state.W + 2), cs * (state.H + 2));
@@ -1248,6 +1271,7 @@
     const m = /^#fase(\d+)$/.exec(location.hash || '');
     if (m && LEVELS[+m[1] - 1]) { openMap(); openPre(+m[1]); }
     else if (/^#jogar\d+$/.test(location.hash)) startLevel(+location.hash.slice(6));
+    else if (location.hash === '#fxdemo') { startLevel(5); setTimeout(() => { state.grid[3][2].special = 'lineH'; state.grid[5][5].special = 'barrel'; state.grid[6][1] = { id: 9997, kind: 'gem', color: null, special: 'idol', armed: false, vine: false }; setInterval(() => { if (Math.random() < 0.34) blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); else if (Math.random() < 0.5) blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); else blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 1400); if (0) setInterval(() => { blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 900); }, 1500); }
     else if (location.hash === '#mapa') openMap();
     else if (location.hash === '#mapademo') { save.unlocked = 7; for (let i = 1; i <= 6; i++) save.stars[i] = (i % 3) + 1; openMap(); }
     else if (location.hash === '#loja') { openMap(); openShop(); }

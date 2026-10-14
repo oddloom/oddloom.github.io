@@ -153,7 +153,7 @@
   }
 
   // ---------- arte de IA (art-data.js): joias e fundo. Se não existir, usa a arte desenhada aqui ----------
-  const AI = { gems: {}, pieces: {}, ui: {}, nodes: {}, bg: null, board: null, ready: false };
+  const AI = { gems: {}, pieces: {}, ui: {}, nodes: {}, fx: {}, bg: null, board: null, ready: false };
   function loadAI(onReady) {
     const D = root.ART_DATA;
     if (!D) { if (onReady) onReady(); return; }
@@ -181,6 +181,7 @@
     for (const k in D.gems) load(D.gems[k], (im) => { AI.gems[k] = im; });
     for (const k in D.pieces || {}) load(D.pieces[k], (im) => { AI.pieces[k] = im; });
     for (const k in D.ui || {}) load(D.ui[k], (im) => { AI.ui[k] = im; });
+    for (const k in D.fx || {}) load(D.fx[k], (im) => { AI.fx[k] = im; });
     for (const k in D.nodes || {}) load(D.nodes[k], (im) => { AI.nodes[k] = im.toDataURL ? im.toDataURL('image/png') : im.src; });
     if (D.bg) load(D.bg, (im) => { AI.bg = im; });
     if (D.board) load(D.board, (im) => { AI.board = im; });
@@ -513,12 +514,17 @@
     if (AI.pieces.chest) {
       if (p.kind === 'rock') return sprite('ar' + p.hp, S, (ctx) => drawAIPiece(ctx, 'rock' + Math.min(3, Math.max(1, p.hp)), S, 1.08));
       if (p.kind === 'artifact') return sprite('achest', S, (ctx) => drawAIPiece(ctx, 'chest', S, 1.12));
-      if (p.special === 'idol' || p.color == null) return sprite('aorb', S, (ctx) => drawAIPiece(ctx, 'orb', S, 1.12));
+      if (p.special === 'idol' || p.color == null) return sprite('aorb', S, (ctx) => { const o = AI.fx.sunorb; if (o) { const k = S * 1.25 / Math.max(o.width, o.height); ctx.drawImage(o, -o.width * k / 2, -o.height * k / 2, o.width * k, o.height * k); } else drawAIPiece(ctx, 'orb', S, 1.12); });
       if (p.special === 'lineH' || p.special === 'lineV') {
         const v = p.special === 'lineV';
-        return sprite('al' + p.color + (v ? 'v' : 'h'), S, (ctx) => { drawAIPiece(ctx, 'dynamite', S, 1.18, (v ? Math.PI / 2 : 0) - 0.35); ctx.scale(0.74, 0.74); paintGem(ctx, GEMS[p.color], S * 0.4, 0); });
+        return sprite('al' + p.color + (v ? 'v' : 'h'), S, (ctx) => {
+          paintGem(ctx, GEMS[p.color], S * 0.4, 0);
+          const m = AI.fx.arrowmark;
+          if (m) { ctx.save(); ctx.rotate(v ? Math.PI / 2 : 0); const k = S * 0.92 / m.width; ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = S * 0.06; ctx.drawImage(m, -m.width * k / 2, -m.height * k / 2, m.width * k, m.height * k); ctx.restore(); }
+          else { drawAIPiece(ctx, 'dynamite', S, 1.18, (v ? Math.PI / 2 : 0) - 0.35); }
+        });
       }
-      if (p.special === 'barrel') return sprite('ab' + p.color, S, (ctx) => { drawAIPiece(ctx, 'barrel', S, 1.1); ctx.translate(0, S * 0.06); ctx.scale(0.5, 0.5); paintGem(ctx, GEMS[p.color], S * 0.4, 0); });
+      if (p.special === 'barrel') return sprite('ab' + p.color, S, (ctx) => { if (AI.fx.runering) { ctx.scale(0.86, 0.86); paintGem(ctx, GEMS[p.color], S * 0.4, 0); } else { drawAIPiece(ctx, 'barrel', S, 1.1); ctx.translate(0, S * 0.06); ctx.scale(0.5, 0.5); paintGem(ctx, GEMS[p.color], S * 0.4, 0); } });
     }    if (p.kind === 'rock') return sprite('r' + p.hp, S, (ctx) => drawRock(ctx, S, p.hp));
     if (p.kind === 'artifact') return sprite('chest', S, (ctx) => drawChest(ctx, S));
     if (p.special === 'idol' || p.color == null) return sprite('idol', S, (ctx) => drawIdol(ctx, S)); // ídolo já usado numa combinação perde o "special" mas continua sendo ídolo
@@ -548,6 +554,9 @@
     else if (key === 'vine') { paintGem(ctx, GEMS[1], px * 0.3); drawSeal(ctx, px * 0.95); }
     else if (key === 'chest' && drawAIPiece(ctx, 'chest', px, 1)) {}
     else if (key === 'idol' && drawAIPiece(ctx, 'orb', px, 1)) {}
+    else if (key === 'dynamite' && AI.fx.arrowmark) { paintGem(ctx, GEMS[0], px * 0.4); const m = AI.fx.arrowmark, k = px * 0.92 / m.width; ctx.drawImage(m, -m.width * k / 2, -m.height * k / 2, m.width * k, m.height * k); }
+    else if (key === 'barrel' && AI.fx.runering) { ctx.scale(0.8, 0.8); paintGem(ctx, GEMS[2], px * 0.4); const r = AI.fx.runering, k = px * 1.2 / r.width; ctx.drawImage(r, -r.width * k / 2, -r.height * k / 2, r.width * k, r.height * k); }
+    else if (key === 'idol' && AI.fx.sunorb) { const o = AI.fx.sunorb, k = px * 1.1 / o.width; ctx.drawImage(o, -o.width * k / 2, -o.height * k / 2, o.width * k, o.height * k); }
     else if (key === 'dynamite' && AI.pieces.dynamite) { drawAIPiece(ctx, 'dynamite', px, 1.05, -0.35); ctx.scale(0.7, 0.7); paintGem(ctx, GEMS[0], px * 0.4); }
     else if (key === 'barrel' && AI.pieces.barrel) { drawAIPiece(ctx, 'barrel', px, 1); ctx.scale(0.5, 0.5); paintGem(ctx, GEMS[2], px * 0.4); }
     else if (key === 'sand') drawSand(ctx, px * 0.9, 1);
@@ -673,5 +682,5 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     return c;
   }
-  root.ART = { loadAI, uiImages: () => AI.ui, nodeImg: (k) => AI.nodes[k] || null, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { return Object.keys(AI.gems).length > 0; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
+  root.ART = { loadAI, fx: (k) => AI.fx[k] || null, uiImages: () => AI.ui, nodeImg: (k) => AI.nodes[k] || null, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { return Object.keys(AI.gems).length > 0; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
 })(window);

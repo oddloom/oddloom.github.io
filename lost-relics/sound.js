@@ -52,6 +52,19 @@
   const S = {
     swap() { const t = ctx.currentTime; noise(t, 0.12, 0.25, 'bandpass', 600, 2400); },
     bad() { const t = ctx.currentTime; tone(160, t, 0.18, 'triangle', 0.3); tone(120, t + 0.06, 0.2, 'triangle', 0.25); },
+    // vidro estilhaçando: estalo + cacos tilintando (notas altas aleatórias) + chiado de rachadura. n = intensidade (1 a 3)
+    glass(n) {
+      const t = ctx.currentTime, k = Math.max(1, Math.min(3, n || 1));
+      noise(t, 0.05, 0.55 * k, 'highpass', 3500);                          // estalo
+      noise(t + 0.01, 0.28 + 0.08 * k, 0.22 * k, 'bandpass', 6500, 2500);   // chiado da rachadura
+      const shards = 7 + k * 5;
+      for (let i = 0; i < shards; i++) {                                     // cacos caindo e tilintando
+        const dt = 0.02 + Math.random() * (0.18 + 0.1 * k), f = 2400 + Math.random() * 5200;
+        tone(f, t + dt, 0.06 + Math.random() * 0.12, 'sine', (0.05 + Math.random() * 0.06) * (k * 0.6 + 0.4));
+        if (Math.random() < 0.4) tone(f * 1.5, t + dt, 0.04, 'triangle', 0.025);
+      }
+      tone(1800 + Math.random() * 400, t, 0.18, 'sine', 0.08);              // "ping" do vidro
+    },
     match(cascade) {
       const t = ctx.currentTime, i = Math.min(PENTA.length - 3, cascade - 1);
       marimba(hz(PENTA[i] + 12), t, 0.35); marimba(hz(PENTA[i + 2] + 12), t + 0.04, 0.22);
