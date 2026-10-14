@@ -319,22 +319,27 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 /* ===== kit de interface pintado (pedra, raízes, runas turquesa) — vale quando o kit carrega ===== */
 /* principal v2 (Gemini, 14/10): ouro + runas. A ponta com o nó de raiz foi espelhada pra direita (botão simétrico,
    texto centralizado de verdade). 3 fatias; o texto fica só no meio liso */
+/* tamanhos acompanham a largura da janela (--cw): no iPhone estreito as pontas encolhem e o texto nunca quebra linha */
 .ui-kit .btn {
-  clip-path: none; border-radius: 0; min-height: 64px; padding: 0 58px; border: 0;
-  background: none; border-image: var(--ui-btn) 0 34.1% 0 34.1% fill / 0 60px 0 60px stretch; box-shadow: none;
-  font-size: clamp(13px, 3.9vw, 16px); letter-spacing: .08em;
+  --be: clamp(40px, calc(var(--cw, 440px) * .135), 60px); /* largura de cada ponta com nó de raiz */
+  clip-path: none; border-radius: 0; min-height: 64px; padding: 0 calc(var(--be) - 4px); border: 0; white-space: nowrap;
+  background: none; border-image: var(--ui-btn) 0 34.1% 0 34.1% fill / 0 var(--be) 0 var(--be) stretch; box-shadow: none;
+  font-size: clamp(12px, calc(var(--cw, 440px) * .037), 16px); letter-spacing: .06em;
   color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.55), 0 -1px 0 rgba(0,0,0,.25);
   filter: drop-shadow(0 8px 14px rgba(0,0,0,.6));
 }
 .ui-kit .btn.stack { min-height: 80px; line-height: 1.15; }
-.ui-kit .btn .sub { font-size: 12.5px; opacity: 1; color: #2b1d0a; letter-spacing: .01em; }
+.ui-kit .btn .sub { font-size: clamp(10.5px, calc(var(--cw, 440px) * .03), 12.5px); opacity: 1; color: #2b1d0a; letter-spacing: 0; }
+/* botões da janela avançam um pouco sobre a borda interna da moldura: mais espaço pro texto */
+.ui-kit .card .btns { margin-inline: calc(var(--cw) * -.06); }
 .ui-kit .btn:hover { filter: drop-shadow(0 8px 14px rgba(0,0,0,.6)) brightness(1.08); }
 .ui-kit .btn:active { transform: translateY(2px) scale(.98); filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)) brightness(.95); }
 /* secundário v2 (Gemini, 14/10): pedra com musgo, centro liso. 3 fatias: pontas com raízes ficam intactas, só o meio liso estica */
 .ui-kit .btn.dark {
   background: none; border: 0; color: #f7e2a1;
-  border-image: var(--ui-btn2) 0 24% 0 24% fill / 0 46px 0 46px stretch;
-  text-shadow: 0 0 10px rgba(63,216,204,.35), 0 2px 0 #000, 0 0 4px #000; min-height: 56px; padding: 0 46px;
+  --be2: clamp(34px, calc(var(--cw, 440px) * .105), 46px);
+  border-image: var(--ui-btn2) 0 24% 0 24% fill / 0 var(--be2) 0 var(--be2) stretch;
+  text-shadow: 0 0 10px rgba(63,216,204,.35), 0 2px 0 #000, 0 0 4px #000; min-height: 56px; padding: 0 var(--be2);
 }
 .ui-kit .btn.small { min-height: 48px; }
 /* moldura pintada v2 (Gemini, 14/10, vertical, 687x1024): 9 fatias = cantos intactos, laterais repetem/esticam.
