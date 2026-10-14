@@ -119,14 +119,13 @@
   // O SDK avisa por eventos: SDK_GAME_PAUSE / SDK_GAME_START (pausar e voltar
   // durante o anúncio) e SDK_REWARDED_WATCH_COMPLETE (recompensa liberada).
   let gdRewarded = false;
+  // GD_OPTIONS tem que existir ANTES do main.min.js carregar (o build põe no
+  // <head>, antes do script do SDK). Aqui só ligamos o tratamento dos eventos.
   if (provider === 'gamedistribution') {
-    root.GD_OPTIONS = {
-      gameId: cfg.gdGameId,
-      onEvent(ev) {
-        if (ev.name === 'SDK_GAME_PAUSE') hooks.pause();
-        else if (ev.name === 'SDK_GAME_START') hooks.resume();
-        else if (ev.name === 'SDK_REWARDED_WATCH_COMPLETE') gdRewarded = true;
-      },
+    root.__gdOnEvent = function (ev) {
+      if (ev.name === 'SDK_GAME_PAUSE') hooks.pause();
+      else if (ev.name === 'SDK_GAME_START') hooks.resume();
+      else if (ev.name === 'SDK_REWARDED_WATCH_COMPLETE') gdRewarded = true;
     };
   }
   const gd = () => (typeof root.gdsdk !== 'undefined' ? root.gdsdk : null);
