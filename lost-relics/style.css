@@ -366,3 +366,9 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .toggle-row.icons { justify-content: center; gap: 18px; }
 .toggle-row.icons > * { flex: none; }
 .menu-toggles { align-items: center; gap: 14px; }
+
+/* centro liso nos botões redondos: esconde o glifo entalhado da arte pra o ícone ficar limpo */
+.ui-kit .icon-btn { position: relative; }
+.ui-kit .icon-btn::before { content: ''; position: absolute; inset: 20%; border-radius: 50%; background: radial-gradient(circle at 40% 32%, #ddd2b6, #b3a685 62%, #8a7e63); box-shadow: inset 0 2px 5px rgba(0,0,0,.5), inset 0 -1px 2px rgba(255,245,220,.35), 0 1px 0 rgba(255,245,220,.35); }
+.ui-kit .icon-btn svg { position: relative; z-index: 1; }
+.ui-kit .icon-btn.toggle.off::before { background: radial-gradient(circle at 40% 32%, #b9ae95, #8f8469 62%, #6b614c); }
