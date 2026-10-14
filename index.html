@@ -5,16 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Oddloom Games</title>
 <meta name="description" content="Jogos grátis pra jogar no navegador: Neon Snake e Lost Relics. Sem instalar, sem cadastro, funciona no celular.">
-<meta name="theme-color" content="#05090A">
+<meta name="theme-color" content="#ffffff">
 <meta property="og:title" content="Oddloom Games">
 <meta property="og:description" content="Jogos grátis pra jogar no navegador. Sem instalar, sem cadastro, funciona no celular.">
 <meta property="og:image" content="https://oddloom.github.io/img/og.jpg">
 <meta property="og:url" content="https://oddloom.github.io/">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2305090A'/%3E%3Cpath d='M5 3h6v2H5zM3 5h2v6H3zM11 5h2v6h-2zM5 11h6v2H5z' fill='%2346E65F'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Chakra+Petch:wght@400;600&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071E3'/%3E%3Ccircle cx='16' cy='16' r='6' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6743099408388533" crossorigin="anonymous"></script>
 <script>
   window.ADS_CONFIG = { client: '' }; /* anúncio simulado até o AdSense aprovar */
@@ -23,722 +20,109 @@
 </script>
 <style>
 :root{
-  --canvas:#05090A;
-  --panel:#0B1311;
-  --accent:#46E65F;
-  --accent-hover:#6BF57F;
-  --gold:#F2C14E;
-  --pink:#FF4F8B;
-  --text-primary:#E6EFEA;
-  --text-secondary:#93A39C;
-  --line:#1C2A26;
-  --ease-out:cubic-bezier(.22,1,.36,1);
-  --ease-soft:cubic-bezier(.45,0,.2,1);
-  --tshadow:0 1px 2px rgba(3,6,6,.95),0 3px 12px rgba(3,6,6,.8),0 10px 40px rgba(3,6,6,.8);
-  --pixel:"Press Start 2P",ui-monospace,monospace;
-  --label:"VT323",ui-monospace,monospace;
-  --body:"Chakra Petch",system-ui,sans-serif;
-  color-scheme:dark;
+  --bg:#ffffff;
+  --soft:#F5F5F7;
+  --text:#1D1D1F;
+  --muted:#6E6E73;
+  --blue:#0071E3;
+  --blue-hover:#0077ED;
+  --line:#E5E5EA;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  color-scheme:light;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{overflow-x:hidden;overflow-x:clip}
 html{scroll-behavior:smooth}
-body{background:var(--canvas);color:var(--text-primary);font-family:var(--body);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;animation:pageIn .8s var(--ease-out) both}
-@keyframes pageIn{from{opacity:0}to{opacity:1}}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-.01em;-webkit-font-smoothing:antialiased}
 img{display:block;max-width:100%}
-a{color:inherit}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.skip{position:fixed;left:16px;top:-60px;z-index:50;background:var(--accent);color:#05090A;padding:10px 16px;text-decoration:none;font-weight:600;transition:top .3s var(--ease-out)}
-.skip:focus{top:16px}
-:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:8px}
 
-/* ambiente fixo: grade do tear + brilho que anda devagar */
-.env{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
-.env::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(70,230,95,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(70,230,95,.045) 1px,transparent 1px);background-size:24px 24px}
-.env::after{content:"";position:absolute;width:80vmax;height:80vmax;right:-30vmax;top:-20vmax;border-radius:50%;background:radial-gradient(circle,rgba(70,230,95,.08),rgba(70,230,95,0) 60%);animation:drift 80s var(--ease-soft) infinite alternate;animation-delay:-25s}
-@keyframes drift{to{transform:translate(-60vmax,70vmax)}}
+nav{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.8);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line)}
+nav .in{max-width:1080px;margin:0 auto;height:52px;padding:0 clamp(16px,4vw,32px);display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:600;font-size:17px;letter-spacing:-.02em}
+.logo b{color:var(--blue);font-weight:600}
+nav .contact{font-size:14px;color:var(--muted);transition:color .2s}
+nav .contact:hover{color:var(--text)}
 
-/* nav */
-nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:16px clamp(16px,4vw,48px);transition:background .5s var(--ease-out),box-shadow .5s var(--ease-out)}
-nav.solid{background:rgba(5,9,10,.86);backdrop-filter:blur(10px);box-shadow:0 1px 0 var(--line)}
-.logo{font-family:var(--pixel);font-size:13px;letter-spacing:.06em;text-decoration:none;display:flex;align-items:center;gap:10px}
-.logo i{width:12px;height:12px;background:var(--accent);box-shadow:0 0 12px rgba(70,230,95,.7)}
-.navlinks{display:flex;gap:26px;align-items:center;font-family:var(--label);font-size:22px}
-.navlinks a{text-decoration:none;color:var(--text-secondary);transition:color .3s var(--ease-out)}
-.navlinks a:hover{color:var(--text-primary)}
-@media (max-width:720px){.navlinks a:not(.btn){display:none}}
+main{max-width:1080px;margin:0 auto;padding:clamp(40px,8vw,88px) clamp(16px,4vw,32px) clamp(48px,8vw,96px)}
+.head{text-align:center;margin-bottom:clamp(32px,5vw,56px)}
+h1{font-weight:700;font-size:clamp(36px,6vw,64px);line-height:1.05;letter-spacing:-.035em}
+h1 span{color:var(--blue)}
+.head p{color:var(--muted);font-size:clamp(17px,2vw,21px);margin-top:14px}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-family:var(--pixel);font-size:11px;letter-spacing:.04em;line-height:1;padding:15px 20px;border:0;cursor:pointer;text-decoration:none;background:var(--accent);color:#05090A !important;box-shadow:0 0 0 2px var(--accent),0 0 22px rgba(70,230,95,.35);transition:background .3s var(--ease-out),transform .3s var(--ease-out),box-shadow .3s var(--ease-out)}
-.btn:hover{background:var(--accent-hover);transform:translateY(-2px);box-shadow:0 0 0 2px var(--accent-hover),0 0 34px rgba(70,230,95,.5)}
-.btn.gold{background:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 22px rgba(242,193,78,.35)}
-.btn.gold:hover{background:#FFD36B;box-shadow:0 0 0 2px #FFD36B,0 0 34px rgba(242,193,78,.5)}
-@media (pointer:coarse){.btn{min-height:44px}}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(16px,2.5vw,28px)}
+.card{display:flex;flex-direction:column;background:var(--soft);border-radius:28px;overflow:hidden;transition:transform .5s cubic-bezier(.22,1,.36,1),box-shadow .5s cubic-bezier(.22,1,.36,1)}
+.card:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(0,0,0,.10)}
+.card .pic{aspect-ratio:16/10;overflow:hidden;background:#0b1311}
+.card .pic img{width:100%;height:100%;object-fit:cover;transition:transform 1s cubic-bezier(.22,1,.36,1)}
+.card:hover .pic img{transform:scale(1.04)}
+.snake .pic img{object-position:50% 50%}
+.relics .pic img{object-position:50% 40%}
+.card .body{padding:clamp(20px,3vw,32px);display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.card h2{font-size:clamp(22px,2.4vw,28px);font-weight:600;letter-spacing:-.025em;line-height:1.15}
+.card p{color:var(--muted);font-size:15px;margin-top:4px}
+.play{flex:none;background:var(--blue);color:#fff;font-weight:500;font-size:15px;padding:10px 22px;border-radius:980px;transition:background .2s}
+.card:hover .play,.play:hover{background:var(--blue-hover)}
 
-/* ---------- HERO (desenhado em canvas, sem vídeo) ---------- */
-.hero{position:relative;height:420vh}
-.stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
-#loom{position:absolute;inset:0;width:100%;height:100%;display:block}
-.scrim{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 120% 90% at 50% 45%,rgba(5,9,10,0) 40%,rgba(5,9,10,.7) 100%)}
-.scan{position:absolute;inset:0;pointer-events:none;opacity:.25;background:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0 1px,transparent 1px 3px)}
-.band{position:absolute;opacity:0;text-shadow:var(--tshadow);pointer-events:none}
-.band.live{pointer-events:auto}
-.band::before{content:"";position:absolute;inset:-40% -30%;z-index:-1;pointer-events:none;opacity:calc(.3 + .7*var(--k,1));background:radial-gradient(ellipse 62% 58% at 50% 50%,rgba(5,9,10,.72) 0%,rgba(5,9,10,.45) 50%,rgba(5,9,10,0) 76%)}
-.b1{left:clamp(16px,6vw,96px);bottom:clamp(56px,12vh,130px)}
-.b2{right:clamp(16px,6vw,96px);bottom:clamp(56px,12vh,130px);text-align:right}
-.b3{left:50%;bottom:clamp(40px,12vh,120px);transform:translateX(-50%);text-align:center;width:min(640px,92vw)}
-.kicker{font-family:var(--label);font-size:22px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
-.band h1,.band h2{font-family:var(--body);font-weight:600;line-height:1.05;font-size:clamp(34px,4.6vw,66px);letter-spacing:-.01em}
-.b1 h1{max-width:14ch}
-.b2 h2{max-width:15ch;margin-left:auto}
-.band h2 .g{color:var(--gold)}
-.band h2 .n{color:var(--accent)}
-.band p{font-size:clamp(17px,1.35vw,20px);color:var(--text-secondary);margin-top:16px}
-.b1 p{max-width:32ch}
-.b3 p{font-size:clamp(18px,1.5vw,22px);color:var(--text-primary)}
-.band .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
-.b3 .row{justify-content:center}
-.band .btn{text-shadow:none}
-.w{display:inline-block;white-space:nowrap}
-.c{display:inline-block}
-/* entrada 1: letras caindo em degraus de pixel, como o fio descendo */
-.e-drop .c{--kc:clamp(0,(var(--k,0) - var(--th,0))*3,1);opacity:var(--kc);transform:translateY(calc((1 - var(--kc))*var(--jy,0px)))}
-/* entrada 2: tecer, letras chegando alternadas de cima e de baixo */
-.e-weave .c{--kc:clamp(0,(var(--k,0) - var(--th,0))*2.8,1);opacity:var(--kc);transform:translateY(calc((1 - var(--kc))*var(--jy,0px)))}
-/* entrada 3: chegada em degraus, texto e depois botão */
-.e-rise p{--ks:clamp(0,(var(--k,0) - .2)*3,1);opacity:var(--ks);transform:translateY(calc((1 - var(--ks))*16px))}
-.e-rise .row{--kb:clamp(0,(var(--k,0) - .5)*3,1);opacity:var(--kb);transform:translateY(calc((1 - var(--kb))*16px))}
-.cue{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font-family:var(--label);font-size:18px;letter-spacing:.2em;color:var(--text-secondary);display:flex;flex-direction:column;align-items:center;gap:6px;transition:opacity .5s var(--ease-out)}
-.cue i{width:6px;height:6px;background:var(--accent);animation:blink 1.6s steps(2) infinite;animation-delay:-.4s}
-@keyframes blink{50%{opacity:0}}
-@media (max-height:560px){.cue{display:none}}
-@media (max-width:720px){
-  .b1,.b2{left:16px;right:16px;bottom:72px;text-align:left}
-  .b2 h2{margin-left:0}
-  .b3{bottom:56px}
+footer{border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+footer .in{max-width:1080px;margin:0 auto;padding:20px clamp(16px,4vw,32px);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer a:hover{color:var(--text)}
+
+@media (max-width:760px){
+  .grid{grid-template-columns:1fr}
+  .card{border-radius:24px}
 }
-/* movimento reduzido: hero vira uma tela parada já com o nome montado */
-.static-copy{display:none}
 @media (prefers-reduced-motion:reduce){
-  .hero{height:auto}
-  .stage{position:relative;height:100svh}
-  .band,.cue{display:none}
-  .static-copy{display:block;position:absolute;left:50%;bottom:12vh;transform:translateX(-50%);width:min(640px,92vw);text-align:center;text-shadow:var(--tshadow)}
-  .static-copy h1{font-family:var(--body);font-weight:600;font-size:clamp(30px,5vw,52px);line-height:1.1}
-  .static-copy p{color:var(--text-secondary);margin-top:12px}
-  .static-copy .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:22px}
-}
-
-/* ---------- SEÇÕES ---------- */
-section{position:relative;padding:clamp(88px,11vw,150px) clamp(16px,6vw,96px)}
-.wrap{max-width:1180px;margin:0 auto}
-.label{font-family:var(--label);font-size:22px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
-h2.title{font-family:var(--body);font-weight:600;font-size:clamp(34px,4.4vw,60px);line-height:1.05;letter-spacing:-.01em;margin-top:8px;max-width:18ch}
-.lede{color:var(--text-secondary);font-size:clamp(17px,1.3vw,19px);max-width:50ch;margin-top:16px}
-
-/* fio de pixels entre seções (assinatura) */
-.thread{display:block;width:min(720px,90vw);height:auto;margin:0 auto;overflow:visible}
-.thread rect{opacity:0;transition:opacity .35s steps(2)}
-.thread.in rect{opacity:1}
-
-/* jogos: dois painéis com esqueletos diferentes */
-.game{display:grid;align-items:center;gap:clamp(28px,5vw,72px);margin-top:64px}
-.game h3{font-family:var(--pixel);font-size:clamp(18px,2vw,26px);line-height:1.4;letter-spacing:.02em}
-.game p{color:var(--text-secondary);margin-top:16px;max-width:44ch}
-.facts{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
-.facts li{font-family:var(--label);font-size:20px;letter-spacing:.06em;padding:4px 12px;border:1px solid #2A3D37;color:var(--text-primary);background:rgba(11,19,17,.7)}
-.game .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
-.snake{grid-template-columns:1.25fr .75fr}
-.snake h3{color:var(--accent);text-shadow:0 0 18px rgba(70,230,95,.45)}
-.shot{position:relative;display:block;text-decoration:none;overflow:hidden;box-shadow:0 0 0 2px var(--accent),0 0 50px rgba(70,230,95,.18);transition:box-shadow .5s var(--ease-out)}
-.shot img{width:100%;height:auto;transform:scale(1.04);transition:transform 1.4s var(--ease-out)}
-.game.in .shot img{transform:scale(1)}
-.shot:hover{box-shadow:0 0 0 2px var(--accent-hover),0 0 70px rgba(70,230,95,.3)}
-.shot .tag{position:absolute;left:14px;top:14px;font-family:var(--label);font-size:19px;letter-spacing:.1em;padding:2px 10px;background:rgba(5,9,10,.8);color:var(--accent)}
-.relics{grid-template-columns:.8fr 1.2fr;margin-top:clamp(96px,12vw,170px)}
-.relics h3{color:var(--gold);text-shadow:0 0 18px rgba(242,193,78,.35)}
-.relics .facts li{border-color:#4A3E22}
-.relics .tall{position:relative;display:block;text-decoration:none}
-.relics .tall .frame{position:relative;overflow:hidden;aspect-ratio:4/3;box-shadow:0 0 0 2px var(--gold),0 0 60px rgba(242,193,78,.16);transition:box-shadow .5s var(--ease-out)}
-.relics .tall .frame img{width:100%;height:100%;object-fit:cover;object-position:50% 38%;transform:scale(1.06);transition:transform 1.6s var(--ease-out)}
-.game.in .tall .frame img{transform:scale(1)}
-.relics .tall:hover .frame{box-shadow:0 0 0 2px #FFD36B,0 0 80px rgba(242,193,78,.28)}
-.gem{position:absolute;width:clamp(48px,6vw,76px);height:auto;filter:drop-shadow(0 6px 16px rgba(0,0,0,.6));pointer-events:none}
-.gem1{left:-24px;top:16%}
-.gem2{right:-20px;top:46%}
-.gem3{left:22%;bottom:-26px}
-.alive .gem{animation:bob 6s var(--ease-soft) infinite alternate}
-.alive .gem2{animation-delay:-2s}
-.alive .gem3{animation-delay:-4s}
-@keyframes bob{to{transform:translateY(-10px) rotate(4deg)}}
-@media (max-width:860px){.snake,.relics{grid-template-columns:1fr}.relics .copy{order:2}.gem1{left:-8px}.gem2{right:-6px}}
-
-/* puxe o fio: momento interativo */
-#fio{background:var(--panel)}
-.fio{display:grid;grid-template-columns:.7fr 1.3fr;gap:clamp(28px,5vw,72px);align-items:center}
-.board{position:relative;aspect-ratio:2/1;background:#060B0B;box-shadow:0 0 0 2px #22362F;cursor:crosshair;touch-action:none}
-.board canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.board .hint{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-family:var(--label);font-size:20px;letter-spacing:.1em;color:var(--text-secondary);pointer-events:none;transition:opacity .4s var(--ease-out)}
-.score{font-family:var(--pixel);font-size:14px;margin-top:22px;color:var(--text-primary)}
-.score b{color:var(--pink);font-weight:400}
-.win{margin-top:18px;opacity:0;transform:translateY(10px);transition:opacity .6s var(--ease-out),transform .6s var(--ease-out);pointer-events:none}
-.fio.done .win{opacity:1;transform:none;pointer-events:auto}
-.win p{color:var(--accent);font-weight:600}
-.win .btn{margin-top:14px}
-@media (max-width:860px){.fio{grid-template-columns:1fr}}
-
-/* como funciona: três colunas com ícone de pixel, sem cartão */
-.perks{display:grid;grid-template-columns:repeat(3,1fr);margin-top:56px;border-top:1px solid var(--line)}
-.perk{padding:34px 28px 0 0}
-.perk + .perk{padding-left:28px;border-left:1px solid var(--line)}
-.perk svg{width:40px;height:40px;display:block}
-.perk h3{font-family:var(--body);font-weight:600;font-size:22px;margin-top:18px}
-.perk p{color:var(--text-secondary);margin-top:8px;max-width:30ch}
-@media (max-width:860px){.perks{grid-template-columns:1fr}.perk,.perk + .perk{padding:28px 0;border-left:0;border-bottom:1px solid var(--line)}}
-
-/* em breve */
-.soon{display:flex;justify-content:space-between;align-items:center;gap:28px;flex-wrap:wrap;padding:40px clamp(24px,4vw,56px);border:2px dashed #2A3D37}
-.soon h2{font-family:var(--pixel);font-size:clamp(14px,1.6vw,18px);line-height:1.6;color:var(--text-secondary)}
-.soon p{color:var(--text-secondary);max-width:44ch;margin-top:10px}
-.loader{display:flex;gap:6px}
-.loader i{width:12px;height:12px;background:#2A3D37}
-.alive .loader i{animation:load 2.4s steps(1) infinite}
-.alive .loader i:nth-child(2){animation-delay:.4s}
-.alive .loader i:nth-child(3){animation-delay:.8s}
-.alive .loader i:nth-child(4){animation-delay:1.2s}
-@keyframes load{0%,40%{background:var(--accent)}41%,100%{background:#2A3D37}}
-
-/* dúvidas */
-.faq{display:grid;grid-template-columns:.8fr 1.2fr;gap:clamp(32px,6vw,96px);align-items:start}
-.faq .head{position:sticky;top:110px}
-.faq details{border-bottom:1px solid var(--line)}
-.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;gap:24px;padding:22px 0;font-weight:600;font-size:clamp(19px,1.6vw,22px);line-height:1.3}
-.faq summary::-webkit-details-marker{display:none}
-.faq summary i{font-style:normal;font-family:var(--pixel);font-size:14px;color:var(--accent);transition:transform .4s var(--ease-out)}
-.faq details[open] summary i{transform:rotate(45deg)}
-.faq .a{color:var(--text-secondary);padding:0 0 22px;max-width:60ch}
-.faq .a a{color:var(--accent)}
-@media (max-width:860px){.faq{grid-template-columns:1fr}.faq .head{position:static}}
-
-footer{padding:40px clamp(16px,6vw,96px) 48px;border-top:1px solid var(--line);color:var(--text-secondary);font-family:var(--label);font-size:20px}
-footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:baseline}
-footer a{color:var(--text-secondary)}
-footer a:hover{color:var(--text-primary)}
-
-/* entradas */
-.rv{opacity:0;transform:translateY(24px);transition:opacity .8s var(--ease-out),transform .8s var(--ease-out)}
-.rv.in{opacity:1;transform:none}
-.stagger .rv:nth-child(2){transition-delay:.1s}
-.stagger .rv:nth-child(3){transition-delay:.2s}
-.stagger .rv:nth-child(4){transition-delay:.3s}
-.stagger .rv:nth-child(5){transition-delay:.4s}
-.stagger .rv.done:nth-child(n){transition-delay:0s}
-
-body.paused *,body.paused *::before,body.paused *::after{animation-play-state:paused !important}
-
-@media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation:none !important;transition:none !important;transition-delay:0s !important}
-  .rv{opacity:1;transform:none}
-  .thread rect{opacity:1}
-  .shot img,.tall .frame img{transform:none}
-  html{scroll-behavior:auto}
+  *{transition:none !important;scroll-behavior:auto !important}
 }
 </style>
 </head>
 <body>
-<a class="skip" href="#main">Pular para o conteúdo</a>
-<div class="env" aria-hidden="true"></div>
 
-<nav id="nav" aria-label="Principal">
-  <a class="logo" href="#topo" aria-label="Oddloom Games, início"><i aria-hidden="true"></i>ODDLOOM</a>
-  <div class="navlinks">
-    <a href="#jogos">Jogos</a>
-    <a href="#duvidas">Dúvidas</a>
-    <a class="btn" href="#jogos">JOGAR</a>
+<nav aria-label="Principal">
+  <div class="in">
+    <a class="logo" href="./" aria-label="Oddloom Games, início">Oddloom<b>.</b></a>
+    <a class="contact" href="mailto:officialoddloom@gmail.com">Contato</a>
   </div>
 </nav>
 
-<header class="hero" id="topo">
-  <div class="stage" id="stage">
-    <canvas id="loom" aria-hidden="true"></canvas>
-    <div class="scrim" aria-hidden="true"></div>
-    <div class="scan" aria-hidden="true"></div>
-
-    <div class="band b1 e-drop" data-a="0" data-b="0.3" data-spread="0.5">
-      <div class="kicker">Oddloom Games</div>
-      <h1 class="split">Jogos grátis que abrem no navegador.</h1>
-      <p>Sem instalar, sem cadastro. Funciona no celular e no computador.</p>
-    </div>
-
-    <div class="band b2 e-weave" data-a="0.34" data-b="0.62" data-spread="0.45">
-      <div class="kicker">Cada jogo, um fio novo</div>
-      <h2 class="split">Um dia, uma <span class="n">cobra de neon.</span> No outro, um <span class="g">templo perdido.</span></h2>
-    </div>
-
-    <div class="band b3 e-rise" data-a="0.82" data-b="1" data-ramp="0.06">
-      <p>Escolha um jogo e aperte jogar. Simples assim.</p>
-      <div class="row"><a class="btn" href="#jogos">VER OS JOGOS</a></div>
-    </div>
-
-    <div class="cue" id="cue" aria-hidden="true">ROLE<i></i></div>
-
-    <div class="static-copy">
-      <h1>Jogos grátis que abrem no navegador.</h1>
-      <p>Sem instalar, sem cadastro. Funciona no celular e no computador.</p>
-      <div class="row"><a class="btn" href="#jogos">VER OS JOGOS</a></div>
-    </div>
-  </div>
-</header>
-
-<main id="main" tabindex="-1">
-
-  <section id="jogos">
-    <div class="wrap">
-      <span class="label rv">Os jogos</span>
-      <h2 class="title rv">Dois jogos. Nenhum download.</h2>
-
-      <article class="game snake rv">
-        <a class="shot" href="neon-snake/" aria-label="Jogar Neon Snake">
-          <img src="img/jogo-snake.jpg" alt="Cobra de escamas pretas com brilho verde sobre uma grade de neon" width="1600" height="900" loading="lazy">
-          <span class="tag">ARCADE</span>
-        </a>
-        <div class="copy">
-          <h3>NEON SNAKE</h3>
-          <p>A cobrinha começa cinza e ganha cor comendo cogumelos. Cada fase muda o jogo: deserto com flechas, caverna com morcegos, vulcão com rochas.</p>
-          <ul class="facts"><li>5 fases</li><li>Partidas rápidas</li><li>PT e EN</li></ul>
-          <div class="row"><a class="btn" href="neon-snake/">JOGAR NEON SNAKE</a></div>
-        </div>
-      </article>
-
-      <article class="game relics rv">
-        <div class="copy">
-          <h3>LOST RELICS</h3>
-          <p>Combine joias num templo maia perdido. Abra caminho com dinamite, barris de pólvora e o Orbe Solar, e gaste as moedas na Loja do Templo.</p>
-          <ul class="facts"><li>20 fases</li><li>Mundo 1: o Templo</li><li>PT e EN</li></ul>
-          <div class="row"><a class="btn gold" href="lost-relics/">JOGAR LOST RELICS</a></div>
-        </div>
-        <a class="tall" href="lost-relics/" aria-label="Jogar Lost Relics">
-          <div class="frame"><img src="img/jogo-relics.jpg" alt="Mapa pintado de um templo maia na selva, com trilha de pedra, estátuas e um baú de moedas" width="900" height="1350" loading="lazy"></div>
-          <img class="gem gem1" src="img/gema-ruby.png" alt="" width="140" height="140" loading="lazy">
-          <img class="gem gem2" src="img/gema-emerald.png" alt="" width="140" height="140" loading="lazy">
-          <img class="gem gem3" src="img/gema-sapphire.png" alt="" width="140" height="140" loading="lazy">
-        </a>
-      </article>
-    </div>
-  </section>
-
-  <div aria-hidden="true">
-    <svg class="thread" id="thread" viewBox="0 0 720 24"></svg>
+<main>
+  <div class="head">
+    <h1>Jogos para jogar <span>agora.</span></h1>
+    <p>Grátis, no navegador. Sem instalar, sem cadastro.</p>
   </div>
 
-  <section id="fio">
-    <div class="wrap fio" id="fioWrap">
-      <div>
-        <span class="label rv">Teste rápido</span>
-        <h2 class="title rv">Puxe o fio.</h2>
-        <p class="lede rv">Passe o dedo ou o mouse no quadro. O fio segue você. Pegue os três pontos rosa.</p>
-        <p class="score rv" aria-live="polite">PONTOS <b id="pts">0</b> / 3</p>
-        <div class="win">
-          <p>Pegou o jeito. Agora jogue de verdade.</p>
-          <a class="btn" href="neon-snake/">JOGAR NEON SNAKE</a>
-        </div>
-      </div>
-      <div class="board rv" id="board" tabindex="0" role="application" aria-label="Mini jogo: mova o fio com o mouse, o dedo ou as setas do teclado para pegar três pontos">
-        <canvas id="mini"></canvas>
-        <div class="hint" id="hint">MOVA AQUI</div>
-      </div>
-    </div>
-  </section>
-
-  <section id="como">
-    <div class="wrap">
-      <span class="label rv">Como funciona</span>
-      <h2 class="title rv">Clicou, jogou.</h2>
-      <div class="perks stagger">
-        <div class="perk rv">
-          <svg viewBox="0 0 10 10" aria-hidden="true" shape-rendering="crispEdges"><path fill="#46E65F" d="M1 2h8v1H1zM1 3h1v5H1zM8 3h1v5H8zM1 8h8v1H1zM3 4h1v1H3zM4 5h1v1H4zM3 6h1v1H3zM5 6h2v1H5z"/></svg>
-          <h3>Abre no navegador</h3>
-          <p>Nada pra baixar nem instalar. O jogo carrega em segundos.</p>
-        </div>
-        <div class="perk rv">
-          <svg viewBox="0 0 10 10" aria-hidden="true" shape-rendering="crispEdges"><path fill="#46E65F" d="M3 1h4v1H3zM2 2h1v7H2zM7 2h1v7H7zM3 8h4v1H3zM4 7h2v1H4z"/></svg>
-          <h3>Funciona no celular</h3>
-          <p>Toque pra jogar. Em pé ou deitado, a tela se ajusta.</p>
-        </div>
-        <div class="perk rv">
-          <svg viewBox="0 0 10 10" aria-hidden="true" shape-rendering="crispEdges"><path fill="#F2C14E" d="M2 1h5v1H2zM7 2h1v1H7zM8 3h1v6H8zM1 2h1v7H1zM2 8h6v1H2zM3 2h3v2H3zM3 6h4v1H3z"/></svg>
-          <h3>Progresso salvo</h3>
-          <p>Suas fases ficam guardadas no próprio aparelho. Sem conta, sem senha.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="breve" style="padding-top:0">
-    <div class="wrap">
-      <div class="soon rv">
+  <div class="grid">
+    <a class="card snake" href="neon-snake/" aria-label="Jogar Neon Snake">
+      <div class="pic"><img src="img/jogo-snake.jpg" alt="Cobra de escamas pretas com brilho verde sobre uma grade de neon" width="1600" height="900"></div>
+      <div class="body">
         <div>
-          <h2>NOVO JOGO A CAMINHO</h2>
-          <p>Um jogo novo já está em produção. Quando ficar pronto, aparece aqui.</p>
+          <h2>Neon Snake</h2>
+          <p>Cobrinha arcade em 5 fases.</p>
         </div>
-        <div class="loader" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <span class="play">Jogar</span>
       </div>
-    </div>
-  </section>
+    </a>
 
-  <section id="duvidas">
-    <div class="wrap faq">
-      <div class="head">
-        <span class="label rv">Dúvidas</span>
-        <h2 class="title rv">Antes de apertar jogar.</h2>
+    <a class="card relics" href="lost-relics/" aria-label="Jogar Lost Relics">
+      <div class="pic"><img src="img/jogo-relics.jpg" alt="Mapa pintado de um templo maia na selva, com trilha de pedra, estátuas e um baú de moedas" width="900" height="1350"></div>
+      <div class="body">
+        <div>
+          <h2>Lost Relics</h2>
+          <p>Combine joias num templo perdido.</p>
+        </div>
+        <span class="play">Jogar</span>
       </div>
-      <div class="stagger">
-        <details class="rv"><summary>É grátis mesmo? <i aria-hidden="true">+</i></summary><div class="a">Sim. Os jogos se pagam com anúncios que aparecem entre uma partida e outra, nunca no meio da jogada.</div></details>
-        <details class="rv"><summary>Preciso baixar alguma coisa? <i aria-hidden="true">+</i></summary><div class="a">Não. Tudo roda no navegador, no Chrome, Safari, Edge ou Firefox.</div></details>
-        <details class="rv"><summary>Funciona no celular? <i aria-hidden="true">+</i></summary><div class="a">Funciona. Os dois jogos foram feitos pra toque e se ajustam à tela, em pé ou deitado.</div></details>
-        <details class="rv"><summary>Meu progresso some? <i aria-hidden="true">+</i></summary><div class="a">Não some. Ele fica salvo no navegador do aparelho. Se você limpar os dados do navegador ou trocar de aparelho, começa do zero.</div></details>
-        <details class="rv"><summary>Achei um erro. Como aviso? <i aria-hidden="true">+</i></summary><div class="a">Mande um e-mail pra <a href="mailto:officialoddloom@gmail.com">officialoddloom@gmail.com</a> contando o jogo, a fase e o aparelho.</div></details>
-      </div>
-    </div>
-  </section>
+    </a>
+  </div>
 </main>
 
 <footer>
-  <div class="wrap">
+  <div class="in">
     <span>© 2026 Oddloom Games</span>
-    <span><a href="privacidade/">Política de privacidade</a> · <a href="mailto:officialoddloom@gmail.com">officialoddloom@gmail.com</a></span>
+    <span><a href="privacidade/">Privacidade</a> · <a href="mailto:officialoddloom@gmail.com">officialoddloom@gmail.com</a></span>
   </div>
 </footer>
 
-<script>
-(() => {
-  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  const smooth = (p, e0, e1) => { const t = clamp((p - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
-  const ease = t => 1 - Math.pow(1 - t, 3);
-  function rng(seed){ let s = seed >>> 0; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
-
-  /* ---------- divisão do texto ---------- */
-  document.querySelectorAll('.split').forEach((el, i) => {
-    const r = rng(11 + i * 29);
-    const band = el.closest('.band');
-    const spread = parseFloat(band.dataset.spread || .5);
-    const weave = band.classList.contains('e-weave');
-    const full = el.textContent;
-    const vis = document.createElement('span'); vis.setAttribute('aria-hidden', 'true');
-    el.childNodes.forEach(node => {
-      const holder = node.nodeType === 1 ? node.cloneNode(false) : null;
-      const target = holder || vis;
-      node.textContent.split(/(\s+)/).forEach(tok => {
-        if (!tok) return;
-        if (/^\s+$/.test(tok)) { target.appendChild(document.createTextNode(' ')); return; }
-        const w = document.createElement('span'); w.className = 'w';
-        [...tok].forEach(ch => { const c = document.createElement('span'); c.className = 'c'; c.textContent = ch; w.appendChild(c); });
-        target.appendChild(w);
-      });
-      if (holder) vis.appendChild(holder);
-    });
-    const sr = document.createElement('span'); sr.className = 'sr'; sr.textContent = full;
-    el.textContent = ''; el.appendChild(sr); el.appendChild(vis);
-    const chars = vis.querySelectorAll('.c');
-    chars.forEach((c, n) => {
-      c.style.setProperty('--th', (n / chars.length * spread + r() * .06).toFixed(3));
-      const jy = weave ? (n % 2 ? 1 : -1) * (14 + r() * 18) : -(12 + Math.floor(r() * 4) * 8);
-      c.style.setProperty('--jy', jy.toFixed(1) + 'px');
-    });
-  });
-
-  /* ---------- o tear (canvas) ---------- */
-  const hero = document.getElementById('topo');
-  const cv = document.getElementById('loom'), ctx = cv.getContext('2d');
-  const cue = document.getElementById('cue');
-  const FONT = {
-    O: ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'],
-    D: ['####.', '#...#', '#...#', '#...#', '#...#', '#...#', '####.'],
-    L: ['#....', '#....', '#....', '#....', '#....', '#....', '#####'],
-    M: ['#...#', '##.##', '#.#.#', '#.#.#', '#...#', '#...#', '#...#']
-  };
-  const GREEN = [70, 230, 95], GOLD = [242, 193, 78];
-  let W = 0, H = 0, S = 16, cols = 0, rows = 0, green = [], gold = [], letters = [], fly = [], stars = [], nG = 0, nO = 0;
-
-  function makePath(seed, startCol, startRow, endRow, lo, hi){
-    const r = rng(seed), path = [];
-    let c = startCol, row = startRow, dir = r() < .5 ? -1 : 1;
-    while (row < endRow) {
-      const down = 2 + Math.floor(r() * 4);
-      for (let i = 0; i < down && row < endRow; i++) path.push([c, row++]);
-      const side = 2 + Math.floor(r() * 6);
-      for (let i = 0; i < side; i++) {
-        const n = c + dir;
-        if (n < lo || n > hi) break;
-        c = n; path.push([c, row]);
-      }
-      dir = -dir;
-    }
-    return path;
-  }
-
-  // câmera: desce seguindo a ponta do fio verde
-  function headIndex(p){ return Math.floor((green.length - 1) * clamp(p / .64, 0, 1)); }
-  function camAt(p){
-    const h = green[headIndex(Math.min(p, .64))];
-    return h ? Math.max(0, h[1] * S - H * .58) : 0;
-  }
-
-  function layout(){
-    const dpr = Math.min(2, devicePixelRatio || 1);
-    W = cv.clientWidth; H = cv.clientHeight;
-    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    S = Math.max(12, Math.round(Math.min(W, H) / 40));
-    cols = Math.ceil(W / S); rows = Math.ceil(H / S);
-    const mid = Math.round(cols / 2), lane = Math.max(4, Math.round(cols * (W < 720 ? .3 : .14)));
-    green = makePath(7, mid, -2, Math.round(rows * 2.6), mid - lane, mid + lane);
-    gold = makePath(23, mid + Math.round(lane / 2), Math.round(rows * .9), Math.round(rows * 2.6), mid - lane, mid + lane);
-    // letras de ODDLOOM, centradas na parte de cima
-    const word = 'ODDLOOM', q = Math.max(6, Math.floor(Math.min(W * .84 / (word.length * 6 - 1), H * .32 / 7)));
-    const x0 = (W - (word.length * 6 - 1) * q) / 2, y0 = H * (W < 720 ? .2 : .16);
-    letters = [];
-    [...word].forEach((ch, li) => FONT[ch].forEach((line, ry) => [...line].forEach((v, rx) => {
-      if (v === '#') letters.push({ x: x0 + (li * 6 + rx) * q, y: y0 + ry * q, q });
-    })));
-    // origem de cada pixel das letras = pedaços finais dos dois fios
-    const camEnd = camAt(1);
-    nG = Math.min(green.length, Math.round(letters.length * .62)); nO = Math.min(gold.length, letters.length - nG);
-    const src = green.slice(-nG).map(([c, r]) => ({ x: c * S, y: r * S - camEnd, col: GREEN }))
-      .concat(gold.slice(-nO).map(([c, r]) => ({ x: c * S, y: r * S - camEnd, col: GOLD })));
-    src.sort((a, b) => a.x - b.x);
-    const tgt = letters.slice().sort((a, b) => a.x - b.x);
-    const r = rng(41);
-    fly = src.map((s, i) => ({ ...s, tx: tgt[i].x, ty: tgt[i].y, q: tgt[i].q, d: r() * .09 }));
-    const rs = rng(5); stars = [];
-    for (let i = 0; i < 70; i++) stars.push([Math.floor(rs() * cols), Math.floor(rs() * rows * 2.8), rs()]);
-  }
-
-  function trail(path, head, col, skipLast, p, cam, fadeTrail){
-    const len = 150;
-    for (let i = Math.max(0, head - len); i <= head; i++) {
-      if (p > .64 && i > path.length - 1 - skipLast) continue;
-      const [c, r] = path[i], y = r * S - cam;
-      if (y < -S || y > H + S) continue;
-      const a = (1 - (head - i) / len) * fadeTrail;
-      if (a <= .01) continue;
-      ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${(a * .22).toFixed(3)})`;
-      ctx.fillRect(c * S - 3, y - 3, S + 6, S + 6);
-      ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a.toFixed(3)})`;
-      ctx.fillRect(c * S + 1, y + 1, S - 2, S - 2);
-    }
-  }
-
-  function draw(p){
-    ctx.clearRect(0, 0, W, H);
-    const cam = camAt(p);
-    const fadeTrail = 1 - smooth(p, .64, .7);
-    // urdidura do tear: fios verticais e, depois, tramas douradas
-    ctx.fillStyle = `rgba(70,230,95,${(.05 + .05 * Math.min(1, p * 2)).toFixed(3)})`;
-    for (let c = 0; c < cols; c += 3) ctx.fillRect(c * S + S / 2, 0, 1, H);
-    const weft = smooth(p, .28, .5) * .06;
-    if (weft > .002) {
-      ctx.fillStyle = `rgba(242,193,78,${weft.toFixed(3)})`;
-      const off = -(cam % (S * 6));
-      for (let y = off; y < H; y += S * 6) ctx.fillRect(0, y, W, 1);
-    }
-    // poeira de pixels presa no mundo (sobe enquanto a câmera desce)
-    for (const [c, r, a] of stars) {
-      const y = r * S - cam;
-      if (y < -S || y > H) continue;
-      ctx.fillStyle = `rgba(150,190,170,${(.06 + a * .12).toFixed(3)})`;
-      ctx.fillRect(c * S + S * .4, y + S * .4, 2, 2);
-    }
-    // os fios: 100% na ponta, apagando pra trás
-    const hg = headIndex(p);
-    const ho = Math.floor((gold.length - 1) * clamp((p - .3) / .34, 0, 1));
-    if (p > .3) trail(gold, ho, GOLD, nO, p, cam, fadeTrail);
-    trail(green, hg, GREEN, nG, p, cam, fadeTrail);
-    if (p < .64) {
-      const [c, r] = green[hg], y = r * S - cam;
-      ctx.fillStyle = 'rgba(230,255,235,.95)'; ctx.fillRect(c * S + 2, y + 2, S - 4, S - 4);
-    }
-    // montagem do nome
-    if (p > .64) {
-      for (const f of fly) {
-        const t = ease(clamp((p - .64 - f.d) / .18, 0, 1));
-        const size = (S - 2) + (f.q - 2 - (S - 2)) * t;
-        const x = f.x + 1 + (f.tx - f.x) * t, y = f.y + 1 + (f.ty - f.y) * t;
-        const col = f.col;
-        ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},.22)`;
-        ctx.fillRect(x - 4, y - 4, size + 8, size + 8);
-        ctx.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
-        ctx.fillRect(x, y, size, size);
-      }
-    }
-  }
-
-  /* ---------- legendas ---------- */
-  const bands = [...document.querySelectorAll('.band')].map((el, i, all) => ({
-    el, a: +el.dataset.a, b: +el.dataset.b, ramp: el.dataset.ramp ? +el.dataset.ramp : null,
-    first: i === 0, last: i === all.length - 1, op: -1, k: -1
-  }));
-  let loadK = 0, loadStart = 0;
-  function updateCaptions(p){
-    for (const b of bands) {
-      const f = Math.min(.02, (b.b - b.a) / 3);
-      const opacity = (b.first ? 1 : smooth(p, b.a, b.a + f)) * (b.last ? 1 : 1 - smooth(p, b.b - f, b.b));
-      let k = clamp((p - b.a) / (b.ramp || Math.min(.025, (b.b - b.a) * .35)), 0, 1);
-      if (b.first) k = Math.max(k, loadK);
-      if (Math.abs(opacity - b.op) > .004) { b.el.style.opacity = opacity.toFixed(3); b.el.classList.toggle('live', opacity > .6); b.op = opacity; }
-      if (Math.abs(k - b.k) > .008 || (k === 1 && b.k !== 1)) { b.el.style.setProperty('--k', k.toFixed(3)); b.k = k; }
-    }
-    const on = p < .78;
-    if (cue._on !== on) { cue.style.opacity = on ? '' : '0'; cue._on = on; }
-  }
-  function heroProgress(){
-    const r = hero.getBoundingClientRect();
-    return clamp(-r.top / Math.max(1, r.height - innerHeight), 0, 1);
-  }
-
-  /* ---------- loop suavizado que descansa ---------- */
-  let target = 0, shown = 0, rafId = null, lastTick = 0, heroOn = true, drawn = -1;
-  function render(p){ if (Math.abs(p - drawn) > .0003) { draw(p); drawn = p; } updateCaptions(p); }
-  function tick(now){
-    const dt = Math.min(100, now - (lastTick || now)); lastTick = now;
-    shown += (target - shown) * (1 - Math.pow(1 - .16, dt / 16.667));
-    if (Math.abs(target - shown) < .0005) { shown = target; rafId = null; lastTick = 0; }
-    else rafId = requestAnimationFrame(tick);
-    render(shown);
-  }
-  function onScroll(){
-    if (reduce.matches) return;
-    target = heroProgress();
-    if (rafId === null && heroOn) rafId = requestAnimationFrame(tick);
-  }
-  function loadRamp(now){
-    if (!loadStart) loadStart = now;
-    loadK = ease(clamp((now - loadStart) / 1300, 0, 1));
-    updateCaptions(shown);
-    if (loadK < 1) requestAnimationFrame(loadRamp);
-  }
-  new IntersectionObserver(es => { heroOn = es[0].isIntersecting; if (heroOn) onScroll(); }).observe(hero);
-  addEventListener('scroll', onScroll, { passive: true });
-  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { layout(); drawn = -1; render(reduce.matches ? 1 : shown); }, 120); });
-
-  /* ---------- nav ---------- */
-  const nav = document.getElementById('nav'); let navSolid = null;
-  addEventListener('scroll', () => {
-    const s = hero.getBoundingClientRect().bottom < innerHeight * .6;
-    if (s !== navSolid) { nav.classList.toggle('solid', s); navSolid = s; }
-  }, { passive: true });
-
-  /* ---------- fio de pixels entre seções ---------- */
-  const th = document.getElementById('thread');
-  (() => {
-    const r = rng(3); let y = 10, html = '';
-    for (let x = 0, i = 0; x < 720; x += 12, i++) {
-      if (r() < .25) y = clamp(y + (r() < .5 ? -6 : 6), 4, 16);
-      const col = x > 420 ? '#F2C14E' : '#46E65F';
-      html += `<rect x="${x}" y="${y}" width="10" height="6" fill="${col}" style="transition-delay:${(i * .025).toFixed(3)}s"/>`;
-    }
-    th.innerHTML = html;
-  })();
-
-  /* ---------- entradas ---------- */
-  const io = new IntersectionObserver(es => es.forEach(e => {
-    if (!e.isIntersecting) return;
-    e.target.classList.add('in');
-    setTimeout(() => e.target.classList.add('done'), 1400);
-    io.unobserve(e.target);
-  }), { threshold: .15, rootMargin: '0px 0px -6% 0px' });
-  document.querySelectorAll('.rv,.thread').forEach(el => io.observe(el));
-  const alive = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle('alive', e.isIntersecting)));
-  document.querySelectorAll('section').forEach(s => alive.observe(s));
-  document.addEventListener('visibilitychange', () => document.body.classList.toggle('paused', document.hidden));
-
-  /* ---------- puxe o fio (mini jogo) ---------- */
-  const board = document.getElementById('board'), mini = document.getElementById('mini'), mctx = mini.getContext('2d');
-  const hint = document.getElementById('hint'), pts = document.getElementById('pts'), fioWrap = document.getElementById('fioWrap');
-  const MC = 32, MR = 16;
-  let snake = [[4, 8], [3, 8], [2, 8]], len = 8, food = [[6, 4], [24, 11], [17, 3]], got = 0, aim = null, mRaf = null, mLast = 0, acc = 0, cell = 10, boardOn = false;
-  function mLayout(){
-    const dpr = Math.min(2, devicePixelRatio || 1);
-    const w = board.clientWidth, h = board.clientHeight;
-    mini.width = Math.round(w * dpr); mini.height = Math.round(h * dpr);
-    mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cell = w / MC;
-    mDraw();
-  }
-  function mDraw(){
-    const w = mini.clientWidth, h = mini.clientHeight;
-    mctx.clearRect(0, 0, w, h);
-    mctx.fillStyle = 'rgba(70,230,95,.06)';
-    for (let c = 0; c <= MC; c++) mctx.fillRect(c * cell, 0, 1, h);
-    for (let r = 0; r <= MR; r++) mctx.fillRect(0, r * cell, w, 1);
-    for (const [c, r] of food) {
-      mctx.fillStyle = 'rgba(255,79,139,.25)'; mctx.fillRect(c * cell - 3, r * cell - 3, cell + 6, cell + 6);
-      mctx.fillStyle = '#FF4F8B'; mctx.fillRect(c * cell + 2, r * cell + 2, cell - 4, cell - 4);
-    }
-    snake.forEach(([c, r], i) => {
-      const a = 1 - i / Math.max(len, snake.length + 1);
-      mctx.fillStyle = `rgba(70,230,95,${a.toFixed(3)})`;
-      mctx.fillRect(c * cell + 1, r * cell + 1, cell - 2, cell - 2);
-    });
-  }
-  function step(){
-    if (!aim) return false;
-    const [hc, hr] = snake[0];
-    const dc = aim[0] - hc, dr = aim[1] - hr;
-    if (!dc && !dr) return false;
-    const n = Math.abs(dc) >= Math.abs(dr) ? [hc + Math.sign(dc), hr] : [hc, hr + Math.sign(dr)];
-    snake.unshift(n);
-    const fi = food.findIndex(([c, r]) => c === n[0] && r === n[1]);
-    if (fi >= 0) {
-      food.splice(fi, 1); len += 4;
-      if (got < 3) { got++; pts.textContent = String(got); if (got === 3) fioWrap.classList.add('done'); }
-    }
-    while (snake.length > len) snake.pop();
-    return true;
-  }
-  function mTick(now){
-    const dt = Math.min(100, now - (mLast || now)); mLast = now; acc += dt;
-    let moved = false;
-    while (acc >= 45) { acc -= 45; moved = step() || moved; }
-    mDraw();
-    const chasing = aim && (snake[0][0] !== aim[0] || snake[0][1] !== aim[1]);
-    if (moved || chasing) mRaf = requestAnimationFrame(mTick); else { mRaf = null; mLast = 0; acc = 0; }
-  }
-  function wake(){ if (!mRaf) mRaf = requestAnimationFrame(mTick); }
-  function aimAt(e){
-    const r = board.getBoundingClientRect();
-    aim = [clamp(Math.floor((e.clientX - r.left) / cell), 0, MC - 1), clamp(Math.floor((e.clientY - r.top) / cell), 0, MR - 1)];
-    hint.style.opacity = '0';
-    if (got === 3 && !food.length) food = [[2 + Math.floor(Math.random() * (MC - 4)), 2 + Math.floor(Math.random() * (MR - 4))]];
-    wake();
-  }
-  board.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) aimAt(e); });
-  board.addEventListener('pointerdown', e => { board.setPointerCapture?.(e.pointerId); aimAt(e); });
-  board.addEventListener('keydown', e => {
-    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-    if (!d) return; e.preventDefault();
-    const [c, r] = snake[0];
-    aim = [clamp(c + d[0] * 3, 0, MC - 1), clamp(r + d[1] * 3, 0, MR - 1)];
-    hint.style.opacity = '0'; wake();
-  });
-  new ResizeObserver(mLayout).observe(board);
-
-  /* ---------- movimento reduzido ao vivo ---------- */
-  function pinToFinalStates(){
-    document.querySelectorAll('.rv,.thread').forEach(el => el.classList.add('in', 'done'));
-    if (rafId) cancelAnimationFrame(rafId); rafId = null;
-    shown = target = 1; drawn = -1; draw(1);
-  }
-  function unpinFinalStates(){
-    bands.forEach(b => { b.op = -1; b.k = -1; });
-    shown = target = heroProgress(); drawn = -1; render(shown);
-  }
-  reduce.addEventListener('change', e => e.matches ? pinToFinalStates() : unpinFinalStates());
-
-  layout();
-  if (reduce.matches) pinToFinalStates();
-  else { shown = target = heroProgress(); render(shown); requestAnimationFrame(loadRamp); }
-})();
-</script>
 </body>
 </html>
