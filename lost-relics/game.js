@@ -1081,10 +1081,9 @@
       '<div class="btns"><button class="btn" id="mResume" type="button">' + T('resume') + '</button>' +
       '<button class="btn dark" id="mRestart" type="button">' + T('restart') + '</button>' +
       '<button class="btn dark" id="mMap" type="button">' + T('map') + '</button></div>' +
-      '<div class="toggle-row"><button class="btn dark small" id="mSfx" type="button"></button><button class="btn dark small" id="mMusic" type="button"></button></div>');
+      '<div class="toggle-row icons"><button class="icon-btn toggle" id="mSfx" type="button">' + $('btnSfx').innerHTML + '</button><button class="icon-btn toggle" id="mMusic" type="button">' + $('btnMusic').innerHTML + '</button></div>');
     const paint = () => {
-      card.querySelector('#mSfx').textContent = T('menu.sound') + ': ' + T(Sound.sfx ? 'on' : 'off');
-      card.querySelector('#mMusic').textContent = T('menu.music') + ': ' + T(Sound.music ? 'on' : 'off');
+      for (const [id, on, key] of [['#mSfx', Sound.sfx, 'menu.sound'], ['#mMusic', Sound.music, 'menu.music']]) { const b = card.querySelector(id); b.classList.toggle('off', !on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', T(key) + ': ' + T(on ? 'on' : 'off')); }
     };
     paint();
     card.querySelector('#mResume').onclick = () => { Sound.play('click'); closeModal(); };
@@ -1149,8 +1148,9 @@
   function paintMenu() {
     document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = T(el.dataset.t); });
     $('btnPlay').textContent = save.unlocked > 1 ? T('menu.continue') : T('menu.play');
-    $('btnSfx').textContent = T('menu.sound') + ': ' + T(Sound.sfx ? 'on' : 'off');
-    $('btnMusic').textContent = T('menu.music') + ': ' + T(Sound.music ? 'on' : 'off');
+    for (const [id, on, key] of [['btnSfx', Sound.sfx, 'menu.sound'], ['btnMusic', Sound.music, 'menu.music']]) {
+      const b = $(id); b.classList.toggle('off', !on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', T(key) + ': ' + T(on ? 'on' : 'off')); b.title = T(key);
+    }
     $('btnLang').textContent = T('lang');
     $('btnPause').setAttribute('aria-label', T('pause'));
   }

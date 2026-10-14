@@ -355,3 +355,14 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .node .st img { width: 15px; height: 15px; filter: drop-shadow(0 1px 1px #000); }
 .node .cur-label { font-family: var(--f-display); font-size: 18px; top: -40px; }
 .node .cur-bar { bottom: -34px; }
+
+/* som e música como ícones */
+.icon-btn.toggle { width: 60px; height: 60px; }
+.icon-btn.toggle svg { width: 34px; height: 34px; fill: #23160a; stroke: #23160a; filter: drop-shadow(0 1px 0 rgba(255,240,210,.7)) drop-shadow(0 0 3px rgba(255,240,210,.5)); }
+.icon-btn.toggle .slash { display: none; stroke: #b3261e; }
+.icon-btn.toggle.off svg { opacity: .55; }
+.icon-btn.toggle.off .slash { display: block; opacity: 1; }
+.icon-btn.toggle.off .wave { display: none; }
+.toggle-row.icons { justify-content: center; gap: 18px; }
+.toggle-row.icons > * { flex: none; }
+.menu-toggles { align-items: center; gap: 14px; }
