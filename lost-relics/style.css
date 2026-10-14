@@ -419,6 +419,9 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 /* palavra FASE pintada (estilo Solar) em cima da fase atual — não usada desde 14/10 (ele pediu sem rótulo) */
 .node .cur-word { position: absolute; left: 50%; top: -78px; width: 108px; margin-left: -54px; max-width: none; pointer-events: none; z-index: 2; filter: drop-shadow(0 2px 2px rgba(40,18,0,.85)) drop-shadow(0 0 6px rgba(0,0,0,.55)); }
 .node:has(.node-img) .num { font-family: var(--f-display); color: #fff3c4; text-shadow: 0 2px 0 #3a2504, 0 0 8px rgba(0,0,0,.9), 0 0 2px #000; z-index: 1; }
+/* número pintado: centrado na pedra (absoluto, não depende da linha de texto) */
+.node .num.digits { position: absolute; left: 50%; top: 50%; height: 44%; transform: translate(-50%, -50%); z-index: 1; }
+.node .num.digits img { filter: drop-shadow(0 1px 1px #000) drop-shadow(0 0 3px rgba(0,0,0,.8)); }
 .node.current:has(.node-img) .num { font-size: 30px; }
 .node.locked .node-img { filter: drop-shadow(0 5px 6px rgba(0,0,0,.75)) brightness(.85); }
 .node .st img { width: 15px; height: 15px; filter: drop-shadow(0 1px 1px #000); }

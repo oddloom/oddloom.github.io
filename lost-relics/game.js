@@ -1283,7 +1283,8 @@
         // 14/10: sem rótulo "FASE" em cima da fase atual (pedido dele: o sol e o número já bastam)
         // fase atual = medalhão limpo + aura solar pintada atrás (a arte "current" tinha brilho verde que serrilhava no recorte)
         (current && NI('aura') ? '<img class="node-aura" alt="" src="' + NI('aura') + '"><img class="node-aura b" alt="" src="' + NI('aura') + '">' : '') +
-        (NI('done') ? '<img class="node-img" alt="" src="' + NI(locked ? (L.boss ? 'boss' : 'locked') : L.boss ? 'boss' : 'done') + '">' + (locked ? '' : '<span class="num">' + id + '</span>') : '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face) +
+        // número em dígitos Solar pintados (a Uncial tem algarismos "antigos": o 4 e o 9 descem e ficam fora do centro)
+        (NI('done') ? '<img class="node-img" alt="" src="' + NI(locked ? (L.boss ? 'boss' : 'locked') : L.boss ? 'boss' : 'done') + '">' + (locked ? '' : NI('s0') ? '<span class="num digits">' + digitsHTML(id) + '</span>' : '<span class="num">' + id + '</span>') : '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face) +
         (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
     });
     html += '<div class="map-fog" style="height:' + fogAt(fogPrevIdx).toFixed(0) + 'px"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>';
