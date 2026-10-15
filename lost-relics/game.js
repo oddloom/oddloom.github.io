@@ -1671,28 +1671,97 @@
     paintMenu();
     buildMap();
   }
+  // ---------- mapa 3D falso (15/10) ----------
+  // Maquete pintada (ampliada 4x) + mapa de profundidade: um shader desloca cada ponto conforme a distância,
+  // então ao rolar a cidade ganha relevo. As fases recebem o mesmo deslocamento (amostram a profundidade na CPU).
+  const MAP3 = { gl: null, cv: null, U: null, ready: false, depth: null, raf: 0, cam: null, tilt: [0, 0], lastTop: 0, lastT: 0, nodes: [] };
+  function mapGLInit() {
+    const D = window.ART_DATA || {};
+    if (MAP3.gl || !D.map3 || !D.mapDepth) return !!MAP3.gl;
+    const cv = document.createElement('canvas'); cv.id = 'mapGL';
+    const gl = cv.getContext('webgl', { antialias: false, alpha: false });
+    if (!gl) return false;
+    const vs = 'attribute vec2 p; varying vec2 v; void main(){ v = p * 0.5 + 0.5; v.y = 1.0 - v.y; gl_Position = vec4(p, 0.0, 1.0); }';
+    const fs = 'precision mediump float; varying vec2 v; uniform sampler2D img, dep; uniform vec2 cam; uniform float top, span, left, spanX, k;' +
+      'void main(){ vec2 uv = vec2(left + v.x * spanX, top + v.y * span); vec2 t = uv;' +
+      ' for (int i = 0; i < 3; i++) { float d = texture2D(dep, t).r; t = uv + cam * k * (d - 0.5); }' +
+      ' vec3 c = texture2D(img, t).rgb; float d = texture2D(dep, t).r; c *= 0.86 + 0.22 * d; gl_FragColor = vec4(c, 1.0); }';
+    const sh = (ty, s) => { const o = gl.createShader(ty); gl.shaderSource(o, s); gl.compileShader(o); return o; };
+    const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) return false;
+    gl.useProgram(pr);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    MAP3.U = {}; for (const u of ['cam', 'top', 'span', 'left', 'spanX', 'k']) MAP3.U[u] = gl.getUniformLocation(pr, u);
+    gl.uniform1i(gl.getUniformLocation(pr, 'img'), 0); gl.uniform1i(gl.getUniformLocation(pr, 'dep'), 1);
+    let loaded = 0;
+    const tex = (src, unit, onImg) => { const im = new Image(); im.onload = () => {
+      gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
+      for (const [p, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, p, v);
+      if (onImg) onImg(im);
+      if (++loaded === 2) MAP3.ready = true;
+    }; im.src = src; };
+    tex(D.map3, 0);
+    tex(D.mapDepth, 1, (im) => { const c = document.createElement('canvas'); c.width = 572; c.height = 1024; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 572, 1024); MAP3.depth = x.getImageData(0, 0, 572, 1024).data; });
+    MAP3.gl = gl; MAP3.cv = cv;
+    $('screen-map').insertBefore(cv, $('mapScroll'));
+    return true;
+  }
+  const mapDepthAt = (x, y) => MAP3.depth ? MAP3.depth[(Math.max(0, Math.min(1023, y | 0)) * 572 + Math.max(0, Math.min(571, x | 0))) * 4] / 255 : 0.5;
+  function mapGLFrame(t) {
+    MAP3.raf = 0;
+    if (scene !== 'map' || !MAP3.cam) return;
+    const { gl, U, cam } = MAP3, scroll = $('mapScroll');
+    const dt = Math.min(0.05, MAP3.lastT ? (t - MAP3.lastT) / 1000 : 0.016); MAP3.lastT = t;
+    // inclinação: velocidade da rolagem + balanço lento (a maquete "respira" mesmo parada)
+    const top = scroll.scrollTop, vy = (top - MAP3.lastTop) / Math.max(0.001, dt); MAP3.lastTop = top;
+    const tgt = [Math.sin(t / 2300) * 0.2, Math.max(-1, Math.min(1, vy / 1400)) + Math.cos(t / 3100) * 0.14];
+    MAP3.tilt[0] += (tgt[0] - MAP3.tilt[0]) * Math.min(1, dt * 5); MAP3.tilt[1] += (tgt[1] - MAP3.tilt[1]) * Math.min(1, dt * 5);
+    const K = REDUCED ? 0 : 0.026, tx = MAP3.tilt[0], ty = MAP3.tilt[1] * (572 / 1024);
+    if (MAP3.ready) {
+      gl.uniform2f(U.cam, tx, ty); gl.uniform1f(U.k, K);
+      gl.uniform1f(U.top, top / cam.mapH); gl.uniform1f(U.span, cam.h / cam.mapH);
+      gl.uniform1f(U.left, -cam.O / cam.mapW); gl.uniform1f(U.spanX, cam.w / cam.mapW);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    // fases: o mesmo deslocamento do relevo no ponto onde cada uma está
+    const px = K * 572 * cam.s;
+    for (const nd of MAP3.nodes) { const d = mapDepthAt(nd.x, nd.y) - 0.5; nd.el.style.translate = (-tx * px * d).toFixed(1) + 'px ' + (-MAP3.tilt[1] * px * d).toFixed(1) + 'px'; }
+    MAP3.raf = requestAnimationFrame(mapGLFrame);
+  }
+  function mapGLResize(fullW, w, h) {
+    const cv = MAP3.cv, dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.style.left = Math.round((fullW - w) / 2) + 'px'; cv.style.width = w + 'px'; cv.style.height = h + 'px';
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); MAP3.gl.viewport(0, 0, cv.width, cv.height);
+  }
+
   function buildMap() {
     const inner = $('mapInner'), scroll = $('mapScroll');
     const n = LEVELS.length, D = window.ART_DATA || {};
+    const NEW3 = mapGLInit();
     let totalStars = 0;
     for (let i = 1; i <= n; i++) totalStars += save.stars[i] || 0;
     // câmera de jornada (estilo Mario/DK/Crash): o mapa fica ~1,9x a altura da tela e rola;
     // só o caminho até a fase atual aparece, o resto fica escondido na névoa
     const fullW = scroll.clientWidth || W, h = scroll.clientHeight || H;
     const w = Math.min(fullW, Math.round(h * 0.72));
-    const IW = 832, IH = 1248, mapH = Math.round(h * 1.9), s = mapH / IH, mapW = IW * s;
+    const IW = NEW3 ? 572 : 832, IH = NEW3 ? 1024 : 1248, mapH = Math.round(h * (NEW3 ? 2.4 : 1.9)), s = mapH / IH, mapW = IW * s;
     // centraliza na horizontal na fase atual (o caminho serpenteia de um lado pro outro)
-    const RP = (D.mapPath || [[416, 1200], [416, 150]]); let rTot = 0; const rSeg = [];
+    const RP = (NEW3 ? D.mapPath3 : D.mapPath) || [[416, 1200], [416, 150]]; let rTot = 0; const rSeg = [];
     for (let i = 0; i < RP.length - 1; i++) { const l = Math.hypot(RP[i + 1][0] - RP[i][0], RP[i + 1][1] - RP[i][1]); rSeg.push(l); rTot += l; }
     const rAt = (dd) => { for (let i = 0; i < rSeg.length; i++) { if (dd <= rSeg[i] || i === rSeg.length - 1) { const k = Math.min(1, dd / rSeg[i]); return [RP[i][0] + (RP[i + 1][0] - RP[i][0]) * k, RP[i][1] + (RP[i + 1][1] - RP[i][1]) * k]; } dd -= rSeg[i]; } return RP[RP.length - 1]; };
     const curRaw = rAt((rTot * (Math.min(save.unlocked, n) - 0.5)) / n);
     const offX = Math.max(w - mapW, Math.min(0, w / 2 - curRaw[0] * s)), offY = 0;
     inner.style.height = mapH + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
-    $('screen-map').style.backgroundImage = D.map ? 'url("' + D.map + '")' : 'none';
-    inner.style.backgroundImage = D.map ? 'url("' + D.map + '")' : 'none';
+    const bgMap = NEW3 ? D.map3 : D.map;
+    $('screen-map').style.backgroundImage = bgMap ? 'url("' + bgMap + '")' : 'none';
+    // mapa 3D: o fundo é o canvas WebGL atrás da coluna; sem isso, a pintura fica como fundo da coluna
+    inner.style.backgroundImage = !NEW3 && D.map ? 'url("' + D.map + '")' : 'none';
+    inner.classList.toggle('gl', NEW3);
     inner.style.backgroundSize = mapW + 'px ' + mapH + 'px';
     inner.style.backgroundPosition = offX + 'px ' + offY + 'px';
-    const P = (D.mapPath || [[416, 1200], [416, 150]]).map(([x, y]) => [offX + x * s, offY + y * s]);
+    const P = RP.map(([x, y]) => [offX + x * s, offY + y * s]);
     const seg = []; let tot = 0;
     for (let i = 0; i < P.length - 1; i++) { const l = Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]); seg.push(l); tot += l; }
     const at = (d) => { for (let i = 0; i < seg.length; i++) { if (d <= seg[i] || i === seg.length - 1) { const k = Math.min(1, d / seg[i]); return [P[i][0] + (P[i + 1][0] - P[i][0]) * k, P[i][1] + (P[i + 1][1] - P[i][1]) * k]; } d -= seg[i]; } return P[P.length - 1]; };
@@ -1722,7 +1791,7 @@
         (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
     });
     const fogHtml = '<div class="map-fog" style="height:' + fogAt(fogPrevIdx).toFixed(0) + 'px"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>';
-    const FX = D.mapFx || {}, pos = (p) => 'left:' + (offX + p[0] * s).toFixed(1) + 'px;top:' + (offY + p[1] * s).toFixed(1) + 'px';
+    const FX = NEW3 ? {} : D.mapFx || {}, pos = (p) => 'left:' + (offX + p[0] * s).toFixed(1) + 'px;top:' + (offY + p[1] * s).toFixed(1) + 'px';
     let fx = '';
     (FX.torch || []).forEach((p, k) => { fx += '<i class="fx-torch" style="' + pos(p) + ';--d:' + (k * 0.37) + 's;--r:' + (60 * s * 1.9) + 'px"></i>'; });
     if (FX.door) fx += '<i class="fx-door" style="' + pos(FX.door) + ';--r:' + (130 * s) + 'px"></i>';
@@ -1755,10 +1824,18 @@
       const O = Math.max(w - mapW, Math.min(0, w / 2 - pathX(scroll.scrollTop + h * 0.62)));
       pans.forEach((p) => { p.style.transform = 'translateX(' + (O - offX).toFixed(1) + 'px)'; });
       inner.style.backgroundPosition = O.toFixed(1) + 'px ' + offY + 'px';
+      if (NEW3) MAP3.cam = { O, w, h, mapW, mapH, s };
     };
     let panRaf = 0;
     scroll.onscroll = () => { if (!panRaf) panRaf = requestAnimationFrame(() => { panRaf = 0; applyPan(); }); };
     applyPan();
+    if (NEW3) {
+      mapGLResize(fullW, w, h);
+      // posição de cada fase na pintura (pra amostrar a profundidade)
+      MAP3.nodes = [...inner.querySelectorAll('.node')].map((el) => { const i = +el.dataset.id - 1, p = pts[i]; return { el, x: (p[0] - offX) / s, y: (p[1] - offY) / s }; });
+      MAP3.lastT = 0; MAP3.lastTop = scroll.scrollTop;
+      if (!MAP3.raf) MAP3.raf = requestAnimationFrame(mapGLFrame);
+    }
     $('mapStars').textContent = totalStars + '/' + n * 3;
     $('mapStarIc').src = ART.icon('star', 44);
     $('mapCoinIc').src = ART.icon('coin', 64);

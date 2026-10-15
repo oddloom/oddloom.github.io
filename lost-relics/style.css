@@ -506,3 +506,7 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .map-head .map-title strong { font-size: clamp(17px, 5vw, 30px); }
 .coin-pill { top: auto; bottom: -26px; right: 12px; }
 .map-head { padding-bottom: 30px; }
+/* mapa 3D falso (15/10): canvas WebGL atrás da coluna; a camada das fases não atrasa (acompanha o canvas quadro a quadro) */
+#mapGL { position: absolute; top: 0; z-index: 0; display: block; pointer-events: none; }
+#mapInner.gl { background: none !important; }
+#mapInner.gl .map-pan { transition: none; }
