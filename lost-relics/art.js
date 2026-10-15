@@ -159,9 +159,31 @@
     if (!D) { if (onReady) onReady(); return; }
     let left = 0;
     const done = () => { if (--left === 0) { AI.ready = true; if (onReady) onReady(); } };
-    // src pode ser uma URL simples ou { c: JPEG da cor, a: PNG cinza da transparência } (junta as duas num canvas)
-    const load = (src, set) => {
-      left++;
+    const load = (src, set) => { left++; loadSrc(src, set, done); };
+    for (const k in D.gems) load(D.gems[k], (im) => { AI.gems[k] = im; });
+    for (const k in D.pieces || {}) load(D.pieces[k], (im) => { AI.pieces[k] = im; });
+    for (const k in D.ui || {}) load(D.ui[k], (im) => { AI.ui[k] = im; });
+    for (const k in D.fx || {}) load(D.fx[k], (im) => { AI.fx[k] = im; });
+    for (const k in D.nodes || {}) load(D.nodes[k], (im) => { AI.nodes[k] = im.toDataURL ? im.toDataURL('image/png') : im.src; });
+    if (D.bg) load(D.bg, (im) => { AI.bg = im; });
+    if (D.board) load(D.board, (im) => { AI.board = im; });
+    if (!left) { AI.ready = true; if (onReady) onReady(); }
+  }
+  // pacote extra (art-extra.js, 15/10): chefes, bichos e barra de vida montados depois da abertura,
+  // um por vez nos intervalos do navegador, pra não travar o menu
+  function loadExtra(E, onReady) {
+    const keys = Object.keys((E && E.nodes) || {});
+    let i = 0;
+    const next = () => {
+      if (i >= keys.length) { if (onReady) onReady(); return; }
+      const k = keys[i++];
+      loadSrc(E.nodes[k], (im) => { AI.nodes[k] = im.toDataURL ? im.toDataURL('image/png') : im.src; }, () => setTimeout(next, 0));
+    };
+    next();
+  }
+  // src pode ser uma URL simples ou { c: JPEG da cor, a: PNG cinza da transparência } (junta as duas num canvas)
+  function loadSrc(src, set, done) {
+    {
       if (typeof src === 'string') { const im = new Image(); im.onload = () => { set(im); done(); }; im.onerror = done; im.src = src; return; }
       const c = new Image(), a = new Image(); let got = 0;
       const join = () => {
@@ -177,15 +199,7 @@
       };
       c.onload = a.onload = join; c.onerror = a.onerror = done;
       c.src = src.c; a.src = src.a;
-    };
-    for (const k in D.gems) load(D.gems[k], (im) => { AI.gems[k] = im; });
-    for (const k in D.pieces || {}) load(D.pieces[k], (im) => { AI.pieces[k] = im; });
-    for (const k in D.ui || {}) load(D.ui[k], (im) => { AI.ui[k] = im; });
-    for (const k in D.fx || {}) load(D.fx[k], (im) => { AI.fx[k] = im; });
-    for (const k in D.nodes || {}) load(D.nodes[k], (im) => { AI.nodes[k] = im.toDataURL ? im.toDataURL('image/png') : im.src; });
-    if (D.bg) load(D.bg, (im) => { AI.bg = im; });
-    if (D.board) load(D.board, (im) => { AI.board = im; });
-    if (!left) { AI.ready = true; if (onReady) onReady(); }
+    }
   }
 
   // joia: imagem da IA > 3D (gems3d.js) > 2D desenhada aqui
@@ -682,5 +696,5 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     return c;
   }
-  root.ART = { loadAI, fx: (k) => AI.fx[k] || null, uiImages: () => AI.ui, nodeImg: (k) => AI.nodes[k] || null, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { return Object.keys(AI.gems).length > 0; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
+  root.ART = { loadAI, loadExtra, fx: (k) => AI.fx[k] || null, uiImages: () => AI.ui, nodeImg: (k) => AI.nodes[k] || null, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { return Object.keys(AI.gems).length > 0; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
 })(window);

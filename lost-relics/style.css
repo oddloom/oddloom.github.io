@@ -510,8 +510,20 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 #mapGL { position: absolute; top: 0; z-index: 0; display: block; pointer-events: none; }
 #mapInner.gl { background: none !important; }
 #mapInner.gl .map-pan { transition: none; }
-/* martelo (15/10, pedido dele): brilho dourado atrás pra destacar do cenário */
-.tool-btn.painted { background: var(--h-btn) center / 84% no-repeat, radial-gradient(circle, rgba(255,214,120,.55) 0%, rgba(255,190,80,.22) 48%, rgba(255,190,80,0) 70%); animation: hammerGlow 2.4s ease-in-out infinite; }
-@keyframes hammerGlow { 0%, 100% { filter: drop-shadow(0 5px 8px rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(255,200,90,.55)); } 50% { filter: drop-shadow(0 5px 8px rgba(0,0,0,.7)) drop-shadow(0 0 16px rgba(255,205,100,.85)); } }
+/* martelo (15/10, pedido dele): parado = luz azul leve atrás pra saltar do cenário; armado = dourado */
+.tool-btn.painted { background: var(--h-btn) center / 84% no-repeat, radial-gradient(circle, rgba(120,225,255,.55) 0%, rgba(80,200,240,.22) 48%, rgba(80,200,240,0) 70%); animation: hammerGlow 2.4s ease-in-out infinite; }
+@keyframes hammerGlow { 0%, 100% { filter: drop-shadow(0 5px 8px rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(110,215,255,.55)); } 50% { filter: drop-shadow(0 5px 8px rgba(0,0,0,.7)) drop-shadow(0 0 16px rgba(130,225,255,.85)); } }
+/* armado: o fundo volta a ser dourado, junto com o martelo aceso */
+.tool-btn.painted.on { background: var(--h-btn) center / 84% no-repeat, radial-gradient(circle, rgba(255,214,120,.6) 0%, rgba(255,190,80,.25) 48%, rgba(255,190,80,0) 70%); }
 .tool-btn.painted.on { animation: hammerArm 1s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .tool-btn.painted { animation: none; } }
+/* setas de fase em fase no mapa (15/10): seta pintada do Códice girada; brilho dourado */
+#mapNav { position: absolute; right: 12px; bottom: calc(48px + env(safe-area-inset-bottom, 0px)); z-index: 3; display: flex; flex-direction: column; gap: 12px; }
+#mapNav button { width: 74px; height: 62px; border: 0; padding: 0; background: center / contain no-repeat; cursor: pointer; filter: drop-shadow(0 4px 6px rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(255,200,90,.45)); transition: transform .12s, opacity .2s; }
+#mapNav .up { transform: rotate(-90deg); }
+#mapNav .dn { transform: rotate(90deg); }
+#mapNav .up:active { transform: rotate(-90deg) scale(.9); }
+#mapNav .dn:active { transform: rotate(90deg) scale(.9); }
+#mapNav button:disabled { opacity: .3; cursor: default; }
+#mapNav button:focus-visible { outline: 2px solid var(--gold-hi, #f3d27a); outline-offset: 3px; }
+.map-pan.nodes .node { will-change: translate; }

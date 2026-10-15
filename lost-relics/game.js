@@ -112,6 +112,7 @@
   const cellX = (x) => ox + (x + 0.5) * cs, cellY = (y) => oy + (y + 0.5) * cs;
 
   async function startLevel(id, boosts) {
+    if ((LEVELS[id - 1].bossKind || LEVELS[id - 1].scarab) && !EXTRA.done) await extraReady();
     level = LEVELS[id - 1];
     state = LR.createState(level, ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
     applyBoosts(boosts || {});
@@ -1664,6 +1665,8 @@
   $('btnMapBack').onclick = () => { Sound.play('click'); wipe(openMenu); };
 
   // ---------- mapa ----------
+  // as setas do mapa só aparecem na tela do mapa
+  const hideMapNav = () => { const n = $('mapNav'); if (n) n.hidden = true; };
   function openMap() {
     Ads.gameplay(false);
     scene = 'map'; state = null; updateHammerBtn();
@@ -1671,6 +1674,26 @@
     paintMenu();
     buildMap();
   }
+  // ---------- pacote extra (15/10) ----------
+  // A abertura só baixa e monta o essencial (joias, tabuleiro, interface). Chefes, bichos, barra de vida e o mapa 3D
+  // vêm no art-extra.js, baixado depois que o menu aparece; o mapa entra assim que o arquivo chega e os bichos são
+  // montados um por vez. Fase com chefe/bicho aberta antes disso espera o pacote terminar.
+  const EXTRA = { done: false, wait: [] };
+  const extraReady = () => (EXTRA.done ? Promise.resolve() : new Promise((r) => EXTRA.wait.push(r)));
+  function loadExtra() {
+    const finish = () => { EXTRA.done = true; EXTRA.wait.splice(0).forEach((r) => r()); };
+    const go = () => {
+      const E = window.ART_EXTRA, D = window.ART_DATA;
+      if (!E || !D) return finish();
+      D.map3 = E.map3; D.mapDepth = E.mapDepth;
+      if (scene === 'map' && !MAP3.gl) buildMap();
+      ART.loadExtra(E, finish);
+    };
+    if (window.ART_EXTRA) return go();
+    const sc = document.createElement('script'); sc.src = 'art-extra.js'; sc.onload = go; sc.onerror = finish;
+    document.head.appendChild(sc);
+  }
+
   // ---------- mapa 3D falso (15/10) ----------
   // Maquete pintada (ampliada 4x) + mapa de profundidade: um shader desloca cada ponto conforme a distância,
   // então ao rolar a cidade ganha relevo. As fases recebem o mesmo deslocamento (amostram a profundidade na CPU).
@@ -1751,7 +1774,13 @@
       const dts = (tm - d.lastT) / 1000; if (dts > 0) V.vel = V.vel * 0.3 + (-(e.clientY - d.lastY) / dts) * 0.7;
       d.lastY = e.clientY; d.lastT = tm;
     };
-    const up = () => { if (!V.drag) return; if (performance.now() - V.drag.lastT > 90) V.vel = 0; V.drag = null; };
+    const up = () => {
+      if (!V.drag) return;
+      if (performance.now() - V.drag.lastT > 90) V.vel = 0;
+      const moved = V.moved; V.drag = null;
+      // em vez de parar solto, plana até a fase mais perto de onde a inércia levaria
+      if (moved && V.snapAt) { const proj = V.top + V.vel / 2.8; V.vel = 0; V.snapAt(Math.max(0, Math.min(V.max, proj))); }
+    };
     const wheel = (e) => { e.preventDefault(); V.target = Math.max(0, Math.min(V.max, (V.target == null ? V.top : V.target) + e.deltaY)); };
     const click = (e) => { if (V.moved) { e.stopPropagation(); e.preventDefault(); V.moved = false; } };
     scroll.addEventListener('pointerdown', down); window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
@@ -1864,6 +1893,25 @@
     let panRaf = 0;
     scroll.onscroll = V ? null : () => { if (!panRaf) panRaf = requestAnimationFrame(() => { panRaf = 0; applyPan(); }); };
     if (V) V.frame = () => { inner.style.transform = 'translate3d(0,' + (-V.top).toFixed(1) + 'px,0)'; applyPan(); };
+    // setas pintadas pra ir de fase em fase (pedido dele 15/10) e, ao soltar o dedo, o mapa plana até a fase mais perto
+    if (V) {
+      let fi = curIdx;
+      let nav = $('mapNav');
+      if (!nav) {
+        nav = document.createElement('div'); nav.id = 'mapNav';
+        nav.innerHTML = '<button type="button" class="up" aria-label="Próxima fase"></button><button type="button" class="dn" aria-label="Fase anterior"></button>';
+        $('screen-map').appendChild(nav);
+      }
+      nav.hidden = false;
+      const [bu, bd] = nav.querySelectorAll('button'), arrow = ART.nodeImg('navarrow');
+      if (arrow) [bu, bd].forEach((b) => { b.style.backgroundImage = 'url(' + arrow + ')'; });
+      const navPaint = () => { bu.disabled = fi >= curIdx; bd.disabled = fi <= 0; };
+      const goTo = (i) => { fi = Math.max(0, Math.min(curIdx, i)); V.target = camY(pts[fi][1]); V.vel = 0; navPaint(); };
+      bu.onclick = () => { Sound.play('click'); goTo(fi + 1); };
+      bd.onclick = () => { Sound.play('click'); goTo(fi - 1); };
+      V.snapAt = (top) => { const c = top + h * 0.62; let best = 0; for (let i = 0; i <= curIdx; i++) if (Math.abs(pts[i][1] - c) < Math.abs(pts[best][1] - c)) best = i; goTo(best); };
+      navPaint();
+    } else if ($('mapNav')) $('mapNav').hidden = true;
     applyPan();
     if (NEW3) {
       mapGLResize(fullW, w, h);
@@ -1928,6 +1976,7 @@
     if (!window.ART_DATA) GEM3D.init();
     ART.clearCache();
     const ld = $('loading'); ld.classList.add('done'); setTimeout(() => ld.remove(), 700);
+    setTimeout(loadExtra, 300);
     const m = /^#fase(\d+)$/.exec(location.hash || '');
     if (m && LEVELS[+m[1] - 1]) { openMap(); openPre(+m[1]); }
     else if (/^#jogar\d+$/.test(location.hash)) startLevel(+location.hash.slice(6));
