@@ -83,6 +83,18 @@
     win() { const t = ctx.currentTime; [0, 4, 7, 12, 7, 12, 16].forEach((s, k) => marimba(hz(s + 12), t + k * 0.11, 0.3)); },
     lose() { const t = ctx.currentTime; [7, 3, 0, -5].forEach((s, k) => marimba(hz(s + 12), t + k * 0.18, 0.28)); },
     announce() { const t = ctx.currentTime; noise(t, 1.2, 0.9, 'lowpass', 400, 40); const o = tone(65, t, 1.4, 'sine', 0.8); o.frequency.exponentialRampToValueAtTime(32, t + 1.2); [0, 7, 12].forEach((s, k) => tone(hz(s - 12), t + 0.05, 2.2, 'triangle', 0.16 - k * 0.04)); tone(hz(-5) * 2.76, t + 0.05, 2.4, 'sine', 0.1); },
+    // rugido da onça: 3 serras graves desafinadas que sobem e caem, abafadas, com sopro rouco por cima
+    roar() {
+      const t = ctx.currentTime, f = ctx.createBiquadFilter(), g = ctx.createGain();
+      f.type = 'lowpass'; f.frequency.setValueAtTime(500, t); f.frequency.linearRampToValueAtTime(1300, t + 0.3); f.frequency.exponentialRampToValueAtTime(260, t + 1.2);
+      g.gain.value = 1; f.connect(g); g.connect(sfxBus);
+      [0, 6, 13].forEach((d) => {
+        const o = tone(70 + d, t, 1.25, 'sawtooth', 0.22, f, 0.12);
+        o.frequency.linearRampToValueAtTime(150 + d * 1.4, t + 0.32); o.frequency.exponentialRampToValueAtTime(52 + d, t + 1.2);
+      });
+      noise(t, 1.1, 0.55, 'bandpass', 700, 200);
+      noise(t, 0.5, 0.5, 'lowpass', 220, 60);
+    },
     star(i) { const t = ctx.currentTime; marimba(hz([12, 16, 19][i] + 12), t, 0.35); tone(hz([12, 16, 19][i] + 36), t, 0.4, 'sine', 0.08); },
   };
 

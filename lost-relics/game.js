@@ -141,7 +141,10 @@
       proms.push(tween(v, { y }, 0.42, 'in', x * 0.025 + (state.H - y) * 0.035).then(() => { v.sq = 0.1; tween(v, { sq: 0 }, 0.14); }));
     }
     announceLevel(level);
+    intro = null;
+    if (level.boss || level.bossKind) startIntro(level);
     await Promise.all(proms);
+    if (intro) await wait(Math.max(0, intro.t0 + INTRO_DUR - now)); // sem jogar durante a entrada do chefe
     busy = false;
   }
 
@@ -564,6 +567,86 @@
       ctx.save(); ctx.globalAlpha = hitQ; ctx.drawImage(crack, chX + chW * target - cw / 2, chY + chH / 2 - cw / 2, cw, cw); ctx.restore();
     }
   }
+  // ---------- Onça em partes (15/10) ----------
+  // Peças recortadas da mesma folha do Gemini, então todas têm a mesma escala: as medidas abaixo são px da folha,
+  // relativos ao canto do tronco. Cada peça = [ponto no tronco x, y, pivô na peça x, y]. A arte olha pra direita.
+  const JAG = { span: 823, cx: 160, cy: 190, head: [385, 45, 30, 85], legF: [320, 150, 54, 33], legB: [95, 150, 60, 40], tail: [20, 70, 12, 32] };
+  function jagPart(im, at, ang, mirror) {
+    ctx.save(); ctx.translate(at[0], at[1]); ctx.rotate(ang); if (mirror) ctx.scale(-1, 1);
+    ctx.drawImage(im, -at[2], -at[3]); ctx.restore();
+  }
+  // desenha a onça na origem atual; pose = idle | hit | leap | claw | intro, q = progresso da pose (0-1)
+  function drawJaguar(K, sc, pose, q, i, flip) {
+    const torso = nodeImgObj(K.torso), head = nodeImgObj(K.head), roarIm = nodeImgObj(K.roar), tail = nodeImgObj(K.tail),
+      legF = nodeImgObj(K.legF), legB = nodeImgObj(K.legB);
+    if (!torso || !head || !tail || !legF || !legB) return false;
+    const k = cs * 2.8 * sc / JAG.span, s = Math.sin(Math.min(1, Math.max(0, q)) * Math.PI);
+    const breathe = Math.sin(now * 2.4 + i);
+    let headA = Math.sin(now * 1.7 + i) * 0.04, legFA = Math.sin(now * 1.3 + i) * 0.04, legBA = -legFA;
+    let tailA = 0.35 + Math.sin(now * 2.2 + i) * 0.18, roar = ((now + i * 1.3) % 6) < 0.5;
+    if (pose === 'hit') { roar = true; headA -= 0.15 * s; }
+    else if (pose === 'leap') { legFA = -0.75; legBA = 0.6; tailA = 0.05; headA = -0.05; }
+    else if (pose === 'claw') { roar = true; legFA = -1.3 * s; headA -= 0.12 * s; tailA += 0.3 * s; }
+    else if (pose === 'intro') { roar = q > 0.15 && q < 0.85; const r = roar ? Math.sin((q - 0.15) / 0.7 * Math.PI) : 0; headA -= 0.2 * r; legFA -= 0.35 * r; tailA += 0.4 * r; }
+    ctx.save(); ctx.scale(flip ? -k : k, k); ctx.translate(-JAG.cx, -JAG.cy);
+    jagPart(tail, JAG.tail, tailA, true);
+    jagPart(legB, JAG.legB, legBA);
+    jagPart(legF, JAG.legF, legFA);
+    // tronco respira (escala só na altura, a partir da barriga)
+    ctx.save(); ctx.translate(0, torso.naturalHeight); ctx.scale(1, 1 + 0.015 * breathe); ctx.drawImage(torso, 0, -torso.naturalHeight); ctx.restore();
+    jagPart(roar && roarIm ? roarIm : head, JAG.head, headA);
+    // garrada: rastro verde passando na frente da pata
+    const claw = pose === 'claw' && nodeImgObj(K.claw);
+    if (claw && s > 0.01) {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = s; ctx.shadowColor = 'transparent';
+      ctx.translate(470 + q * 140, 250); ctx.rotate(-0.35); const cw = claw.naturalWidth * (0.6 + 0.6 * q);
+      ctx.drawImage(claw, -cw / 2, -cw * claw.naturalHeight / claw.naturalWidth / 2, cw, cw * claw.naturalHeight / claw.naturalWidth);
+      ctx.restore();
+    }
+    ctx.restore();
+    return true;
+  }
+
+  // ---------- entrada do chefe (15/10) ----------
+  // Depois do "FASE N": tela escurece, o chefe aparece grande no meio com o nome pintado, ruge (a onça) e some.
+  const INTRO_DUR = 2;
+  let intro = null;
+  function drawIntro() {
+    if (!intro || now < intro.t0) return;
+    const q = (now - intro.t0) / INTRO_DUR;
+    if (q >= 1) { intro = null; return; }
+    const kind = intro.kind, K = BOSS_SPR[kind];
+    const vis1 = Math.max(0, Math.min(1, q / 0.12, (1 - q) / 0.15));
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,' + 0.62 * vis1 + ')'; ctx.fillRect(0, 0, W, H);
+    // entra com um tranco (passa um pouco do tamanho e volta) e encolhe na saída
+    const pin = Math.min(1, q / 0.15), pop = pin < 1 ? 0.6 + 0.55 * Math.sin(pin * Math.PI * 0.75) : 1, out = q > 0.85 ? 1 - (q - 0.85) / 0.15 * 0.3 : 1;
+    const bw = Math.min(W * 0.85, 520), cy = H * 0.4, sh = intro.hitT && now - intro.hitT < 0.4 ? (Math.random() - 0.5) * cs * 0.15 : 0;
+    ctx.globalAlpha = vis1;
+    ctx.translate(W / 2 + sh, cy);
+    ctx.shadowColor = 'rgba(' + BOSS_GLOW[kind] + ',0.8)'; ctx.shadowBlur = cs * 0.5;
+    if (!(kind === 'jaguar' && drawJaguar(K, bw / (cs * 2.8) * pop * out, 'intro', q, 0, false))) {
+      const im = nodeImgObj(K.idle);
+      if (im) { const w = bw * 0.7 * pop * out, h = w * im.naturalHeight / im.naturalWidth; ctx.drawImage(im, -w / 2, -h / 2, w, h); }
+    }
+    ctx.restore();
+    const nm = nodeImgObj('name_' + kind);
+    if (nm) {
+      const nq = Math.min(1, Math.max(0, (q - 0.1) / 0.2)), nw = Math.min(W * 0.8, 460) * (1.3 - 0.3 * nq), nh = nw * nm.naturalHeight / nm.naturalWidth;
+      ctx.save(); ctx.globalAlpha = nq * vis1; ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = cs * 0.2;
+      ctx.drawImage(nm, W / 2 - nw / 2, H * 0.62 - nh / 2, nw, nh); ctx.restore();
+    }
+  }
+  function startIntro(L) {
+    const kind = bossKindOf(L);
+    intro = { t0: now + 2.2, kind };
+    later(2.2 + 0.3, () => {
+      if (!intro) return;
+      intro.hitT = now; addShake(0.6); buzz([60, 40, 90]);
+      Sound.play(kind === 'jaguar' ? 'roar' : 'barrel');
+    });
+  }
+
   function drawBoss(boss, i) {
     const an = bossAnims[i];
     if (an && an.type === 'gone') return;
@@ -613,7 +696,11 @@
     // a arte da serpente olha pra direita: espelha ou gira pra cabeça ficar do lado certo
     if (dir) { if (vert) ctx.rotate(dir[1] > 0 ? Math.PI / 2 : -Math.PI / 2); else if (dir[0] < 0) ctx.scale(-1, 1); }
     ctx.shadowColor = 'rgba(' + BOSS_GLOW[kind] + ',' + (0.65 + 0.25 * Math.sin(now * 4)) + ')'; ctx.shadowBlur = cs * 0.35;
-    ctx.drawImage(im, -w / 2, -h * anchor, w, h);
+    // onça em partes: olha pro meio do tabuleiro (a pose segue a animação da vez)
+    const jagPose = kind === 'jaguar' && key !== K.dead && (!an ? ['idle', 0] : an.type === 'hit' ? ['hit', (now - an.t0) / 0.35]
+      : an.type === 'fly' ? ['leap', 0] : an.type === 'claw' ? ['claw', (now - an.t0) / 0.5] : ['idle', 0]);
+    const fx = cells.length ? midOf(cells)[0] : x;
+    if (!(jagPose && drawJaguar(K, sc, jagPose[0], jagPose[1], i, fx > ox + cs * state.W / 2))) ctx.drawImage(im, -w / 2, -h * anchor, w, h);
     ctx.restore();
     // ídolo: escudo de runas girando enquanto protegido, e piscando quando um golpe não pega
     if (kind === 'statue' && key !== K.dead) {
@@ -1022,7 +1109,7 @@
     if (backdrop) ctx.drawImage(backdrop, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawEmbers(lastDt);
-    if (scene === 'play' && state) drawBoard();
+    if (scene === 'play' && state) { drawBoard(); drawIntro(); }
   }
 
   let emberC = null;
@@ -1326,7 +1413,8 @@
   // size = largura do desenho em casas do tabuleiro
   const BOSS_SPR = {
     scarab: { idle: 'bidle', hit: 'bhit', move: 'bfly', dead: 'bdead', l3: 'blife3', l1: 'blife1', size: 1.3 },
-    jaguar: { idle: 'jidle', hit: 'jhit', move: 'jleap', dead: 'jdead', l3: 'jlife3', l1: 'jlife1', size: 1.95 },
+    jaguar: { idle: 'jidle', hit: 'jhit', move: 'jleap', dead: 'jdead', l3: 'jlife3', l1: 'jlife1', size: 1.95,
+      torso: 'jtorso', head: 'jhead', roar: 'jroar', tail: 'jtail', legF: 'jlegf', legB: 'jlegb', claw: 'jclaw' }, // peças (drawJaguar)
     statue: { idle: 'sidle', hit: 'shit', move: 'sidle', dead: 'sdead', l3: 'slife3', l1: 'slife1', size: 2.05 },
     // jiboia (fase 12): enrolada, golpe, fugindo (também na saída), engolindo; vidas = carapaças do escaravelho (só se faltar a barra)
     // macaco (fase 18): pendurado no cipó, assustado, fugindo, trocando joias
@@ -1991,6 +2079,18 @@
     else if (/^#ver\d+$/.test(location.hash)) {
       startLevel(+location.hash.slice(4));
       let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50);
+    }
+    // #entradaN: fase N parada no meio da entrada do chefe (rugido); #garraN: onça dando a garrada
+    else if (/^#entrada\d+$/.test(location.hash)) {
+      startLevel(+location.hash.slice(8));
+      const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (intro && now >= intro.t0 + 0.9) clearInterval(iv); }, 50);
+    }
+    else if (/^#garra\d+$/.test(location.hash)) {
+      startLevel(+location.hash.slice(6));
+      let t1 = null; const iv = setInterval(() => {
+        if (t1 == null && state && !intro && !busy) { t1 = now; bossAnims[0] = { type: 'claw', t0: now }; }
+        stepTime(0.05); update(0.05); draw(); if (t1 != null && now >= t1 + 0.25) clearInterval(iv);
+      }, 50);
     }
     // #serpdemo: fase 20 com o laço rodando por timer (o Chrome sem janela não roda requestAnimationFrame) e um rastro em curva
     else if (location.hash === '#serpdemo') {
