@@ -12,17 +12,20 @@
   let save = { unlocked: 1, stars: {}, best: {}, wins: 0 };
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.unlocked) save = Object.assign(save, s); } catch (e) {}
   save.coins = save.coins == null ? 300 : save.coins;
-  save.items = Object.assign({ moves: 0, dyn: 0, orb: 0, hammer: 1 }, save.items);
+  save.items = Object.assign({ moves: 0, dyn: 0, seal: 0, orb: 0, hammer: 1 }, save.items);
   // link de teste (tools/montar-link.js): todas as fases abertas, pra testar qualquer uma em qualquer aparelho
   if (window.LR_TESTE) save.unlocked = Math.max(save.unlocked, LEVELS.length);
   // moedas da fase = pontos / 100 (+10 por estrela na vitória)
   const coinsOf = (score) => Math.floor(score / 100);
+  // art = ícone pintado (loja do Códice); icon = vetor de reserva
   const SHOP = [
-    { id: 'moves', price: 150, icon: 'hourglass' },
-    { id: 'dyn', price: 200, icon: 'dynamite' },
-    { id: 'orb', price: 400, icon: 'idol' },
-    { id: 'hammer', price: 250, icon: 'hammer' },
+    { id: 'moves', price: 150, icon: 'hourglass', art: 'ixmoves' },
+    { id: 'dyn', price: 200, icon: 'dynamite', art: 'ixarrow' },
+    { id: 'seal', price: 250, icon: 'barrel', art: 'ixseal' },
+    { id: 'hammer', price: 250, icon: 'hammer', art: 'hham' },
+    { id: 'orb', price: 400, icon: 'idol', art: 'ixorb' },
   ];
+  const itemImg = (it, size) => ART.nodeImg(it.art) || ART.icon(it.icon, size);
   const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
 
   // ---------- tempo do jogo: animações e agendamentos ----------
@@ -153,6 +156,7 @@
     if (b.moves) state.moves += 3;
     const plain = () => { const out = []; for (let y = 0; y < state.H; y++) for (let x = 0; x < state.W; x++) { const p = state.grid[y][x]; if (p && p.kind === 'gem' && !p.special && !p.vine) out.push(p); } return out; };
     if (b.dyn) { const l = plain(); for (let k = 0; k < 2 && l.length; k++) { const p = l.splice(Math.floor(Math.random() * l.length), 1)[0]; p.special = Math.random() < 0.5 ? 'lineH' : 'lineV'; } }
+    if (b.seal) { const l = plain(); for (let k = 0; k < 2 && l.length; k++) l.splice(Math.floor(Math.random() * l.length), 1)[0].special = 'barrel'; }
     if (b.orb) { const l = plain(); if (l.length) { const p = l[Math.floor(Math.random() * l.length)]; p.special = 'idol'; p.color = null; } }
   }
 
@@ -1503,6 +1507,7 @@
   // ---------- janelas ----------
   function openModal(html) {
     const card = $('modalCard');
+    card.classList.remove('codex');
     card.innerHTML = html;
     $('modal').hidden = false;
     const first = card.querySelector('.btn');
@@ -1662,10 +1667,65 @@
     const owned = SHOP.filter((it) => it.id !== 'hammer' && save.items[it.id] > 0);
     if (!owned.length) return '<button class="link-btn" id="mShop" type="button">' + T('shop.get') + '</button>';
     return '<div class="boosts"><div class="moves-line">' + T('shop.use') + '</div><div class="boost-row">' +
-      owned.map((it) => '<button class="boost" type="button" aria-pressed="false" data-k="' + it.id + '"><img alt="" src="' + ART.icon(it.icon, 80) + '"><span>' + T('item.' + it.id) + '</span><b>×' + save.items[it.id] + '</b></button>').join('') +
+      owned.map((it) => '<button class="boost" type="button" aria-pressed="false" data-k="' + it.id + '"><img alt="" src="' + itemImg(it, 80) + '"><span>' + T('item.' + it.id) + '</span><b>×' + save.items[it.id] + '</b></button>').join('') +
       '</div></div>';
   }
+  // Códice do Templo (16/10): a loja é a página do livro pintado; as medalhas penduradas são as abas
+  // (Itens · Skins de joia · Skins de palavra · Rastro de combo) e a medalha de baixo, do lado, volta.
+  // 6 cartas por página; tocar numa carta mostra o detalhe e o botão de comprar embaixo do livro.
+  // Skins: só a que já existe (em uso); as outras aparecem "em breve" até chegar a arte.
+  const CODEX_TABS = [
+    { id: 'items', icon: 'ixmoves' },
+    { id: 'gems', icon: 'ixpalette', skins: [{ id: 'gem.classic', art: 'ixpalette', on: true }, { id: 'soon' }, { id: 'soon' }] },
+    { id: 'words', icon: 'ixorb', skins: [{ id: 'word.solar', art: 'ixorb', on: true }, { id: 'word.rare' }, { id: 'word.goldgem' }] },
+    { id: 'trail', icon: 'ixarrow', skins: [{ id: 'trail.gold', art: 'ixarrow', on: true }, { id: 'soon' }, { id: 'soon' }] },
+  ];
   function openShop(back) {
+    if (!ART.nodeImg('cxbook')) return openShopList(back);
+    Sound.play('click');
+    let tab = 'items', sel = SHOP[0].id;
+    const render = () => {
+      const T0 = CODEX_TABS.find((t) => t.id === tab);
+      const cards = tab === 'items'
+        ? SHOP.map((it) => ({ key: it.id, img: itemImg(it, 96), label: '<img class="coin" alt="" src="' + ART.icon('coin', 32) + '">' + it.price, have: save.items[it.id] }))
+        : T0.skins.map((s, i) => ({ key: s.id + ':' + i, img: s.art && ART.nodeImg(s.art), label: T(s.on ? 'codex.inuse' : 'codex.soon'), soon: !s.on, skin: s }));
+      while (cards.length < 6) cards.push(null);
+      const cur = cards.find((c) => c && c.key === sel) || cards[0];
+      sel = cur.key;
+      const it = tab === 'items' && SHOP.find((x) => x.id === sel);
+      const tabBtn = (t, k) => '<button type="button" class="cx-tab t' + k + (t.id === tab ? ' on' : '') + '" data-tab="' + t.id + '" aria-label="' + T('codex.tab.' + t.id) + '"><img alt="" src="' + ART.nodeImg(t.icon) + '"></button>';
+      const detail = it
+        ? '<b>' + T('item.' + it.id) + '</b><span>' + T('item.' + it.id + '.d') + '</span><small>' + T('shop.have', { n: save.items[it.id] }) + '</small>' +
+          '<button class="cx-buy" type="button"' + (save.coins < it.price ? ' disabled' : '') + ' style="background-image:url(' + ART.nodeImg('cxplate') + ')"><img class="coin" alt="" src="' + ART.icon('coin', 48) + '">' + it.price + '</button>'
+        : '<b>' + T('codex.' + (cur.skin.id === 'soon' ? 'soon.t' : cur.skin.id)) + '</b><span>' + T(cur.soon ? 'codex.soon.d' : 'codex.inuse.d') + '</span>';
+      const card = openModal(
+        '<div class="cx-head"><div class="eyebrow">' + T('codex.tab.' + tab) + '</div>' +
+        '<div class="cx-wallet" style="background-image:url(' + ART.nodeImg('cxplate') + ')"><img class="coin" alt="" src="' + ART.icon('coin', 64) + '"><b>' + save.coins.toLocaleString() + '</b></div></div>' +
+        '<div class="cx-book" style="background-image:url(' + ART.nodeImg('cxbook') + ')">' +
+          CODEX_TABS.map(tabBtn).join('') +
+          '<button type="button" class="cx-tab t4 cx-close" aria-label="' + T('close') + '"><img alt="" src="' + ART.nodeImg('cxback') + '"></button>' +
+          '<div class="cx-grid">' + cards.map((c) => c
+            ? '<button type="button" class="cx-card' + (c.key === sel ? ' on' : '') + (c.soon ? ' soon' : '') + '" data-k="' + c.key + '" style="background-image:url(' + ART.nodeImg('cxcard') + ')">' +
+              (c.img ? '<img alt="" src="' + c.img + '">' : '<i>?</i>') + (c.have ? '<em>×' + c.have + '</em>' : '') + '<span>' + c.label + '</span></button>'
+            : '<div class="cx-card empty" style="background-image:url(' + ART.nodeImg('cxcard') + ')"></div>').join('') + '</div>' +
+        '</div>' +
+        '<div class="cx-detail">' + detail + '</div>' +
+        '<p class="shop-note">' + T('shop.note') + '</p>');
+      card.classList.add('codex');
+      card.querySelectorAll('.cx-tab[data-tab]').forEach((b) => { b.onclick = () => { Sound.play('click'); tab = b.dataset.tab; sel = null; render(); }; });
+      card.querySelectorAll('.cx-card[data-k]').forEach((b) => { b.onclick = () => { Sound.play('click'); sel = b.dataset.k; render(); }; });
+      const buy = card.querySelector('.cx-buy');
+      if (buy) buy.onclick = () => {
+        if (!it || save.coins < it.price) return;
+        save.coins -= it.price; save.items[it.id]++; persist();
+        Sound.play('chest'); render(); paintWallet();
+      };
+      card.querySelector('.cx-close').onclick = () => { Sound.play('click'); closeModal(); if (back) back(); };
+    };
+    render();
+  }
+  // loja antiga em lista (reserva se a arte do Códice não carregar)
+  function openShopList(back) {
     Sound.play('click');
     const render = () => {
       const card = openModal(
@@ -1673,7 +1733,7 @@
         '<h2 class="metal">' + T('shop.title') + '</h2><div class="orn"><i></i></div>' +
         '<div class="wallet"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '"><b>' + save.coins.toLocaleString() + '</b></div>' +
         '<div class="shop-list">' + SHOP.map((it) =>
-          '<div class="shop-item"><img alt="" src="' + ART.icon(it.icon, 96) + '"><div><b>' + T('item.' + it.id) + '</b><span>' + T('item.' + it.id + '.d') + '</span><small>' + T('shop.have', { n: save.items[it.id] }) + '</small></div>' +
+          '<div class="shop-item"><img alt="" src="' + itemImg(it, 96) + '"><div><b>' + T('item.' + it.id) + '</b><span>' + T('item.' + it.id + '.d') + '</span><small>' + T('shop.have', { n: save.items[it.id] }) + '</small></div>' +
           '<button class="btn small buy" type="button" data-id="' + it.id + '"' + (save.coins < it.price ? ' disabled' : '') + '><img class="coin" alt="" src="' + ART.icon('coin', 48) + '">' + it.price + '</button></div>').join('') + '</div>' +
         '<p class="shop-note">' + T('shop.note') + '</p>' +
         '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('close') + '</button></div>');
