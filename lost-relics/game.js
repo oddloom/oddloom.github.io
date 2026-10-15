@@ -13,6 +13,11 @@
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.unlocked) save = Object.assign(save, s); } catch (e) {}
   save.coins = save.coins == null ? 300 : save.coins;
   save.items = Object.assign({ moves: 0, dyn: 0, seal: 0, orb: 0, hammer: 1 }, save.items);
+  // skins compradas no Códice (16/10): owned = ids comprados; skins = a que está em uso em cada aba (null = a de fábrica)
+  save.owned = save.owned || [];
+  save.skins = Object.assign({ gem: null, word: null, trail: null }, save.skins);
+  // Trilha do Explorador (16/10, adaptado do "win streak" do Candy): vitórias seguidas (0-3) viram vantagem grátis na fase seguinte
+  save.streak = save.streak || 0;
   // link de teste (tools/montar-link.js): todas as fases abertas, pra testar qualquer uma em qualquer aparelho
   if (window.LR_TESTE) save.unlocked = Math.max(save.unlocked, LEVELS.length);
   // moedas da fase = pontos / 100 (+10 por estrela na vitória)
@@ -26,6 +31,9 @@
     { id: 'orb', price: 400, icon: 'idol', art: 'ixorb' },
   ];
   const itemImg = (it, size) => ART.nodeImg(it.art) || ART.icon(it.icon, size);
+  // aplica as skins em uso (joia e rastro trocam a arte no art.js; palavra troca as imagens do anúncio e dos elogios)
+  const applySkins = () => ART.setSkins({ gem: save.skins.gem, fx: save.skins.trail });
+  const wordImg = (k) => (save.skins.word === 'rare' && ART.nodeImg('wr_' + k)) || ART.nodeImg(k);
   const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
 
   // ---------- tempo do jogo: animações e agendamentos ----------
@@ -119,6 +127,7 @@
     level = LEVELS[id - 1];
     state = LR.createState(level, ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
     applyBoosts(boosts || {});
+    applyStreak();
     hammerMode = false;
     RUIN_KEYS.forEach(nodeImgObj);
     vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = []; serpTrail = []; barShown = null; barHp = null; barHitT = -9;
@@ -151,6 +160,24 @@
     busy = false;
   }
 
+  // Trilha do Explorador: 1 vitória seguida = 1 Joia Flecha grátis; 2 = + Joia Selo; 3 = + Orbe Solar
+  function applyStreak() {
+    const n = Math.min(3, save.streak || 0);
+    if (!n) return;
+    const l = []; for (let y = 0; y < state.H; y++) for (let x = 0; x < state.W; x++) { const p = state.grid[y][x]; if (p && p.kind === 'gem' && !p.special && !p.vine) l.push(p); }
+    const take = () => l.splice(Math.floor(Math.random() * l.length), 1)[0];
+    if (n >= 1 && l.length) take().special = Math.random() < 0.5 ? 'lineH' : 'lineV';
+    if (n >= 2 && l.length) take().special = 'barrel';
+    if (n >= 3 && l.length) { const p = take(); p.special = 'idol'; p.color = null; }
+  }
+  const breakStreak = () => { if (save.streak) { save.streak = 0; persist(); } };
+  // fileira da trilha na janela antes da fase: 3 vantagens, acesas até a sequência atual
+  const streakHTML = () => {
+    const n = Math.min(3, save.streak || 0);
+    return '<div class="streak"><div class="moves-line">' + T('streak.title') + '</div><div class="streak-row">' +
+      ['ixarrow', 'ixseal', 'ixorb'].map((k, i) => '<img alt="" class="' + (i < n ? 'on' : '') + '" src="' + ART.nodeImg(k) + '">').join('<i></i>') +
+      '</div><small>' + (n ? T('streak.n', { n }) : T('streak.0')) + '</small></div>';
+  };
   // vantagens da loja aplicadas no começo da fase
   function applyBoosts(b) {
     if (b.moves) state.moves += 3;
@@ -167,7 +194,7 @@
     // em português: "FASE" + número pintados (estilo Solar); senão, texto
     const painted = I18N.lang === 'pt' && ART.nodeImg('fase') && ART.nodeImg('n0');
     const word = painted
-      ? '<div class="ann-art"><img class="ann-fase" alt="" src="' + ART.nodeImg('fase') + '">' + String(L.id).split('').map((d) => '<img class="ann-num" alt="" src="' + ART.nodeImg('n' + d) + '">').join('') + '</div>'
+      ? '<div class="ann-art"><img class="ann-fase" alt="" src="' + wordImg('fase') + '">' + String(L.id).split('').map((d) => '<img class="ann-num" alt="" src="' + wordImg('n' + d) + '">').join('') + '</div>'
       : '<span class="metal">' + T('announce', { n: L.id }) + '</span>';
     el.innerHTML = word + (L.boss ? '<small>' + T('boss') + '</small>' : '');
     if (painted) el.setAttribute('aria-label', T('announce', { n: L.id }));
@@ -880,7 +907,7 @@
     if (n <= praiseLevel) return;
     praiseLevel = n;
     // em português: palavra pintada estilo Solar (Ótimo/Incrível/Lendário); senão, texto
-    const art = I18N.lang === 'pt' && ART.nodeImg('p' + n);
+    const art = I18N.lang === 'pt' && wordImg('p' + n);
     showPraise(T('praise.' + n), art ? 'art p' + n : '', art);
     Sound.voice('p' + n, I18N.lang);
   }
@@ -1368,10 +1395,11 @@
         }
         ctx.lineTo(p.x2, p.y2); ctx.stroke();
       } else if (p.type === 'dart' && p.life >= 0) {
-        const im = ART.fx('dart'), q2 = EASE.inout(q), L = cs * 1.9, Hh = L * im.height / im.width;
+        // rastro de skin (jade/fogo) é bem mais comprido e fino que o dardo: desenha maior e somando luz
+        const im = ART.fx('dart'), q2 = EASE.inout(q), long = im.width / im.height > 4.5, L = cs * (long ? 3 : 1.9), Hh = L * im.height / im.width * (long ? 1.6 : 1);
         const span = (p.h ? state.W : state.H) * cs + cs * 2, start = -cs + (p.dir > 0 ? 0 : span), pos = start + p.dir * q2 * span;
         const x = p.h ? ox + pos : cellX(p.at), y = p.h ? cellY(p.at) : oy + pos;
-        ctx.save(); ctx.globalAlpha = 1 - Math.max(0, (q - 0.8) / 0.2); ctx.translate(x, y); ctx.rotate((p.h ? 0 : Math.PI / 2) + (p.dir < 0 ? Math.PI : 0));
+        ctx.save(); if (long) ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 1 - Math.max(0, (q - 0.8) / 0.2); ctx.translate(x, y); ctx.rotate((p.h ? 0 : Math.PI / 2) + (p.dir < 0 ? Math.PI : 0));
         ctx.drawImage(im, -L * 0.8, -Hh / 2, L, Hh); ctx.restore();
       } else if (p.type === 'fxsprite' && p.life >= 0) {
         const im = ART.fx(p.key); if (im) {
@@ -1539,6 +1567,7 @@
       '<div class="moves-line">' + T('moves') + ': <b>' + L.moves + '</b></div>' +
       // (os parênteses importam: sem eles, com a arte do chefe carregada, o texto do tutorial sumia)
       (tutKey ? '<div class="tut"><img alt="" src="' + (((L.boss || L.tut === 'boa' || L.tut === 'monkey') && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><p>' + T(tutKey) + '</p></div>' : '') +
+      (ART.nodeImg('ixarrow') ? streakHTML() : '') +
       boostPicker() +
       '<div class="btns"><button class="btn" id="mPlay" type="button">' + T('play') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
@@ -1561,6 +1590,7 @@
     save.best[id] = Math.max(prevBest, state.score);
     save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, id + 1));
     save.wins = (save.wins || 0) + 1;
+    save.streak = Math.min(3, (save.streak || 0) + 1);
     const earned = coinsOf(state.score) + stars * 10;
     save.coins += earned;
     persist();
@@ -1576,6 +1606,7 @@
         ? '<div class="final-score painted"><span id="mScore" class="digits"></span></div>'
         : '<div class="final-score"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '">+<span id="mScore">0</span></div>') +
       '<div class="best' + (isNew ? ' new' : '') + '">' + (isNew ? T('win.new') + ' · ' : '') + T('wallet', { n: save.coins.toLocaleString() }) + '</div>' +
+      '<div class="moves-line streak-up">' + T('streak.up', { n: save.streak }) + '</div>' +
       (last ? '<p>' + T('map.soon') + '</p>' : '') +
       '<div class="btns">' + (last ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
@@ -1615,12 +1646,14 @@
       '<h2 class="metal">' + T('lose.title') + '</h2><div class="orn"><i></i></div>' +
       '<div class="moves-line">' + T('lose.left') + '</div>' +
       '<div class="goal-list">' + rows + '</div>' +
+      (save.streak ? '<div class="moves-line streak-lost">' + T('streak.lost') + '</div>' : '') +
       '<div class="btns">' +
       '<button class="btn stack" id="mExtra" type="button" hidden>' + T('lose.extra') + '<span class="sub">' + T('lose.extraAd') + '</span></button>' +
       '<button class="btn' + (usedExtra ? '' : ' stone') + '" id="mRetry" type="button">' + T('retry') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
-    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel(id)); };
-    card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
+    // perdeu e desistiu (tentar de novo ou mapa) = trilha zera; se pegar +5 movimentos e vencer, mantém
+    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(() => startLevel(id)); };
+    card.querySelector('#mMap').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(openMap); };
     if (!usedExtra) {
       Ads.offerReward({
         onAvailable(show) {
@@ -1654,8 +1687,8 @@
     };
     paint();
     card.querySelector('#mResume').onclick = () => { Sound.play('click'); closeModal(); };
-    card.querySelector('#mRestart').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel(level.id)); };
-    card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
+    card.querySelector('#mRestart').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(() => startLevel(level.id)); };
+    card.querySelector('#mMap').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(openMap); };
     card.querySelector('#mSfx').onclick = () => { Sound.setSfx(!Sound.sfx); paint(); };
     card.querySelector('#mMusic').onclick = () => { Sound.setMusic(!Sound.music); paint(); };
   }
@@ -1673,34 +1706,49 @@
   // Códice do Templo (16/10): a loja é a página do livro pintado; as medalhas penduradas são as abas
   // (Itens · Skins de joia · Skins de palavra · Rastro de combo) e a medalha de baixo, do lado, volta.
   // 6 cartas por página; tocar numa carta mostra o detalhe e o botão de comprar embaixo do livro.
-  // Skins: só a que já existe (em uso); as outras aparecem "em breve" até chegar a arte.
+  // Skins: a de fábrica (value null) vem de graça; as outras se compram uma vez e depois é só tocar em USAR.
   const CODEX_TABS = [
     { id: 'items', icon: 'ixmoves' },
-    { id: 'gems', icon: 'ixpalette', skins: [{ id: 'gem.classic', art: 'ixpalette', on: true }, { id: 'soon' }, { id: 'soon' }] },
-    { id: 'words', icon: 'ixorb', skins: [{ id: 'word.solar', art: 'ixorb', on: true }, { id: 'word.rare' }, { id: 'word.goldgem' }] },
-    { id: 'trail', icon: 'ixarrow', skins: [{ id: 'trail.gold', art: 'ixarrow', on: true }, { id: 'soon' }, { id: 'soon' }] },
+    { id: 'gems', icon: 'ixpalette', slot: 'gem', skins: [
+      { id: 'gem.classic', art: 'ixpalette', value: null },
+      { id: 'gem.gold', art: 'skgold', value: 'gold', price: 800 },
+      { id: 'gem.obsidian', art: 'skobsidian', value: 'obsidian', price: 800 }] },
+    { id: 'words', icon: 'ixorb', slot: 'word', skins: [
+      { id: 'word.solar', art: 'p3', value: null },
+      { id: 'word.rare', art: 'wr_p3', value: 'rare', price: 600 },
+      { id: 'word.goldgem', soon: true }] },
+    { id: 'trail', icon: 'ixarrow', slot: 'trail', skins: [
+      { id: 'trail.gold', art: 'ixarrow', value: null },
+      { id: 'trail.jade', art: 'skjade', value: 'jade', price: 400 },
+      { id: 'trail.fire', art: 'skfire', value: 'fire', price: 400 }] },
   ];
-  function openShop(back) {
+  function openShop(back, startTab) {
     if (!ART.nodeImg('cxbook')) return openShopList(back);
     Sound.play('click');
-    let tab = 'items', sel = SHOP[0].id;
+    let tab = startTab || 'items', sel = startTab ? null : SHOP[0].id;
+    const coin = (n, sz) => '<img class="coin" alt="" src="' + ART.icon('coin', sz) + '">' + n;
+    const plate = (cls, inner, dis) => '<button class="cx-buy ' + cls + '" type="button"' + (dis ? ' disabled' : '') + ' style="background-image:url(' + ART.nodeImg('cxplate') + ')">' + inner + '</button>';
     const render = () => {
       const T0 = CODEX_TABS.find((t) => t.id === tab);
+      const owns = (s) => s.value == null || save.owned.includes(s.id);
+      const inUse = (s) => (save.skins[T0.slot] || null) === s.value;
       const cards = tab === 'items'
-        ? SHOP.map((it) => ({ key: it.id, img: itemImg(it, 96), label: '<img class="coin" alt="" src="' + ART.icon('coin', 32) + '">' + it.price, have: save.items[it.id] }))
-        : T0.skins.map((s, i) => ({ key: s.id + ':' + i, img: s.art && ART.nodeImg(s.art), label: T(s.on ? 'codex.inuse' : 'codex.soon'), soon: !s.on, skin: s }));
+        ? SHOP.map((it) => ({ key: it.id, img: itemImg(it, 96), label: coin(it.price, 32), have: save.items[it.id] }))
+        : T0.skins.map((s) => ({ key: s.id, img: s.art && ART.nodeImg(s.art), skin: s, soon: s.soon,
+          label: s.soon ? T('codex.soon') : inUse(s) ? T('codex.inuse') : owns(s) ? T('codex.owned') : coin(s.price, 32) }));
       while (cards.length < 6) cards.push(null);
       const cur = cards.find((c) => c && c.key === sel) || cards[0];
       sel = cur.key;
-      const it = tab === 'items' && SHOP.find((x) => x.id === sel);
+      const it = tab === 'items' && SHOP.find((x) => x.id === sel), sk = cur.skin;
       const tabBtn = (t, k) => '<button type="button" class="cx-tab t' + k + (t.id === tab ? ' on' : '') + '" data-tab="' + t.id + '" aria-label="' + T('codex.tab.' + t.id) + '"><img alt="" src="' + ART.nodeImg(t.icon) + '"></button>';
-      const detail = it
-        ? '<b>' + T('item.' + it.id) + '</b><span>' + T('item.' + it.id + '.d') + '</span><small>' + T('shop.have', { n: save.items[it.id] }) + '</small>' +
-          '<button class="cx-buy" type="button"' + (save.coins < it.price ? ' disabled' : '') + ' style="background-image:url(' + ART.nodeImg('cxplate') + ')"><img class="coin" alt="" src="' + ART.icon('coin', 48) + '">' + it.price + '</button>'
-        : '<b>' + T('codex.' + (cur.skin.id === 'soon' ? 'soon.t' : cur.skin.id)) + '</b><span>' + T(cur.soon ? 'codex.soon.d' : 'codex.inuse.d') + '</span>';
+      let detail;
+      if (it) detail = '<b>' + T('item.' + it.id) + '</b><span>' + T('item.' + it.id + '.d') + '</span><small>' + T('shop.have', { n: save.items[it.id] }) + '</small>' + plate('buy', coin(it.price, 48), save.coins < it.price);
+      else if (sk.soon) detail = '<b>' + T('codex.' + sk.id) + '</b><span>' + T('codex.soon.d') + '</span>';
+      else detail = '<b>' + T('codex.' + sk.id) + '</b><span>' + T('codex.' + tab + '.d') + '</span>' +
+        (inUse(sk) ? '<small>' + T('codex.inuse') + '</small>' : owns(sk) ? plate('use', T('codex.use')) : plate('buy', coin(sk.price, 48), save.coins < sk.price));
       const card = openModal(
         '<div class="cx-head"><div class="eyebrow">' + T('codex.tab.' + tab) + '</div>' +
-        '<div class="cx-wallet" style="background-image:url(' + ART.nodeImg('cxplate') + ')"><img class="coin" alt="" src="' + ART.icon('coin', 64) + '"><b>' + save.coins.toLocaleString() + '</b></div></div>' +
+        '<div class="cx-wallet" style="background-image:url(' + ART.nodeImg('cxplate') + ')">' + coin('<b>' + save.coins.toLocaleString() + '</b>', 64) + '</div></div>' +
         '<div class="cx-book" style="background-image:url(' + ART.nodeImg('cxbook') + ')">' +
           CODEX_TABS.map(tabBtn).join('') +
           '<button type="button" class="cx-tab t4 cx-close" aria-label="' + T('close') + '"><img alt="" src="' + ART.nodeImg('cxback') + '"></button>' +
@@ -1714,15 +1762,20 @@
       card.classList.add('codex');
       card.querySelectorAll('.cx-tab[data-tab]').forEach((b) => { b.onclick = () => { Sound.play('click'); tab = b.dataset.tab; sel = null; render(); }; });
       card.querySelectorAll('.cx-card[data-k]').forEach((b) => { b.onclick = () => { Sound.play('click'); sel = b.dataset.k; render(); }; });
-      const buy = card.querySelector('.cx-buy');
+      const equip = () => { save.skins[T0.slot] = sk.value; persist(); applySkins(); };
+      const buy = card.querySelector('.cx-buy.buy');
       if (buy) buy.onclick = () => {
-        if (!it || save.coins < it.price) return;
-        save.coins -= it.price; save.items[it.id]++; persist();
-        Sound.play('chest'); render(); paintWallet();
+        if (it) { if (save.coins < it.price) return; save.coins -= it.price; save.items[it.id]++; }
+        else { if (save.coins < sk.price) return; save.coins -= sk.price; save.owned.push(sk.id); equip(); }
+        persist(); Sound.play('chest'); render(); paintWallet();
       };
+      const use = card.querySelector('.cx-buy.use');
+      if (use) use.onclick = () => { equip(); Sound.play('create'); render(); };
       card.querySelector('.cx-close').onclick = () => { Sound.play('click'); closeModal(); if (back) back(); };
     };
     render();
+    // prévias das skins vêm no pacote extra: se a loja abriu antes dele chegar, redesenha quando chegar
+    if (!EXTRA.done) extraReady().then(() => { if (modalOpen() && $('modalCard').classList.contains('codex')) render(); });
   }
   // loja antiga em lista (reserva se a arte do Códice não carregar)
   function openShopList(back) {
@@ -2110,6 +2163,7 @@
   };
 
   function boot() {
+    applySkins();
     layout();
     TEX.applyCss();
     // kit de interface pintado: cada peça vira variável CSS (--ui-btn, --ui-frame...)
@@ -2136,7 +2190,9 @@
     else if (/^#evento-/.test(location.hash)) { if (location.hash === '#evento-anton') document.documentElement.classList.add('ev-anton'); startLevel(3); setTimeout(() => { const p3 = I18N.lang === 'pt' && ART.nodeImg('p3'); showPraise(T('praise.3'), p3 ? 'art p3' : '', p3); const b = document.createElement('div'); const ra = I18N.lang === 'pt' && ART.nodeImg('rush'); b.className = 'praise ' + (ra ? 'art rush' : 'banner'); if (ra) b.innerHTML = '<img alt="" src="' + ra + '">'; else b.textContent = T('rush'); b.style.top = '62%'; b.style.animation = 'none'; b.style.transform = 'translate(-50%,-50%)'; document.body.appendChild(b); const a = document.querySelector('.praise:not(.banner)'); if (a) { a.style.animation = 'none'; a.style.transform = 'translate(-50%,-50%)'; a.style.opacity = '1'; a.style.top = '40%'; setTimeout(() => document.body.appendChild(a), 1); } }, 2600); }
     else if (location.hash === '#mapa') openMap();
     else if (/^#mapademo\d*$/.test(location.hash)) { const u = +location.hash.slice(9) || 7; save.unlocked = u; save.fogShown = u - 2; for (let i = 1; i < u; i++) save.stars[i] = (i % 3) + 1; openMap(); }
-    else if (location.hash === '#loja') { openMap(); openShop(); }
+    else if (/^#loja/.test(location.hash)) { const m2 = /^#loja-(\w+)(?:-(\w+))?/.exec(location.hash); if (m2 && m2[2]) { save.skins[{ gems: 'gem', words: 'word', trail: 'trail' }[m2[1]]] = m2[2]; applySkins(); } openMap(); openShop(null, m2 ? m2[1] : null); }
+    // #pelesN: fase N com a skin de joia/rastro dada (#peles3-gold-fire), pra print
+    else if (/^#peles\d+/.test(location.hash)) { const m2 = /^#peles(\d+)-(\w+)-(\w+)/.exec(location.hash); save.skins.gem = m2[2]; save.skins.trail = m2[3]; applySkins(); startLevel(+m2[1]); let n = 0; const iv = setInterval(() => { if (n === 70) blastFx({ special: 'lineH', x: 3, y: 4, area: [] }); stepTime(0.05); update(0.05); draw(); if (++n > 74) clearInterval(iv); }, 50); }
     else if (/^#anuncio\d+$/.test(location.hash)) { const n = +location.hash.slice(8); startLevel(n); setTimeout(() => { announceLevel(LEVELS[n - 1]); const a = document.querySelector('.announce:last-of-type'); if (a) { a.style.animation = 'none'; a.remove = () => {}; } }, 600); }
     else if (location.hash === '#placardemo') { startLevel(3); setTimeout(() => { state.score = Math.round((level.stars[1] + level.stars[2]) / 2); renderHUD(); }, 900); }
     // #verN: fase N com o laço rodando por timer (pra print no Chrome sem janela)

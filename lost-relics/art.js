@@ -172,12 +172,17 @@
   // pacote extra (art-extra.js, 15/10): chefes, bichos e barra de vida montados depois da abertura,
   // um por vez nos intervalos do navegador, pra não travar o menu
   function loadExtra(E, onReady) {
-    const keys = Object.keys((E && E.nodes) || {});
+    // nodes viram dataURL; gems e fx (skins da loja, 16/10) ficam como imagem, igual ao pacote principal
+    const keys = [];
+    for (const set of ['nodes', 'gems', 'fx']) for (const k in (E && E[set]) || {}) keys.push([set, k]);
     let i = 0;
     const next = () => {
       if (i >= keys.length) { if (onReady) onReady(); return; }
-      const k = keys[i++];
-      loadSrc(E.nodes[k], (im) => { AI.nodes[k] = im.toDataURL ? im.toDataURL('image/png') : im.src; }, () => setTimeout(next, 0));
+      const [set, k] = keys[i++];
+      loadSrc(E[set][k], (im) => {
+        if (set === 'nodes') AI.nodes[k] = im.toDataURL ? im.toDataURL('image/png') : im.src;
+        else { AI[set][k] = im; cache = new Map(); cacheSize = 0; }
+      }, () => setTimeout(next, 0));
     };
     next();
   }
@@ -202,9 +207,12 @@
     }
   }
 
+  // skins da loja (16/10): joia 'ruby@gold' e efeito 'dart@jade' substituem a base quando a skin está em uso
+  const SKIN = { gem: null, fx: null };
+  function setSkins(s) { SKIN.gem = s.gem || null; SKIN.fx = s.fx || null; cache = new Map(); cacheSize = 0; }
   // joia: imagem da IA > 3D (gems3d.js) > 2D desenhada aqui
   function paintGem(ctx, g, R, f) {
-    const ai = AI.gems[g.key];
+    const ai = (SKIN.gem && AI.gems[g.key + '@' + SKIN.gem]) || AI.gems[g.key];
     if (ai) {
       ctx.save();
       const sh = ctx.createRadialGradient(0, R * 0.72, 0, 0, R * 0.72, R * 0.9);
@@ -696,5 +704,5 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     return c;
   }
-  root.ART = { loadAI, loadExtra, fx: (k) => AI.fx[k] || null, uiImages: () => AI.ui, nodeImg: (k) => AI.nodes[k] || null, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { return Object.keys(AI.gems).length > 0; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
+  root.ART = { loadAI, loadExtra, setSkins, fx: (k) => (SKIN.fx && AI.fx[k + '@' + SKIN.fx]) || AI.fx[k] || null, uiImages: () => AI.ui, nodeImg: (k) => AI.nodes[k] || null, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { return Object.keys(AI.gems).length > 0; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
 })(window);

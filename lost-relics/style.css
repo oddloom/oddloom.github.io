@@ -572,3 +572,14 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .cx-buy:active { transform: translateY(2px) scale(.97); }
 .cx-buy:disabled { filter: grayscale(1) brightness(.55); cursor: not-allowed; }
 .card.codex .shop-note { margin: 0; font-size: 13px !important; text-shadow: 0 1px 0 #000; }.modal:has(.card.codex) { background: radial-gradient(ellipse at center, rgba(4,3,2,.78), rgba(4,3,2,.94)); }
+
+/* Trilha do Explorador (16/10): 3 vantagens na janela antes da fase, acesas até a sequência de vitórias */
+.streak { display: grid; gap: 4px; justify-items: center; }
+.streak-row { display: flex; align-items: center; gap: 6px; }
+.streak-row img { width: 40px; height: 40px; object-fit: contain; opacity: .3; filter: grayscale(1); transition: opacity .2s; }
+.streak-row img.on { opacity: 1; filter: drop-shadow(0 0 8px rgba(255,214,110,.85)); }
+.streak-row i { width: 14px; height: 2px; background: rgba(212,168,75,.5); }
+.streak small { font-family: var(--f-body); font-size: 12px; color: var(--bone-dim); }
+.streak-up { color: var(--gold-hi, #f3d27a) !important; }
+.streak-lost { color: var(--ember) !important; }
+.cx-buy.use { font-size: 18px; letter-spacing: .1em; }
