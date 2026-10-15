@@ -82,12 +82,14 @@
       const px = G.w / 8, py = G.h / 8;
       const L = (G.x - G.visX0) / px, R = (G.visX1 - G.x - G.w) / px, T = (G.y - G.visY0) / py, B = (G.visY1 - G.y - G.h) / py;
       // em tela estreita a moldura pode passar um pouco da borda (até 0,7 casa de cada lado); em cima ela entra por baixo do painel
-      const needH = 8 + T * 0.45 + B * 0.9;
+      // fase de chefe: um pouco mais de espaço em cima pra barra de vida
+      const barH = level && (level.boss || level.scarab || level.bossKind) && ART.nodeImg('hpbar') ? 0.45 : 0;
+      const needH = 8 + T * 0.45 + B * 0.9 + barH;
       // tela estreita (celular): a pedra de fora da moldura pode sair da tela; ficam o filete de ouro e a faixa de glifos (~0,55 casa de cada lado)
       const crop = W < 560 ? Math.max(1.4, L + R - 1.1) : 1.4;
       cs = Math.max(20, Math.floor(Math.min(W / (8 + L + R - crop), availH / needH, 80)));
       ox = Math.round((W - cs * 8) / 2);
-      oy = Math.round(top + T * 0.45 * cs + Math.max(0, (availH - needH * cs) * 0.35));
+      oy = Math.round(top + (T * 0.45 + barH) * cs + Math.max(0, (availH - needH * cs) * 0.35));
     } else {
       cs = Math.max(20, Math.floor(Math.min(availW / state.W, availH / state.H, 82)));
       ox = Math.round((W - cs * state.W) / 2);
@@ -115,11 +117,12 @@
     applyBoosts(boosts || {});
     hammerMode = false;
     RUIN_KEYS.forEach(nodeImgObj);
-    vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = [];
+    vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = []; serpTrail = []; barShown = null; barHp = null; barHitT = -9;
     // fase de chefe: já carrega toda a arte dele (vidas, golpe, morte), senão o 1º golpe aparece sem desenho
-    if (level.boss && (level.bossKind || level.scarab)) {
+    if (level.bossKind || level.scarab) { // chefe ou enxame de escaravelhos em fase comum
       for (const k of Object.values(BOSS_SPR[bossKindOf(level)])) if (typeof k === 'string') nodeImgObj(k);
-      nodeImgObj('sshield'); nodeImgObj('jstone');
+      nodeImgObj('sshield'); nodeImgObj('jstone'); nodeImgObj('alump');
+      ['hpbar', 'hpgreen', 'hpred', 'hpcrack', 'name_' + bossKindOf(level)].forEach(nodeImgObj);
     }
     hint = null; selected = null; drag = null; usedExtra = false; idle = 0; shake = 0;
     scene = 'play';
@@ -244,6 +247,8 @@
     if (ev.type === 'bossland') { bossAnims[ev.idx] = null; return Promise.resolve(); }
     if (ev.type === 'bossflee') return onBossFlee(ev);
     if (ev.type === 'bossclaw') return onBossClaw(ev);
+    if (ev.type === 'bosseat') return onBossEat(ev);
+    if (ev.type === 'bossswap') return onBossSwap(ev);
     if (ev.type === 'bossmove') return onBossMove(ev);
     return Promise.resolve();
   }
@@ -295,24 +300,148 @@
   //               claw (onça cravando a garra) | slide (serpente rastejando 1 casa)
   // bossFlash[i] = instante em que o escudo de runas do ídolo brilhou (golpe que não pegou)
   let bossAnims = [], bossFlash = [];
+
+  // ---------- Kukulkán articulado (15/10) ----------
+  // Montado em peças vistas de cima (cabeça, anéis do corpo, cauda de penas) sobre um caminho:
+  // cabeça → cauda (as 2 casas que valem golpe) → casas por onde ela passou (só as penas da cauda chegam lá).
+  // Ondula de lado o tempo todo: serpenteia mesmo parada. serpTrail[i] = casas antigas atrás da cauda (mais nova primeiro).
+  let serpTrail = [];
+  function serpPolyline(i, head, tail) {
+    const pts = [head, tail];
+    for (const [x, y] of serpTrail[i] || []) {
+      const last = pts[pts.length - 1], p = [cellX(x), cellY(y)];
+      if (Math.hypot(p[0] - last[0], p[1] - last[1]) > cs * 1.2) break; // rastro só vale se for contínuo
+      pts.push(p);
+    }
+    // prolonga reto pra sempre ter caminho pra cauda
+    const a = pts[pts.length - 2], b = pts[pts.length - 1], d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    pts.push([b[0] + (b[0] - a[0]) / d * cs * 2, b[1] + (b[1] - a[1]) / d * cs * 2]);
+    // arredonda as curvas de 90° (Chaikin, mantendo cabeça e ponta)
+    let out = pts;
+    for (let k = 0; k < 2; k++) {
+      const n = [out[0]];
+      for (let j = 0; j < out.length - 1; j++) {
+        const p = out[j], q = out[j + 1];
+        if (j > 0) n.push([p[0] * 0.75 + q[0] * 0.25, p[1] * 0.75 + q[1] * 0.25]);
+        if (j < out.length - 2) n.push([p[0] * 0.25 + q[0] * 0.75, p[1] * 0.25 + q[1] * 0.75]);
+      }
+      n.push(out[out.length - 1]); out = n;
+    }
+    return out;
+  }
+  // ponto a 's' px da cabeça ao longo do caminho
+  function serpAt(pts, s) {
+    for (let k = 0; k < pts.length - 1; k++) {
+      const a = pts[k], b = pts[k + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (s <= L || k === pts.length - 2) { const f = L ? s / L : 0; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
+      s -= L;
+    }
+    return pts[0];
+  }
+  // ponto com a ondulação: parada na cabeça e na casa da cauda, livre nas penas
+  function serpWave(pts, s) {
+    const p = serpAt(pts, s), q = serpAt(pts, s + cs * 0.1);
+    let dx = p[0] - q[0], dy = p[1] - q[1]; const d = Math.hypot(dx, dy) || 1; dx /= d; dy /= d;
+    const u = s / cs, env = u < 1 ? Math.sin(Math.PI * u) : Math.min(1, (u - 1) * 1.6);
+    const o = cs * 0.1 * env * Math.sin(now * 4.2 - u * 3.4);
+    return [p[0] - dy * o, p[1] + dx * o];
+  }
+  // ângulo (apontando pra cabeça) no trecho em volta de s
+  function serpAngle(pts, s) {
+    const a = serpWave(pts, Math.max(0, s - cs * 0.15)), b = serpWave(pts, s + cs * 0.15);
+    return Math.atan2(a[1] - b[1], a[0] - b[0]);
+  }
+  // desenha uma peça girada; pivô em pivotX (fração da largura). Virada pra esquerda espelha na vertical pra luz ficar em cima
+  // clipFrom (opcional): só desenha da fração clipFrom da largura pra frente (o crânio por cima do corpo, sem a crista)
+  function drawSerpPart(im, x, y, ang, w, pivotX, clipFrom) {
+    const h = w * im.naturalHeight / im.naturalWidth;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+    if (Math.cos(ang) < 0) ctx.scale(1, -1);
+    if (clipFrom != null) { ctx.beginPath(); ctx.rect(-w * pivotX + w * clipFrom, -h, w, h * 2); ctx.clip(); }
+    ctx.drawImage(im, -w * pivotX, -h / 2, w, h);
+    ctx.restore();
+  }
+  function drawSerpent(boss, i, an, K) {
+    const seg = nodeImgObj(K.seg), headIm = nodeImgObj(K.head), roarIm = nodeImgObj(K.roar), tailIm = nodeImgObj(K.tail);
+    if (!seg || !headIm || !tailIm) return null;
+    const toScreen = (cs2) => cs2.map(([x, y]) => [cellX(x), cellY(y)]);
+    let head, tail, alpha = 1, scale = 1, roar = false;
+    const live = boss.hp > 0 ? bossScreenCells(boss) : [];
+    if (an && an.type === 'hit' && an.cells && an.cells.length === 2) {
+      // golpe: ruge e treme no lugar antigo
+      [head, tail] = toScreen(an.cells); roar = true;
+      scale = 1 + 0.08 * Math.sin(Math.min(1, (now - an.t0) / 0.35) * Math.PI);
+    } else if (an && an.type === 'fly') {
+      // mergulha no lugar antigo e emerge no novo
+      const q = Math.min(1, (now - an.t0) / 0.6);
+      if (q < 0.5 && an.cells && an.cells.length === 2) { [head, tail] = toScreen(an.cells); alpha = 1 - q * 2; scale = 1 - q * 0.5; }
+      else if (live.length === 2) { [head, tail] = live; alpha = q * 2 - 1; scale = 0.75 + 0.25 * alpha; }
+      if (q >= 1) bossAnims[i] = null;
+    } else if (an && an.type === 'slide' && live.length === 2 && an.from.length === 2) {
+      const q = Math.min(1, (now - an.t0) / 0.3), e = q * q * (3 - 2 * q);
+      head = [an.from[0][0] + (live[0][0] - an.from[0][0]) * e, an.from[0][1] + (live[0][1] - an.from[0][1]) * e];
+      tail = [an.from[1][0] + (live[1][0] - an.from[1][0]) * e, an.from[1][1] + (live[1][1] - an.from[1][1]) * e];
+      if (q >= 1) bossAnims[i] = null;
+    } else if (live.length === 2) [head, tail] = live;
+    if (!head || alpha <= 0.01) return 'hide'; // no meio do mergulho: nada na tela (nem as vidas)
+    // sibilo de vez em quando: abre a boca por um instante
+    if (!roar && roarIm) roar = ((now + i * 1.7) % 5.5) < 0.45;
+    const pts = serpPolyline(i, head, tail);
+    ctx.save(); ctx.globalAlpha = alpha;
+    // marca as 2 casas que valem golpe: brilho de jade pulsando por baixo
+    const pulse = 0.35 + 0.2 * Math.sin(now * 3);
+    for (const [cx, cy] of [head, tail]) {
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, cs * 0.62);
+      g.addColorStop(0, 'rgba(80,240,200,' + pulse + ')'); g.addColorStop(1, 'rgba(80,240,200,0)');
+      ctx.fillStyle = g; ctx.fillRect(cx - cs, cy - cs, cs * 2, cs * 2);
+    }
+    ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = cs * 0.18; ctx.shadowOffsetY = cs * 0.07;
+    const S = scale;
+    // cabeça: balança de leve; ruge no golpe e de vez em quando. A crista de penas fica por baixo do corpo
+    const aH = serpAngle(pts, cs * 0.1) + Math.sin(now * 2.2 + i) * 0.07;
+    const hIm = roar && roarIm ? roarIm : headIm, hW = cs * 2.1 * S * (roar ? 1.05 : 1);
+    drawSerpPart(hIm, head[0], head[1], aH, hW, 0.8);
+    // cauda de penas (balança um pouco além da ondulação)
+    const sT = cs * 1.25;
+    const pT = serpWave(pts, sT), aT = serpAngle(pts, sT + cs * 0.6) + Math.sin(now * 2.6 + i) * 0.1;
+    drawSerpPart(tailIm, pT[0], pT[1], aT, cs * 2.3 * S, 0.97);
+    // anéis do corpo, de trás pra frente
+    for (const u of [1.15, 0.8, 0.45]) {
+      const p = serpWave(pts, cs * u), breathe = 1 + 0.03 * Math.sin(now * 3 + u * 4);
+      drawSerpPart(seg, p[0], p[1], serpAngle(pts, cs * u), cs * 1.15 * S * breathe, 0.5);
+    }
+    // crânio de novo por cima do pescoço
+    drawSerpPart(hIm, head[0], head[1], aH, hW, 0.8, 0.62);
+    ctx.restore();
+    return [head[0], head[1] - cs * 0.62];
+  }
+  // penas soltas voando (golpe na serpente)
+  function feathers(x, y) {
+    const px = cellX(x), py = cellY(y);
+    for (let k = 0; k < 7; k++) {
+      parts.push({ type: 'leaf', x: px, y: py, vx: (Math.random() - 0.5) * cs * 4, vy: -cs * (1.2 + Math.random() * 2), rot: Math.random() * 6, vr: (Math.random() - 0.5) * 9,
+        size: cs * 0.14, color: ['#2fbf86', '#1f8f66', '#d9b04c'][k % 3], life: 0, max: 1.1 });
+    }
+  }
   // centro de um grupo de pontos já em coordenadas de tela
   const midOf = (pts) => [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length];
   // brilho em volta de cada chefe (marca que é o chefe)
-  const BOSS_GLOW = { scarab: '255,196,70', jaguar: '90,255,150', statue: '70,235,220', serpent: '80,240,200' };
+  const BOSS_GLOW = { scarab: '255,196,70', jaguar: '90,255,150', statue: '70,235,220', serpent: '80,240,200', boa: '215,190,90', monkey: '235,180,110' };
   function bossHit(b) {
     const boss = state.bosses[b.idx], kind = (boss && boss.kind) || 'scarab';
     const cells = b.cells && b.cells.length ? b.cells : [b.from];
     const from = midOf(cells.map(([x, y]) => [cellX(x), cellY(y)]));
     Sound.play('rock'); buzz([40, 30, 60]); addShake(kind === 'statue' ? 0.8 : 0.5);
     for (const [cx, cy] of cells) ring(cx, cy, 'rgba(255,215,110,0.95)', 1.4);
-    bossAnims[b.idx] = { type: 'hit', t0: now, from };
+    if (kind === 'serpent') { for (const [cx, cy] of cells) feathers(cx, cy); serpTrail[b.idx] = []; }
+    bossAnims[b.idx] = { type: 'hit', t0: now, from, cells };
     if (b.dead) {
       later(0.35, () => { bossAnims[b.idx] = { type: 'dead', t0: now, from }; Sound.play('glass', 3); praise(state.bosses.every((x) => x.hp <= 0) ? 3 : 2); });
       later(1.4, () => { if (bossAnims[b.idx] && bossAnims[b.idx].type === 'dead') bossAnims[b.idx] = { type: 'gone' }; });
     } else if (kind === 'statue') {
       // o ídolo não sai do lugar: depois do golpe ergue o escudo de runas
       later(0.4, () => { if (bossAnims[b.idx] && bossAnims[b.idx].type === 'hit') bossAnims[b.idx] = null; bossFlash[b.idx] = now; Sound.play('create'); });
-    } else later(0.35, () => { bossAnims[b.idx] = { type: 'fly', t0: now, from }; Sound.play('create'); });
+    } else later(0.35, () => { bossAnims[b.idx] = { type: 'fly', t0: now, from, cells }; Sound.play('create'); });
   }
   // escaravelho que ficou 3 jogadas sem apanhar foge voando
   function onBossFlee(ev) {
@@ -334,8 +463,37 @@
     later(0.55, () => { if (bossAnims[ev.idx] && bossAnims[ev.idx].type === 'claw') bossAnims[ev.idx] = null; });
     await wait(0.75);
   }
+  // macaco troca 2 joias: as duas cruzam em arco até o lugar novo (o motor já trocou na grade)
+  async function onBossSwap(ev) {
+    bossAnims[ev.idx] = { type: 'eat', t0: now };
+    Sound.play('swap'); buzz([20, 40, 20]);
+    for (const [to, fromC, lift] of [[ev.a, ev.b, -1], [ev.b, ev.a, 1]]) {
+      const p = state.grid[to[1]][to[0]];
+      if (!p) continue;
+      const v = V(p, fromC[0], fromC[1]); v.x = fromC[0]; v.y = fromC[1];
+      const x0 = fromC[0], y0 = fromC[1];
+      anim(0.45, (q) => { const e = q * q * (3 - 2 * q); v.x = x0 + (to[0] - x0) * e; v.y = y0 + (to[1] - y0) * e + Math.sin(q * Math.PI) * 0.6 * lift; });
+    }
+    later(0.75, () => { if (bossAnims[ev.idx] && bossAnims[ev.idx].type === 'eat') bossAnims[ev.idx] = null; });
+    await wait(0.6);
+  }
+  // jiboia engole: abre a boca e a joia vizinha vira bolo de pedra
+  async function onBossEat(ev) {
+    bossAnims[ev.idx] = { type: 'eat', t0: now };
+    Sound.play('create'); buzz([40, 30, 40]); addShake(0.3);
+    ev.cells.forEach(([x, y]) => {
+      const p = state.grid[y][x];
+      if (!p) return;
+      const v = V(p, x, y); v.s = 0;
+      later(0.3, () => { tween(v, { s: 1 }, 0.35, 'back'); ring(x, y, 'rgba(215,190,90,0.95)', 1.1); dust(x, y); Sound.play('rock'); });
+    });
+    later(0.75, () => { if (bossAnims[ev.idx] && bossAnims[ev.idx].type === 'eat') bossAnims[ev.idx] = null; });
+    await wait(0.8);
+  }
   // serpente rasteja: anima da posição antiga (cabeça, cauda) até a nova
   function onBossMove(ev) {
+    // a cauda antiga vira rastro: as penas da cauda seguem por onde o corpo passou
+    if (ev.from && ev.from[1]) serpTrail[ev.idx] = [ev.from[1]].concat(serpTrail[ev.idx] || []).slice(0, 3);
     bossAnims[ev.idx] = { type: 'slide', t0: now, from: ev.from.map(([x, y]) => [cellX(x), cellY(y)]) };
     return wait(0.32);
   }
@@ -346,11 +504,74 @@
       return v ? [cellX(v.x), cellY(v.y)] : [cellX(x), cellY(y)];
     });
   }
-  function drawBosses() { state.bosses.forEach((b, i) => drawBoss(b, i)); }
+  function drawBosses() { state.bosses.forEach((b, i) => drawBoss(b, i)); drawBossBar(); }
+
+  // ---------- barra de vida dos chefes (15/10) ----------
+  // Uma barra só no topo do tabuleiro, no lugar das vidas em cima de cada bicho: moldura de pedra com o retrato
+  // do chefe no medalhão, ouro líquido verde que vira vermelho no fim, desce suave e racha a cada golpe.
+  // Vários chefes (escaravelhos) = soma das vidas. Canal e medalhão em px da moldura (926x211).
+  const HPB = { w: 926, h: 211, cx0: 205, cx1: 872, cy0: 66, cy1: 136, mx: 112, my: 100, mr: 58 };
+  let barShown = null, barHp = null, barHitT = -9;
+  const hasBossBar = () => !!(nodeImgObj('hpbar') && nodeImgObj('hpgreen'));
+  function drawBossBar() {
+    const frame = nodeImgObj('hpbar'), green = nodeImgObj('hpgreen'), red = nodeImgObj('hpred'), crack = nodeImgObj('hpcrack');
+    if (!frame || !green || !state.bosses.length) return;
+    const max = state.bosses.reduce((a, b) => a + b.max, 0), hp = state.bosses.reduce((a, b) => a + Math.max(0, b.hp), 0);
+    if (barHp != null && hp < barHp) barHitT = now;
+    barHp = hp;
+    const target = max ? hp / max : 0;
+    barShown = barShown == null ? target : barShown + (target - barShown) * Math.min(1, lastDt * 6);
+    const hitQ = Math.max(0, 1 - (now - barHitT) / 0.6);
+    const bw = cs * 5.6, bh = bw * HPB.h / HPB.w, k = bw / HPB.w;
+    const bx = ox + cs * 4 - bw / 2 + (hitQ ? (Math.random() - 0.5) * cs * 0.12 * hitQ : 0), by = oy - bh - cs * 0.02;
+    // canal: ouro líquido cortado na largura da vida
+    // a moldura vem com o canal pintado de preto: desenha ela primeiro e o líquido por cima, dentro do filete de ouro
+    ctx.drawImage(frame, bx, by, bw, bh);
+    const ins = 5 * k, chX = bx + HPB.cx0 * k + ins, chY = by + HPB.cy0 * k + ins, chW = (HPB.cx1 - HPB.cx0) * k - ins * 2, chH = (HPB.cy1 - HPB.cy0) * k - ins * 2;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(chX, chY, chW * barShown, chH); ctx.clip();
+    ctx.drawImage(green, chX, chY, chW, chH);
+    const redA = red ? Math.max(0, Math.min(1, (0.5 - barShown) / 0.18)) : 0;
+    if (redA > 0) { ctx.globalAlpha = redA; ctx.drawImage(red, chX, chY, chW, chH); ctx.globalAlpha = 1; }
+    // brilho correndo pelo líquido
+    const sx = chX + ((now * 0.35) % 1.4 - 0.2) * chW, gl = ctx.createLinearGradient(sx - chH, 0, sx + chH, 0);
+    gl.addColorStop(0, 'rgba(255,255,255,0)'); gl.addColorStop(0.5, 'rgba(255,250,220,0.35)'); gl.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gl; ctx.fillRect(chX, chY, chW, chH);
+    ctx.restore();
+    // retrato do chefe no medalhão
+    const K = BOSS_SPR[state.bosses[0].kind || 'scarab'], face = nodeImgObj(K.idle);
+    if (face) {
+      const mx = bx + HPB.mx * k, my = by + HPB.my * k, r = HPB.mr * k;
+      ctx.save(); ctx.beginPath(); ctx.arc(mx, my, r, 0, Math.PI * 2); ctx.clip();
+      ctx.fillStyle = '#0b1310'; ctx.fillRect(mx - r, my - r, r * 2, r * 2);
+      const fw = r * 2.3, fh = fw * face.naturalHeight / face.naturalWidth, pop = 1 + 0.15 * hitQ;
+      ctx.drawImage(face, mx - fw * pop / 2, my - fh * pop / 2, fw * pop, fh * pop);
+      ctx.restore();
+    }
+    // nome do chefe pintado (Solar) sobre a faixa de glifos de cima da moldura
+    const nm = nodeImgObj('name_' + (state.bosses[0].kind || 'scarab'));
+    if (nm) {
+      let nh = cs * 0.46, nw = nh * nm.naturalWidth / nm.naturalHeight;
+      const maxW = chW * 0.95; if (nw > maxW) { nh *= maxW / nw; nw = maxW; }
+      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = cs * 0.15;
+      ctx.drawImage(nm, chX + chW / 2 - nw / 2, by + HPB.cy0 * k * 0.42 - nh / 2, nw, nh);
+      ctx.restore();
+    }
+    // racha no ponto onde a vida caiu
+    if (hitQ > 0 && crack) {
+      const cw = chH * 2.4 * (1 + (1 - hitQ) * 0.3);
+      ctx.save(); ctx.globalAlpha = hitQ; ctx.drawImage(crack, chX + chW * target - cw / 2, chY + chH / 2 - cw / 2, cw, cw); ctx.restore();
+    }
+  }
   function drawBoss(boss, i) {
     const an = bossAnims[i];
     if (an && an.type === 'gone') return;
     const kind = boss.kind || 'scarab', K = BOSS_SPR[kind];
+    // Kukulkán: corpo articulado em peças (a morte continua com a explosão de penas pintada)
+    if (kind === 'serpent' && !(an && an.type === 'dead')) {
+      const at = drawSerpent(boss, i, an, K);
+      if (at) { if (at !== 'hide' && boss.hp > 0 && !hasBossBar()) drawBossLives(boss, K, kind, at[0], at[1]); return; }
+    }
     const cells = boss.hp > 0 ? bossScreenCells(boss) : [];
     const bob = kind === 'statue' ? 0 : Math.sin(now * 3.2 + i * 2.1) * cs * 0.04;
     let key = K.idle, x = null, y = null, a = 1, sc = 1, dir = null; // dir = cabeça - cauda (serpente)
@@ -374,12 +595,17 @@
     } else if (an && an.type === 'claw') {
       key = K.move; sc = 1.05 + 0.15 * Math.sin(Math.min(1, (now - an.t0) / 0.5) * Math.PI);
       if (an.from && !cells.length) [x, y] = an.from;
+    } else if (an && an.type === 'eat') {
+      key = K.eat || K.idle; sc = 1 + 0.14 * Math.sin(Math.min(1, (now - an.t0) / 0.7) * Math.PI);
+      if (!cells.length) return;
     } else if (an && an.type === 'dead') { key = K.dead; [x, y] = an.from; const q = Math.min(1, (now - an.t0) / 1); a = 1 - q * q; sc = 1 + q * 0.25; dir = null; }
     else { if (!cells.length || boss.hp <= 0) return; y += bob; }
     if (x == null) return;
     const im = nodeImgObj(key) || nodeImgObj(K.idle);
     if (!im) return;
-    const w = cs * K.size * sc, h = w * im.naturalHeight / im.naturalWidth;
+    // a jiboia cresce um pouco a cada joia engolida
+    const grow = kind === 'boa' ? 1 + 0.08 * Math.min(4, boss.meals || 0) : 1;
+    const w = cs * K.size * sc * grow, h = w * im.naturalHeight / im.naturalWidth;
     const vert = !!dir && Math.abs(dir[1]) > Math.abs(dir[0]);
     const anchor = kind === 'statue' || kind === 'serpent' ? 0.5 : 0.55;
     ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y);
@@ -400,9 +626,13 @@
       }
     }
     // vidas em cima: carapaças (escaravelho), garras (onça), máscaras (ídolo), penas (serpente)
-    if (key === K.dead) return;
+    if (key === K.dead || hasBossBar()) return;
+    drawBossLives(boss, K, kind, x, y - (vert ? w / 2 : h * anchor));
+  }
+  // vidas em fileira acima de 'topY' (centro x)
+  function drawBossLives(boss, K, kind, x, topY) {
     const hp = Math.max(0, boss.hp), max = boss.max, ls = cs * (max > 4 ? 0.3 : 0.34);
-    const top = y - (vert ? w / 2 : h * anchor) - ls * 1.05;
+    const top = topY - ls * 1.05;
     // faixa escura atrás das vidas: lê de longe e não se mistura com o desenho do chefe
     const rowW = max * ls * 0.9 + ls * 0.3;
     ctx.save(); ctx.globalAlpha = 0.55; ctx.fillStyle = '#0b0f0c';
@@ -884,7 +1114,8 @@
     const w = cs * s * (1 + v.sq), h = cs * s * (1 - v.sq);
     ctx.globalAlpha = v.a;
     // joia que a onça transformou em pedra: pedra pintada com a marca verde da garra
-    const stoneIm = p.claw && nodeImgObj('jstone');
+    // joia engolida pela jiboia: bolo de escamas com a joia brilhando dentro
+    const stoneIm = (p.claw && nodeImgObj('jstone')) || (p.lump && nodeImgObj('alump'));
     if (stoneIm) { ctx.drawImage(stoneIm, cx - w * 0.48, cy - h * 0.48, w * 0.96, h * 0.96); ctx.globalAlpha = 1; return; }
     // feitiço: aura da cor da pedra que "respira" devagar, cada joia no seu ritmo
     if (p.kind === 'gem' && !p.special && p.color != null && ART.hasAI) {
@@ -1096,7 +1327,12 @@
     scarab: { idle: 'bidle', hit: 'bhit', move: 'bfly', dead: 'bdead', l3: 'blife3', l1: 'blife1', size: 1.3 },
     jaguar: { idle: 'jidle', hit: 'jhit', move: 'jleap', dead: 'jdead', l3: 'jlife3', l1: 'jlife1', size: 1.95 },
     statue: { idle: 'sidle', hit: 'shit', move: 'sidle', dead: 'sdead', l3: 'slife3', l1: 'slife1', size: 2.05 },
-    serpent: { idle: 'kidle', hit: 'khit', move: 'kcoil', dead: 'kdead', l3: 'klife3', l1: 'klife1', size: 2.3 },
+    // jiboia (fase 12): enrolada, golpe, fugindo (também na saída), engolindo; vidas = carapaças do escaravelho (só se faltar a barra)
+    // macaco (fase 18): pendurado no cipó, assustado, fugindo, trocando joias
+    monkey: { idle: 'midle', hit: 'mhit', move: 'mflee', dead: 'mflee', eat: 'mswap', l3: 'blife3', l1: 'blife1', size: 1.4 },
+    boa: { idle: 'aidle', hit: 'ahit', move: 'aflee', dead: 'aflee', eat: 'aeat', l3: 'blife3', l1: 'blife1', size: 1.35 },
+    serpent: { idle: 'kidle', hit: 'khit', move: 'kcoil', dead: 'kdead', l3: 'klife3', l1: 'klife1', size: 2.3,
+      head: 'khead', roar: 'kroar', seg: 'kseg', tail: 'ktail' }, // peças do corpo articulado (drawSerpent)
   };
   const bossKindOf = (L) => (L && (L.bossKind || (L.scarab ? 'scarab' : null))) || 'scarab';
   const goalIcon = (g, size, L) => (g.type === 'boss' && ART.nodeImg(BOSS_SPR[bossKindOf(L || level)].idle)) || ART.icon(goalIconKey(g), size);
@@ -1208,7 +1444,7 @@
       '<div class="goal-list">' + rows + '</div>' +
       '<div class="moves-line">' + T('moves') + ': <b>' + L.moves + '</b></div>' +
       // (os parênteses importam: sem eles, com a arte do chefe carregada, o texto do tutorial sumia)
-      (tutKey ? '<div class="tut"><img alt="" src="' + ((L.boss && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><p>' + T(tutKey) + '</p></div>' : '') +
+      (tutKey ? '<div class="tut"><img alt="" src="' + (((L.boss || L.tut === 'boa' || L.tut === 'monkey') && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><p>' + T(tutKey) + '</p></div>' : '') +
       boostPicker() +
       '<div class="btns"><button class="btn" id="mPlay" type="button">' + T('play') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
@@ -1589,6 +1825,21 @@
     else if (location.hash === '#loja') { openMap(); openShop(); }
     else if (/^#anuncio\d+$/.test(location.hash)) { const n = +location.hash.slice(8); startLevel(n); setTimeout(() => { announceLevel(LEVELS[n - 1]); const a = document.querySelector('.announce:last-of-type'); if (a) { a.style.animation = 'none'; a.remove = () => {}; } }, 600); }
     else if (location.hash === '#placardemo') { startLevel(3); setTimeout(() => { state.score = Math.round((level.stars[1] + level.stars[2]) / 2); renderHUD(); }, 900); }
+    // #verN: fase N com o laço rodando por timer (pra print no Chrome sem janela)
+    else if (/^#ver\d+$/.test(location.hash)) {
+      startLevel(+location.hash.slice(4));
+      let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50);
+    }
+    // #serpdemo: fase 20 com o laço rodando por timer (o Chrome sem janela não roda requestAnimationFrame) e um rastro em curva
+    else if (location.hash === '#serpdemo') {
+      startLevel(20);
+      setTimeout(() => {
+        const [h, t] = LR.bossCells(state, state.bosses[0]), dx = h[0] - t[0], dy = h[1] - t[1];
+        const back = [t[0] - dx, t[1] - dy], side = [back[0] + dy, back[1] + dx];
+        serpTrail[0] = [back, side].filter(([x, y]) => x >= 0 && y >= 0 && x < 8 && y < 8);
+      }, 300);
+      let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50);
+    }
     else if (location.hash === '#chefedemo') { startLevel(5); setTimeout(() => { vis = new Map(); state.bosses[0].hp = 0; state.bosses[1].hp = 1; state.goals[0].count = 1; renderHUD(); }, 1500); }
     else if (location.hash === '#derrotademo') { startLevel(1); setTimeout(() => { showLose(); const x = document.getElementById('mExtra'); if (x) x.hidden = false; }, 900); }
     else if (location.hash === '#pontosdemo') { startLevel(1); setTimeout(() => { state.score = 1290; renderHUD(); floats.push({ x: cellX(3), y: cellY(4), text: '+90', num: 90, color: '#ffe08a', t: 0, hold: true }); }, 900); }

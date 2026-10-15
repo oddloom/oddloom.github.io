@@ -101,6 +101,10 @@
   const BOSS_FLEE = 3;
   // Onça de Jade (fase 10): a cada JAG_CLAW jogadas crava a garra e vira JAG_STONES joias perto dela em pedra
   const JAG_CLAW = 3, JAG_STONES = 2;
+  // Jiboia (fase 12, ideia dele 15/10): a cada BOA_EAT jogadas sem apanhar engole 1 joia encostada
+  const BOA_EAT = 2;
+  // Macaco (fase 18, ideia dele 15/10): a cada MONKEY_SWAP jogadas sem apanhar troca 2 joias de lugar
+  const MONKEY_SWAP = 3;
   const aliveBosses = (s) => (s.bosses || []).filter((b) => b.hp > 0);
   function idPos(s, id) {
     if (id == null) return null;
@@ -626,6 +630,29 @@
     for (const b of aliveBosses(s)) {
       const idx = s.bosses.indexOf(b);
       if (b.kind === 'statue') continue;
+      if (b.kind === 'monkey') {
+        // macaco: a cada MONKEY_SWAP jogadas sem apanhar troca 2 joias de lugar perto dele (nunca deixa combinação pronta)
+        if (b.hitThisMove) { b.prank = 0; continue; }
+        b.prank = (b.prank || 0) + 1;
+        if (b.prank >= MONKEY_SWAP) {
+          b.prank = 0;
+          const from = bossPos(s, b), sw = prank(s, from);
+          if (sw) yield { type: 'bossswap', idx, from, a: sw[0], b: sw[1] };
+        }
+        continue;
+      }
+      if (b.kind === 'boa') {
+        // jiboia: a cada BOA_EAT jogadas sem apanhar engole uma joia encostada (vira bolo de pedra) e cresce;
+        // apanhou = o contador zera
+        if (b.hitThisMove) { b.eat = 0; continue; }
+        b.eat = (b.eat || 0) + 1;
+        if (b.eat >= BOA_EAT) {
+          b.eat = 0;
+          const from = bossPos(s, b), cells = swallow(s, from);
+          if (cells.length) { b.meals = (b.meals || 0) + 1; yield { type: 'bosseat', idx, from, cells }; }
+        }
+        continue;
+      }
       if (b.kind === 'jaguar') {
         // garra a cada 3 jogadas, tenha apanhado ou não: o tabuleiro vai endurecendo
         b.claw = (b.claw || 0) + 1;
@@ -676,6 +703,39 @@
     for (const o of opts) { r -= o.w; if (r <= 0) { pick = o; break; } }
     b.id2 = b.id; b.id = pick.p.id;
     return true;
+  }
+  // macaco troca 2 joias comuns de cores diferentes a até 3 casas dele; desfaz e tenta outro par se a troca
+  // deixar combinação pronta (o tabuleiro não pode ficar com match parado)
+  function prank(s, from) {
+    if (!from) return null;
+    const taken = takenIds(s), cand = [];
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+      if (Math.abs(x - from[0]) + Math.abs(y - from[1]) > 3) continue;
+      const p = s.grid[y][x];
+      if (plainGem(p) && !taken.has(p.id)) cand.push([x, y]);
+    }
+    for (let tries = 0; tries < 40 && cand.length > 1; tries++) {
+      const a = cand[randInt(s, cand.length)], b = cand[randInt(s, cand.length)];
+      const pa = s.grid[a[1]][a[0]], pb = s.grid[b[1]][b[0]];
+      if (pa === pb || pa.color === pb.color) continue;
+      s.grid[a[1]][a[0]] = pb; s.grid[b[1]][b[0]] = pa;
+      if (!matchThrough(s, a[0], a[1]) && !matchThrough(s, b[0], b[1])) return [a, b];
+      s.grid[a[1]][a[0]] = pa; s.grid[b[1]][b[0]] = pb;
+    }
+    return null;
+  }
+  // jiboia engole 1 joia comum encostada (cima/baixo/lados): vira um bolo de pedra (rocha de 1 camada, lump)
+  function swallow(s, from) {
+    if (!from) return [];
+    const taken = takenIds(s), opts = [];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const x = from[0] + dx, y = from[1] + dy;
+      if (inside(s, x, y) && plainGem(s.grid[y][x]) && !taken.has(s.grid[y][x].id)) opts.push([x, y]);
+    }
+    if (!opts.length) return [];
+    const [x, y] = opts[randInt(s, opts.length)];
+    s.grid[y][x] = { id: s.nextId++, kind: 'rock', hp: 1, lump: true };
+    return [[x, y]];
   }
   // garra da onça: vira em pedra as n joias comuns mais perto dela (não a joia onde ela está)
   function petrify(s, from, n) {

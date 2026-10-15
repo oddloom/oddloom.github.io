@@ -20,14 +20,17 @@
       'xx....xx', 'x.ssss.x', '..s..s..', '.ss..ss.', '.ss..ss.', '..s..s..', 'x.ssss.x', 'xx....xx'] },
     { moves: 15, colors: 5, goals: [{ type: 'artifact', target: 1 }], artifacts: 1, artifactMax: 1, tut: 'artifact', layout: [
       '...a....', '........', '........', '........', '........', '........', '........', '........'] },
-    { moves: 14, colors: 5, goals: [{ type: 'score', target: 9000 }], tut: 'idol', layout: FULL },
+    // fase 8 (15/10, pedido dele: escaravelhos também em fase comum): ENXAME, 4 escaravelhos de 1 vida + a meta de pontos.
+    { moves: 14, colors: 5, goals: [{ type: 'boss', target: 4 }, { type: 'score', target: 9000 }], scarab: 4, scarabHp: 1, tut: 'idol', layout: FULL },
     { moves: 18, colors: 5, goals: [{ type: 'artifact', target: 2 }], artifacts: 2, artifactMax: 1, layout: ['....a...', '........', '........', '........', '........', '........', '........', '........'] },
     // fase 10 = 2º chefe (14/10): ONÇA DE JADE. Monta numa joia como o escaravelho (golpe = joia dela ou encostada,
     // 1 por jogada, ela salta pra longe) e a cada 3 jogadas crava a garra: 2 joias perto dela viram pedra.
     { moves: 20, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'jaguar', bossHp: 6, boss: true, tut: 'jaguar', layout: FULL },
     { moves: 12, colors: 5, goals: [{ type: 'rock', target: 10 }], tut: 'rock', layout: [
       '........', '........', '........', '........', '........', 'rr.rr.rr', '.r.rr.r.', '........'] },
-    { moves: 13, colors: 5, goals: [{ type: 'sand' }, { type: 'rock', target: 8 }], layout: [
+    // fase 12 (15/10, ideia dele): JIBOIA. Monta numa joia (golpe = joia dela ou encostada, ela foge pra longe);
+    // a cada 2 jogadas sem apanhar engole 1 joia encostada, que vira bolo de pedra. Antes: areia + 8 rochas.
+    { moves: 14, colors: 5, goals: [{ type: 'boss', target: 1 }, { type: 'sand' }], bossKind: 'boa', bossHp: 3, tut: 'boa', layout: [
       '........', '........', 'r......r', 'rr....rr', '.ssssss.', '.ssssss.', 'rr....rr', 'r......r'] },
     { moves: 18, colors: 6, goals: [{ type: 'collect', color: 5, target: 25 }], tut: 'diamond', layout: FULL },
     { moves: 26, colors: 6, goals: [{ type: 'vine', target: 10 }], tut: 'vine', layout: [
@@ -39,7 +42,9 @@
       '........', '........', 'v.ssss.v', 'v.s..s.v', 'v.s..s.v', 'v.ssss.v', '........', '........'] },
     { moves: 26, colors: 6, goals: [{ type: 'rock', target: 11 }], layout: [
       '........', '........', '........', '........', 'RR.RR.RR', '........', 'r.rr.rr.', '........'] },
-    { moves: 17, colors: 6, goals: [{ type: 'score', target: 7500 }], layout: [
+    // fase 18 (15/10, ideia dele): MACACO. Monta numa joia (golpe = joia dele ou encostada, ele pula pra longe);
+    // a cada 3 jogadas sem apanhar troca 2 joias de lugar perto dele. Antes: só 7.500 pontos.
+    { moves: 17, colors: 6, goals: [{ type: 'boss', target: 1 }, { type: 'score', target: 7500 }], bossKind: 'monkey', bossHp: 3, tut: 'monkey', layout: [
       'xx....xx', 'x......x', '........', '........', '........', '........', 'x......x', 'xx....xx'] },
     { moves: 19, colors: 6, goals: [{ type: 'artifact', target: 2 }, { type: 'rock', target: 8 }], artifacts: 2, artifactMax: 1, layout: [
       '...a....', '........', '........', 'r.r..r.r', '.r.rr.r.', '........', '........', '........'] },
