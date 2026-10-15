@@ -13,6 +13,8 @@
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.unlocked) save = Object.assign(save, s); } catch (e) {}
   save.coins = save.coins == null ? 300 : save.coins;
   save.items = Object.assign({ moves: 0, dyn: 0, orb: 0, hammer: 1 }, save.items);
+  // link de teste (tools/montar-link.js): todas as fases abertas, pra testar qualquer uma em qualquer aparelho
+  if (window.LR_TESTE) save.unlocked = Math.max(save.unlocked, LEVELS.length);
   // moedas da fase = pontos / 100 (+10 por estrela na vitória)
   const coinsOf = (score) => Math.floor(score / 100);
   const SHOP = [
@@ -112,6 +114,7 @@
     state = LR.createState(level, ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
     applyBoosts(boosts || {});
     hammerMode = false;
+    RUIN_KEYS.forEach(nodeImgObj);
     vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = [];
     // fase de chefe: já carrega toda a arte dele (vidas, golpe, morte), senão o 1º golpe aparece sem desenho
     if (level.boss && (level.bossKind || level.scarab)) {
@@ -624,6 +627,10 @@
 
   // camada do tabuleiro: pedra, filete de ouro e casas fundas (redesenha só quando muda tamanho ou fase)
   let boardLayer = null, boardLayerX = 0, boardLayerY = 0;
+  // blocos de ruína (folha: ruin1 calendário, ruin2 musgo, ruin3 runa acesa, ruin4 raízes).
+  // Escolha dele (15/10): todas as casas com o mesmo bloco, o de musgo (misturado ficou bagunçado)
+  const RUIN_KEYS = ['ruin2'];
+  const ruinPick = () => 0;
   function buildBoardLayer() {
     const G = window.ART_DATA && ART_DATA.boardGrid;
     if (ART.board && G && state.W === 8 && state.H === 8) return buildPaintedBoard(G);
@@ -664,16 +671,28 @@
       sg.globalCompositeOperation = 'destination-in'; sg.drawImage(mk, 0, 0);
       g.save(); g.shadowColor = 'rgba(40,24,6,0.55)'; g.shadowBlur = cs * 0.15; g.drawImage(lc, 0, 0, iw, ih); g.restore();
     }
-    // casas que não existem na fase: viram fosso de pedra escura
+    // casas que não existem na fase: blocos de ruína que não quebram (pintados; fosso escuro só enquanto a arte carrega)
     const dark = g.createPattern(TEX.get('dark'), 'repeat');
+    const ruins = RUIN_KEYS.map(nodeImgObj);
+    const ready = ruins.every(Boolean);
     for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
       if (state.mask[y][x]) continue;
       const X = ox - ix + x * cs, Y = oy - iy + y * cs;
       g.fillStyle = dark; g.fillRect(X - 1, Y - 1, cs + 2, cs + 2);
+      if (ready) {
+        g.drawImage(ruins[ruinPick(x, y)], X, Y, cs, cs);
+        // sombra leve no pé do bloco pra ele assentar na moldura
+        const sh = g.createLinearGradient(0, Y + cs * 0.7, 0, Y + cs);
+        sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,0.35)');
+        g.fillStyle = sh; g.fillRect(X, Y, cs, cs);
+        continue;
+      }
       const sh = g.createLinearGradient(0, Y, 0, Y + cs);
       sh.addColorStop(0, 'rgba(0,0,0,0.85)'); sh.addColorStop(1, 'rgba(0,0,0,0.55)');
       g.fillStyle = sh; g.fillRect(X - 1, Y - 1, cs + 2, cs + 2);
     }
+    // a arte ainda não carregou: refaz a camada quando chegar
+    if (!ready) for (const k of RUIN_KEYS) { const im = nodeImgs[k]; if (im && !im.complete) im.addEventListener('load', () => { if (state) buildBoardLayer(); }, { once: true }); }
     boardLayer = c; boardLayerX = ix; boardLayerY = iy;
   }
   function buildCodeBoard() {    const M = Math.round(cs * 0.55), BW = state.W, BH = state.H;
@@ -851,6 +870,7 @@
       drawPiece(d.p, v, 1);
     }
     if (state.bosses && state.bosses.length) drawBosses();
+    drawHammerFx();
     drawParts();
     ctx.restore();
     drawFloats();
@@ -1345,18 +1365,40 @@
   function paintWallet() { const el = $('mapCoins'); if (el) el.textContent = save.coins.toLocaleString(); }
 
   // martelo: o próximo toque quebra a joia escolhida (não gasta movimento)
-  let hammerMode = false;
+  let hammerMode = false, hammerFx = null;
+  // desenha a marretada: 0..0.32s ergue e desce girando até a joia, depois fica 0.25s no impacto e some
+  function drawHammerFx() {
+    if (!hammerFx) return;
+    const q = now - hammerFx.t0, im = nodeImgObj('hhamon') || nodeImgObj('hham');
+    if (q > 0.6 || !im) { if (q > 0.6) hammerFx = null; return; }
+    const down = Math.min(1, q / 0.32), e = down * down * down;
+    const ang = -1.1 + e * 1.5; // ergue pra trás e bate pra frente
+    const w = cs * 1.7, h = w * im.naturalHeight / im.naturalWidth;
+    const px = cellX(hammerFx.x) + cs * 0.55, py = cellY(hammerFx.y) + cs * 0.6; // pivô = mão no cabo
+    ctx.save(); ctx.globalAlpha = q < 0.32 ? 1 : Math.max(0, 1 - (q - 0.32) / 0.28);
+    ctx.translate(px, py); ctx.rotate(ang);
+    ctx.drawImage(im, -w * 0.78, -h * 0.92, w, h); // cabeça do martelo em cima à esquerda da imagem
+    ctx.restore();
+  }
   function updateHammerBtn() {
     const b = $('btnHammer'); if (!b) return;
     b.hidden = scene !== 'play' || !(save.items.hammer > 0);
     b.classList.toggle('on', hammerMode);
-    $('hammerCount').textContent = '×' + (save.items.hammer || 0);
+    const n = save.items.hammer || 0, hc = $('hammerCount');
+    if (b.classList.contains('painted')) {
+      $('hammerIc').src = ART.nodeImg(hammerMode ? 'hhamon' : 'hham');
+      hc.innerHTML = digitsHTML(n); hc.classList.add('digits');
+    } else hc.textContent = '×' + n;
   }
   $('btnHammer').onclick = () => { if (busy || scene !== 'play' || !(save.items.hammer > 0)) return; hammerMode = !hammerMode; Sound.play('click'); updateHammerBtn(); };
   async function useHammer(c) {
     hammerMode = false; save.items.hammer--; persist(); updateHammerBtn();
     busy = true; praiseLevel = 0;
-    Sound.play('rock'); addShake(0.3);
+    // marretada: o martelo aceso ergue, desce na joia e racha (o golpe acontece no impacto)
+    hammerFx = { x: c[0], y: c[1], t0: now };
+    await wait(0.32);
+    Sound.play('rock'); Sound.play('glass', 2); addShake(0.6); buzz([50]);
+    ring(c[0], c[1], 'rgba(255,215,110,0.95)', 1.5); dust(c[0], c[1]);
     await play(LR.resolve(state, { hits: [{ x: c[0], y: c[1], src: 'blast' }] }));
     await afterMove();
   }
@@ -1526,7 +1568,14 @@
     for (const k in UIK) { const im = UIK[k]; const url = im.toDataURL ? im.toDataURL('image/png') : im.src; document.documentElement.style.setProperty('--ui-' + k, 'url(' + url + ')'); }
     if (Object.keys(UIK).length) document.documentElement.classList.add('ui-kit');
     UIART.applyCorners();
-    $('hammerIc').src = ART.icon('hammer', 80);
+    // martelo pintado (15/10): botão de pedra redondo, martelo (aceso quando armado) e selo de pedra com o contador
+    if (ART.nodeImg('hbtn')) {
+      const hb = $('btnHammer'); hb.classList.add('painted');
+      hb.style.setProperty('--h-btn', 'url(' + ART.nodeImg('hbtn') + ')');
+      hb.style.setProperty('--h-badge', 'url(' + ART.nodeImg('hbadge') + ')');
+      $('hammerIc').src = ART.nodeImg('hham');
+      nodeImgObj('hham'); nodeImgObj('hhamon');
+    } else $('hammerIc').src = ART.icon('hammer', 80);
     if (!window.ART_DATA) GEM3D.init();
     ART.clearCache();
     const ld = $('loading'); ld.classList.add('done'); setTimeout(() => ld.remove(), 700);
