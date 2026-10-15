@@ -1848,6 +1848,7 @@
     MAP3.raf = requestAnimationFrame(mapGLFrame);
   }
   // arrasto com inércia e roda do mouse; um arrasto não vira clique numa fase
+  const MAP_DRAG = false;
   function mapView(scroll, inner, max) {
     const old = MAP3.view;
     if (old && old.off) old.off();
@@ -1871,8 +1872,11 @@
     };
     const wheel = (e) => { e.preventDefault(); V.target = Math.max(0, Math.min(V.max, (V.target == null ? V.top : V.target) + e.deltaY)); };
     const click = (e) => { if (V.moved) { e.stopPropagation(); e.preventDefault(); V.moved = false; } };
-    scroll.addEventListener('pointerdown', down); window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
-    scroll.addEventListener('wheel', wheel, { passive: false }); scroll.addEventListener('click', click, true);
+    // 16/10, pedido dele: sem deslizar nem roda do mouse; o mapa só anda pelas setas (arrasto/roda ficam aqui se quiser voltar)
+    if (MAP_DRAG) {
+      scroll.addEventListener('pointerdown', down); window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+      scroll.addEventListener('wheel', wheel, { passive: false }); scroll.addEventListener('click', click, true);
+    }
     V.off = () => { scroll.removeEventListener('pointerdown', down); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); scroll.removeEventListener('wheel', wheel); scroll.removeEventListener('click', click, true); };
     MAP3.view = V;
     return V;

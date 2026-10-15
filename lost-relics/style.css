@@ -517,13 +517,15 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .tool-btn.painted.on { background: var(--h-btn) center / 84% no-repeat, radial-gradient(circle, rgba(255,214,120,.6) 0%, rgba(255,190,80,.25) 48%, rgba(255,190,80,0) 70%); }
 .tool-btn.painted.on { animation: hammerArm 1s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .tool-btn.painted { animation: none; } }
-/* setas de fase em fase no mapa (15/10): seta pintada do Códice girada; brilho dourado */
-#mapNav { position: absolute; right: 12px; bottom: calc(48px + env(safe-area-inset-bottom, 0px)); z-index: 3; display: flex; flex-direction: column; gap: 12px; }
-#mapNav button { width: 74px; height: 62px; border: 0; padding: 0; background: center / contain no-repeat; cursor: pointer; filter: drop-shadow(0 4px 6px rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(255,200,90,.45)); transition: transform .12s, opacity .2s; }
+/* setas de fase em fase no mapa (15/10): seta pintada do Códice girada.
+   16/10: único jeito de andar no mapa (sem deslizar); discretas, menores, separadas e meio apagadas */
+#mapNav { position: absolute; right: 10px; bottom: calc(56px + env(safe-area-inset-bottom, 0px)); z-index: 3; display: flex; flex-direction: column; gap: 28px; }
+#mapNav button { width: 46px; height: 38px; border: 0; padding: 0; background: center / contain no-repeat; cursor: pointer; opacity: .72; filter: drop-shadow(0 2px 4px rgba(0,0,0,.65)); transition: transform .12s, opacity .2s; }
+#mapNav button:not(:disabled):active { opacity: 1; }
 #mapNav .up { transform: rotate(-90deg); }
 #mapNav .dn { transform: rotate(90deg); }
 #mapNav .up:active { transform: rotate(-90deg) scale(.9); }
 #mapNav .dn:active { transform: rotate(90deg) scale(.9); }
-#mapNav button:disabled { opacity: .3; cursor: default; }
+#mapNav button:disabled { opacity: .22; cursor: default; }
 #mapNav button:focus-visible { outline: 2px solid var(--gold-hi, #f3d27a); outline-offset: 3px; }
 .map-pan.nodes .node { will-change: translate; }
