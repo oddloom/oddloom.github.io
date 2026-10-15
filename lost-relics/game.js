@@ -130,7 +130,7 @@
     applyStreak();
     hammerMode = false;
     RUIN_KEYS.forEach(nodeImgObj);
-    vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = []; serpTrail = []; barShown = null; barHp = null; barHitT = -9;
+    vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = []; serpTrail = []; bombTick = {}; barShown = null; barHp = null; barHitT = -9;
     // fase de chefe: já carrega toda a arte dele (vidas, golpe, morte), senão o 1º golpe aparece sem desenho
     if (level.bossKind || level.scarab) { // chefe ou enxame de escaravelhos em fase comum
       for (const k of Object.values(BOSS_SPR[bossKindOf(level)])) if (typeof k === 'string') nodeImgObj(k);
@@ -285,6 +285,8 @@
     if (ev.type === 'bosseat') return onBossEat(ev);
     if (ev.type === 'bossswap') return onBossSwap(ev);
     if (ev.type === 'bossmove') return onBossMove(ev);
+    if (ev.type === 'mossgrow') return onMossGrow(ev);
+    if (ev.type === 'bombtick') return onBombTick(ev);
     return Promise.resolve();
   }
 
@@ -335,6 +337,15 @@
   //               claw (onça cravando a garra) | slide (serpente rastejando 1 casa)
   // bossFlash[i] = instante em que o escudo de runas do ídolo brilhou (golpe que não pegou)
   let bossAnims = [], bossFlash = [];
+  let bombTick = {}; // id da joia amaldiçoada -> hora da última contagem (pisca)
+  let mossC = null;
+  function mossSprite(im) {
+    if (mossC || !im || !im.naturalWidth) return mossC;
+    const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+    x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(140,235,110,0.42)'; x.fillRect(0, 0, c.width, c.height);
+    return (mossC = c);
+  }
 
   // ---------- Kukulkán articulado (15/10) ----------
   // Montado em peças vistas de cima (cabeça, anéis do corpo, cauda de penas) sobre um caminho:
@@ -803,6 +814,25 @@
     await wait(0.32);
   }
 
+  // musgo vivo cresce: a joia vira musgo com um estalo de folhas
+  async function onMossGrow(ev) {
+    const [x, y] = ev.to, p = state.grid[y][x];
+    if (p) { const v = V(p, x, y); v.s = 0; tween(v, { s: 1 }, 0.35, 'back'); }
+    leaves(x, y); Sound.play('vine'); buzz([20]);
+    await wait(0.4);
+  }
+  // ídolos amaldiçoados contam 1 a menos; se algum zerou, explode e a fase acaba
+  async function onBombTick(ev) {
+    for (const [x, y] of ev.cells) { const p = state.grid[y][x]; if (p) bombTick[p.id] = now; }
+    Sound.play('click');
+    if (ev.cursed) {
+      const [x, y] = ev.cursed;
+      await wait(0.3);
+      Sound.play('barrel'); buzz([80, 40, 120]); addShake(0.9);
+      ring(x, y, 'rgba(255,40,60,0.95)', 3); fire(x, y, 40); parts.push({ type: 'flash', life: 0, max: 0.5 });
+      await wait(0.7);
+    } else await wait(0.15);
+  }
   async function onShuffle() {
     showPraise(T('shuffle'), 'info');
     const proms = [];
@@ -863,6 +893,7 @@
 
   async function afterMove() {
     renderHUD();
+    if (state.cursed) { showLose(); return; } // ídolo amaldiçoado zerou
     if (LR.isWon(state)) { await treasureRush(); showWin(); return; }
     if (state.moves <= 0) { showLose(); return; }
     busy = false;
@@ -1234,6 +1265,20 @@
     ctx.globalAlpha = v.a;
     // joia que a onça transformou em pedra: pedra pintada com a marca verde da garra
     // joia engolida pela jiboia: bolo de escamas com a joia brilhando dentro
+    // Musgo Vivo (16/10): o bloco de musgo pintado das ruínas, com um brilho verde que pulsa (está vivo, cresce)
+    if (p.kind === 'moss') {
+      const im = nodeImgObj('ruin2'), pulse = 0.5 + 0.5 * Math.sin(now * 2.6 + p.id);
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, cs * 0.62 * s);
+      g.addColorStop(0, 'rgba(120,255,110,' + (0.45 + 0.25 * pulse) * v.a + ')'); g.addColorStop(1, 'rgba(120,255,110,0)');
+      ctx.fillStyle = g; ctx.fillRect(cx - cs, cy - cs, cs * 2, cs * 2);
+      const k = 0.9 + 0.03 * pulse;
+      // bloco mais claro que a casa vazia (que usa a mesma arte): pintado uma vez, esverdeado; o cipó pintado por cima respira
+      const ms = mossSprite(im);
+      if (ms) ctx.drawImage(ms, cx - w * 0.5 * k, cy - h * 0.5 * k, w * k, h * k);
+      const vine = ART.pieceImage('vine');
+      if (vine) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.sin(now * 1.3 + p.id) * 0.12); ctx.globalAlpha = v.a * 0.95; ctx.drawImage(vine, -w * 0.52, -h * 0.52, w * 1.04, h * 1.04); ctx.restore(); }
+      ctx.globalAlpha = 1; return;
+    }
     const stoneIm = (p.claw && nodeImgObj('jstone')) || (p.lump && nodeImgObj('alump'));
     if (stoneIm) { ctx.drawImage(stoneIm, cx - w * 0.48, cy - h * 0.48, w * 0.96, h * 0.96); ctx.globalAlpha = 1; return; }
     // feitiço: aura da cor da pedra que "respira" devagar, cada joia no seu ritmo
@@ -1287,6 +1332,23 @@
       ctx.restore()
     } else {
       ctx.drawImage(spr, cx - w / 2, cy - h / 2 + (cs * v.sq) / 2, w, h);
+    }
+    // Ídolo Amaldiçoado (16/10): aura vermelha que pulsa mais rápido quanto menos falta, e a contagem em dígitos Solar
+    if (p.bomb) {
+      const urgent = p.bomb <= 3, sp = urgent ? 9 : 3.5, pulse = 0.5 + 0.5 * Math.sin(now * sp + p.id);
+      const tick = bombTick[p.id] != null ? Math.max(0, 1 - (now - bombTick[p.id]) / 0.4) : 0;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, cs * 0.7 * s);
+      g.addColorStop(0, 'rgba(255,40,60,' + ((urgent ? 0.45 : 0.25) + 0.25 * pulse + 0.4 * tick) * v.a + ')'); g.addColorStop(1, 'rgba(160,0,60,0)');
+      ctx.fillStyle = g; ctx.fillRect(cx - cs, cy - cs, cs * 2, cs * 2); ctx.restore();
+      const ds = String(p.bomb).split('').map((d) => nodeImgObj('n' + d)).filter(Boolean);
+      if (ds.length) {
+        const dh = cs * s * (0.5 + 0.15 * tick), dw = ds.map((im) => dh * im.naturalWidth / im.naturalHeight * 0.8);
+        let x0 = cx - dw.reduce((a, b) => a + b, 0) / 2;
+        ctx.save(); ctx.globalAlpha = v.a; ctx.shadowColor = urgent ? 'rgba(255,40,40,0.95)' : 'rgba(0,0,0,0.9)'; ctx.shadowBlur = cs * 0.15;
+        ds.forEach((im, i) => { ctx.drawImage(im, x0, cy - dh / 2, dw[i], dh); x0 += dw[i]; });
+        ctx.restore();
+      }
     }
     if (p.vine) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(now * 0.35 + p.id); ctx.globalAlpha = v.a * (0.85 + 0.15 * Math.sin(now * 3 + p.id)); ctx.drawImage(ART.vineSprite(S), -(cs * s) / 2, -(cs * s) / 2, cs * s, cs * s); ctx.restore(); }
     if (p.special === 'lineH' || p.special === 'lineV') {
@@ -1456,11 +1518,15 @@
       head: 'khead', roar: 'kroar', seg: 'kseg', tail: 'ktail' }, // peças do corpo articulado (drawSerpent)
   };
   const bossKindOf = (L) => (L && (L.bossKind || (L.scarab ? 'scarab' : null))) || 'scarab';
-  const goalIcon = (g, size, L) => (g.type === 'boss' && ART.nodeImg(BOSS_SPR[bossKindOf(L || level)].idle)) || ART.icon(goalIconKey(g), size);
+  // musgo e Pedido do Sacerdote usam a arte pintada (bloco de musgo, ícones da loja)
+  const MAKE_ART = { line: 'ixarrow', barrel: 'ixseal', idol: 'ixorb' };
+  const goalIcon = (g, size, L) => (g.type === 'boss' && ART.nodeImg(BOSS_SPR[bossKindOf(L || level)].idle)) ||
+    (g.type === 'moss' && ART.nodeImg('ruin2')) || (g.type === 'make' && ART.nodeImg(MAKE_ART[g.special])) || ART.icon(goalIconKey(g), size);
   const goalIconKey = (g) => (g.type === 'score' ? 'star' : g.type === 'collect' ? 'gem' + g.color : g.type === 'sand' ? 'sand' : g.type === 'rock' ? 'rock' : g.type === 'vine' ? 'vine' : 'chest');
   function goalLeft(g) {
     if (g.type === 'score') return Math.max(0, g.target - state.score);
     if (g.type === 'sand') return LR.sandLeft(state);
+    if (g.type === 'moss') return LR.countKind(state, 'moss'); // o musgo cresce: falta o que tem no tabuleiro
     return Math.max(0, g.target - g.count);
   }
   let chipEls = [], lastLeft = [];
@@ -1545,10 +1611,12 @@
   function closeModal() { $('modal').hidden = true; }
   const goalText = (g, L) => {
     if (g.type === 'collect') return T('goal.collect', { n: g.target }) + ' ' + I18N.gem(g.color);
+    if (g.type === 'make') return T('goal.make.' + g.special, { n: g.target });
     if (g.type === 'boss' && bossKindOf(L || level) !== 'scarab') return T('goal.' + bossKindOf(L || level));
     const s = T('goal.' + g.type, { n: g.type === 'score' ? g.target.toLocaleString() : g.target });
     return s.replace('baú(s)', g.target === 1 ? 'baú' : 'baús').replace('chest(s)', g.target === 1 ? 'chest' : 'chests');
   };
+  const TUT_ART = { moss: 'ruin2', make: 'ixseal', bomb: 'ixorb' }; // tutoriais das fases 21+ com arte pintada
   const TUT_ICON = { swap: 'gem3', collect: 'gem0', line: 'dynamite', sand: 'sand', barrel: 'barrel', artifact: 'chest', idol: 'idol', rock: 'rock', diamond: 'gem5', vine: 'vine' };
 
   function openPre(id) {
@@ -1557,6 +1625,7 @@
     const rows = L.goals.map((g) => {
       const gg = Object.assign({}, g);
       if (g.type === 'sand') { gg.target = L.layout.join('').split('').reduce((n, c) => n + (c === 's' || c === 'w' ? 1 : c === 'S' || c === 'W' ? 2 : 0), 0); }
+      if (g.type === 'moss') gg.target = L.layout.join('').split('m').length - 1;
       return '<div class="goal-row"><img alt="" src="' + goalIcon(g, 80, L) + '"><span>' + goalText(gg, L) + '</span></div>';
     }).join('');
     const card = openModal(
@@ -1566,7 +1635,7 @@
       '<div class="goal-list">' + rows + '</div>' +
       '<div class="moves-line">' + T('moves') + ': <b>' + L.moves + '</b></div>' +
       // (os parênteses importam: sem eles, com a arte do chefe carregada, o texto do tutorial sumia)
-      (tutKey ? '<div class="tut"><img alt="" src="' + (((L.boss || L.tut === 'boa' || L.tut === 'monkey') && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><p>' + T(tutKey) + '</p></div>' : '') +
+      (tutKey ? '<div class="tut"><img alt="" src="' + (((L.boss || L.tut === 'boa' || L.tut === 'monkey') && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || (TUT_ART[L.tut] && ART.nodeImg(TUT_ART[L.tut])) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><p>' + T(tutKey) + '</p></div>' : '') +
       (ART.nodeImg('ixarrow') ? streakHTML() : '') +
       boostPicker() +
       '<div class="btns"><button class="btn" id="mPlay" type="button">' + T('play') + '</button>' +
@@ -1644,6 +1713,7 @@
     const card = openModal(
       '<div class="eyebrow">' + T('level') + ' ' + id + '</div>' +
       '<h2 class="metal">' + T('lose.title') + '</h2><div class="orn"><i></i></div>' +
+      (state.cursed ? '<p>' + T('lose.cursed') + '</p>' : '') +
       '<div class="moves-line">' + T('lose.left') + '</div>' +
       '<div class="goal-list">' + rows + '</div>' +
       (save.streak ? '<div class="moves-line streak-lost">' + T('streak.lost') + '</div>' : '') +
@@ -1654,7 +1724,7 @@
     // perdeu e desistiu (tentar de novo ou mapa) = trilha zera; se pegar +5 movimentos e vencer, mantém
     card.querySelector('#mRetry').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(() => startLevel(id)); };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(openMap); };
-    if (!usedExtra) {
+    if (!usedExtra && !state.cursed) { // maldição não se resolve com mais movimentos
       Ads.offerReward({
         onAvailable(show) {
           const b = card.querySelector('#mExtra');
@@ -2010,7 +2080,8 @@
     // só o caminho até a fase atual aparece, o resto fica escondido na névoa
     const fullW = scroll.clientWidth || W, h = scroll.clientHeight || H;
     const w = Math.min(fullW, Math.round(h * 0.72));
-    const IW = NEW3 ? 572 : 832, IH = NEW3 ? 1024 : 1248, mapH = Math.round(h * (NEW3 ? 2.4 : 1.9)), s = mapH / IH, mapW = IW * s;
+    // 16/10: 35 fases no mesmo caminho; o mapa cresce na proporção pra manter a distância entre as fases
+    const IW = NEW3 ? 572 : 832, IH = NEW3 ? 1024 : 1248, mapH = Math.round(h * (NEW3 ? 2.4 : 1.9) * Math.max(1, n / 20)), s = mapH / IH, mapW = IW * s;
     // centraliza na horizontal na fase atual (o caminho serpenteia de um lado pro outro)
     const RP = (NEW3 ? D.mapPath3 : D.mapPath) || [[416, 1200], [416, 150]]; let rTot = 0; const rSeg = [];
     for (let i = 0; i < RP.length - 1; i++) { const l = Math.hypot(RP[i + 1][0] - RP[i][0], RP[i + 1][1] - RP[i][1]); rSeg.push(l); rTot += l; }

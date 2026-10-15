@@ -28,6 +28,7 @@
   //  .  joia      x  sem casa     s/S  areia 1/2 camadas
   //  r/R/T rocha 1/2/3            v  joia presa no cipó (w/W = cipó sobre areia 1/2)
   //  a  baú (artefato)
+  //  m  Musgo Vivo (bloco que se espalha)   b  Ídolo Amaldiçoado (joia com contagem; zerou = derrota)
   function createState(level, seed) {
     const rows = level.layout;
     const H = rows.length, W = rows[0].length;
@@ -39,7 +40,7 @@
       artifactsLeft: level.artifacts || 0, artifactMax: level.artifactMax || 1,
       sandTotal: 0, level,
     };
-    const vines = [];
+    const vines = [], bombs = [];
     for (let y = 0; y < H; y++) {
       s.mask.push([]); s.grid.push([]); s.sand.push([]);
       for (let x = 0; x < W; x++) {
@@ -53,6 +54,8 @@
         let p = null;
         if (ch === 'r' || ch === 'R' || ch === 'T') p = { id: s.nextId++, kind: 'rock', hp: ch === 'r' ? 1 : ch === 'R' ? 2 : 3 };
         if (ch === 'a') { p = { id: s.nextId++, kind: 'artifact' }; s.artifactsLeft--; }
+        if (ch === 'm') p = { id: s.nextId++, kind: 'moss', hp: 1 };
+        if (ch === 'b') bombs.push(y * W + x);
         if (ch === 'v' || ch === 'w' || ch === 'W') vines.push(y * W + x);
         s.grid[y].push(p);
       }
@@ -64,6 +67,8 @@
       s.grid[y][x] = newGem(s, safeColor(s, x, y));
     }
     for (const k of vines) s.grid[Math.floor(k / W)][k % W].vine = true;
+    for (const k of bombs) s.grid[Math.floor(k / W)][k % W].bomb = level.bombTimer || 10;
+    for (const g of s.goals) if (g.type === 'moss') g.target = countKind(s, 'moss');
     for (const g of s.goals) if (g.type === 'sand') g.target = s.sandTotal;
     s.bosses = [];
     const B = bossConfig(level);
@@ -127,7 +132,7 @@
     if (b.kind === 'serpent') { const t = idPos(s, b.id2); if (t) out.push(t); }
     return out;
   }
-  const plainGem = (p) => !!p && p.kind === 'gem' && !p.special && !p.vine;
+  const plainGem = (p) => !!p && p.kind === 'gem' && !p.special && !p.vine && !p.bomb;
   function takenIds(s) {
     const t = new Set();
     for (const b of s.bosses || []) if (b.hp > 0) { if (b.id != null) t.add(b.id); if (b.id2 != null) t.add(b.id2); }
@@ -202,7 +207,7 @@
     const p = s.grid[y][x];
     return p && p.kind === 'gem' && p.special !== 'idol' && p.color != null ? p.color : -1;
   }
-  const movable = (p) => !!p && p.kind !== 'rock' && p.kind !== 'statue' && !p.vine;
+  const movable = (p) => !!p && p.kind !== 'rock' && p.kind !== 'moss' && p.kind !== 'statue' && !p.vine;
   const swappable = (p) => !!p && (p.kind === 'gem' || p.kind === 'artifact') && !p.vine;
   const isSpecial = (p) => !!p && p.kind === 'gem' && !!p.special;
 
@@ -313,6 +318,7 @@
     for (const g of s.goals) {
       if (g.type !== type) continue;
       if (type === 'collect' && g.color !== color) continue;
+      if (type === 'make' && g.special !== color) continue; // Pedido do Sacerdote: 'line' | 'barrel' | 'idol'
       g.count++;
     }
   }
@@ -320,6 +326,7 @@
   function goalDone(s, g) {
     if (g.type === 'score') return s.score >= g.target;
     if (g.type === 'sand') return sandLeft(s) === 0;
+    if (g.type === 'moss') return countKind(s, 'moss') === 0;
     return g.count >= g.target;
   }
   function isWon(s) { return s.goals.every((g) => goalDone(s, g)); }
@@ -342,11 +349,12 @@
         if (done.has(k)) continue;
         done.add(k);
         const p = s.grid[y][x];
-        if (p && p.kind === 'rock') {
+        if (p && (p.kind === 'rock' || p.kind === 'moss')) {
           p.hp--;
           const dead = p.hp <= 0;
           res.rocks.push({ x, y, p, dead, wave });
-          if (dead) { s.grid[y][x] = null; bump(s, 'rock'); res.score += SCORE.rock; }
+          if (p.kind === 'moss') s.mossHit = true; // musgo que apanhou nesta jogada não se espalha
+          if (dead) { s.grid[y][x] = null; bump(s, p.kind); res.score += SCORE.rock; }
           continue;
         }
         if (p && p.kind === 'artifact') continue;
@@ -369,7 +377,7 @@
         if (h.src === 'match') {
           for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
             const q = inside(s, x + dx, y + dy) && s.grid[y + dy][x + dx];
-            if (q && q.kind === 'rock') next.push({ x: x + dx, y: y + dy, src: 'adj' });
+            if (q && (q.kind === 'rock' || q.kind === 'moss')) next.push({ x: x + dx, y: y + dy, src: 'adj' });
           }
         }
         s.grid[y][x] = null;
@@ -415,6 +423,7 @@
       const p = newGem(s, c.special === 'idol' ? null : c.color, c.special);
       s.grid[c.y][c.x] = p;
       res.created.push({ x: c.x, y: c.y, piece: p });
+      bump(s, 'make', c.special === 'lineH' || c.special === 'lineV' ? 'line' : c.special);
     }
     res.waves = wave;
     s.score += res.score;
@@ -428,8 +437,11 @@
       s.artifactsLeft--;
       return { id: s.nextId++, kind: 'artifact' };
     }
-    return newGem(s, randInt(s, s.colors));
+    const g = newGem(s, randInt(s, s.colors)), L = s.level;
+    if (L.bombSpawn && countBombs(s) < (L.bombMax || 2) && rand(s) < L.bombSpawn) g.bomb = L.bombTimer || 10;
+    return g;
   }
+  function countBombs(s) { let n = 0; for (const row of s.grid) for (const p of row) if (p && p.bomb) n++; return n; }
   function countKind(s, kind) {
     let n = 0;
     for (const row of s.grid) for (const p of row) if (p && p.kind === kind) n++;
@@ -568,7 +580,7 @@
 
   // ---------- resolução completa (gerador: o jogo anima cada passo) ----------
   function* resolve(s, start) {
-    s.cascade = 0;
+    s.cascade = 0; s.mossHit = false;
     for (const b of s.bosses || []) {
       b.hitThisMove = false; // cada jogada nova pode dar 1 golpe em cada chefe
       if (b.shield > 0) b.shield--; // escudo do ídolo: dura a jogada seguinte ao golpe
@@ -678,7 +690,33 @@
         yield { type: 'bossflee', idx, from, toId: b.id };
       }
     }
+    // fim da jogada (16/10, adaptado do Candy): musgo que ninguém tocou cresce; ídolos amaldiçoados contam 1 a menos
+    if (!isWon(s) && !s.rush) {
+      if (!s.mossHit) { const g = mossGrow(s); if (g) yield Object.assign({ type: 'mossgrow' }, g); }
+      const ticks = [];
+      for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+        const p = s.grid[y][x];
+        if (p && p.bomb) { p.bomb--; ticks.push([x, y]); if (p.bomb <= 0 && !s.cursed) s.cursed = [x, y]; }
+      }
+      if (ticks.length) yield { type: 'bombtick', cells: ticks, cursed: s.cursed || null };
+    }
     if (!findMove(s)) { shuffle(s); yield { type: 'shuffle' }; }
+  }
+  // Musgo Vivo: um musgo encostado numa joia comum engole essa joia (vira musgo também)
+  function mossGrow(s) {
+    const taken = takenIds(s), opts = [];
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+      const p = s.grid[y][x];
+      if (!p || p.kind !== 'moss') continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (inside(s, nx, ny) && plainGem(s.grid[ny][nx]) && !taken.has(s.grid[ny][nx].id)) opts.push([[x, y], [nx, ny]]);
+      }
+    }
+    if (!opts.length) return null;
+    const [from, to] = opts[randInt(s, opts.length)];
+    s.grid[to[1]][to[0]] = { id: s.nextId++, kind: 'moss', hp: 1 };
+    return { from, to };
   }
 
   function serpentTogether(s, b) {
@@ -820,6 +858,7 @@
   // ---------- fim de fase: Corrida do Tesouro ----------
   // Movimentos que sobraram viram dinamites, depois todo especial no tabuleiro explode.
   function* treasureRush(s) {
+    s.rush = true;
     while (s.moves > 0) {
       const plain = [];
       for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
@@ -849,7 +888,7 @@
   const api = {
     SCORE, GEM_NAMES, rand, createState, cloneState, findGroups, groupSpecial, applyHits, gravity, gravityStep,
     collectArtifacts, doSwap, swapIsValid, resolve, runAll, allMoves, findMove, shuffle, treasureRush,
-    isWon, goalDone, sandLeft, stars, colorAt, inside, swappable, isExit, bossPos, bossCells,
+    isWon, goalDone, sandLeft, stars, colorAt, inside, swappable, isExit, bossPos, bossCells, countKind,
   };
   root.LR = api;
   if (typeof module !== 'undefined') module.exports = api;

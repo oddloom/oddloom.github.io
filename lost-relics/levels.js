@@ -53,6 +53,41 @@
     // ao apanhar, mergulha e reaparece longe. 5 vidas.
     { moves: 19, colors: 6, goals: [{ type: 'boss', target: 1 }], bossKind: 'serpent', bossHp: 5, boss: true, tut: 'serpent', layout: [
       'r......r', '........', '........', '........', '........', '........', '........', 'r..rr..r'] },
+    // ---- fases 21-35 (16/10): mecânicas adaptadas do Candy Crush ----
+    // m = MUSGO VIVO (bloco; se ninguém quebrar musgo na jogada, ele engole 1 joia vizinha; meta 'moss' = limpar todo)
+    // b = ÍDOLO AMALDIÇOADO (joia com contagem; zerou = derrota; quebrar a joia desarma). bombSpawn/bombMax/bombTimer = nascem caindo
+    // PEDIDO DO SACERDOTE = meta { type: 'make', special: 'line' | 'barrel' | 'idol' }: criar joias especiais
+    { moves: 14, colors: 5, goals: [{ type: 'moss' }], tut: 'moss', layout: [
+      '........', '........', '........', '...mm...', '...mm...', '........', '........', '........'] },
+    { moves: 12, colors: 5, goals: [{ type: 'make', special: 'line', target: 3 }], tut: 'make', layout: FULL },
+    { moves: 12, colors: 5, goals: [{ type: 'score', target: 8000 }], tut: 'bomb', bombTimer: 10, layout: [
+      '........', '........', '..b..b..', '........', '........', '........', '........', '........'] },
+    { moves: 18, colors: 5, goals: [{ type: 'sand' }, { type: 'moss' }], layout: [
+      'm......m', '........', '.ssssss.', '.ssssss.', '.ssssss.', '.ssssss.', '........', 'm......m'] },
+    // fase 25 = chefe: a Onça de Jade volta mais forte, com musgo nos cantos
+    { moves: 18, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'jaguar', bossHp: 7, boss: true, layout: [
+      'mm....mm', 'm......m', '........', '........', '........', '........', 'm......m', 'mm....mm'] },
+    { moves: 18, colors: 5, goals: [{ type: 'make', special: 'barrel', target: 2 }, { type: 'make', special: 'idol', target: 1 }], layout: FULL },
+    { moves: 17, colors: 5, goals: [{ type: 'artifact', target: 2 }], artifacts: 2, artifactMax: 1, bombSpawn: 0.05, bombMax: 2, bombTimer: 9, layout: [
+      '...a....', '........', '........', '........', '........', '........', '........', '........'] },
+    { moves: 22, colors: 6, goals: [{ type: 'vine', target: 12 }, { type: 'moss' }], layout: [
+      '........', '.v.mm.v.', '..v..v..', 'v.v..v.v', 'v.v..v.v', '..v..v..', '.v....v.', '........'] },
+    { moves: 27, colors: 6, goals: [{ type: 'rock', target: 12 }, { type: 'make', special: 'line', target: 3 }], layout: [
+      '........', '........', '........', '........', 'RR.RR.RR', '........', 'r.rr.rr.', 'r......r'] },
+    // fase 30 = chefe: Ídolo de Pedra com 4 vidas e musgo crescendo em volta
+    { moves: 32, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 4, statueAt: [3, 3], boss: true, layout: [
+      'm......m', '........', '........', '........', '........', '........', '........', 'm......m'] },
+    { moves: 22, colors: 6, goals: [{ type: 'moss' }], layout: [
+      '........', '.mm..mm.', '........', '........', '........', '........', '.mm..mm.', '........'] },
+    { moves: 15, colors: 6, goals: [{ type: 'boss', target: 1 }], bossKind: 'monkey', bossHp: 4, bombSpawn: 0.05, bombMax: 2, bombTimer: 10, layout: [
+      '........', '.b....b.', '........', '........', '........', '........', '........', '........'] },
+    { moves: 33, colors: 6, goals: [{ type: 'sand' }], bombTimer: 16, layout: [
+      '........', '..b..b..', 'SS....SS', 'SSssssSS', '.ssssss.', '..ssss..', '........', '........'] },
+    { moves: 14, colors: 5, goals: [{ type: 'boss', target: 1 }, { type: 'sand' }], bossKind: 'boa', bossHp: 4, layout: [
+      '........', '........', 'm......m', '.ssssss.', '.ssssss.', 'm......m', '........', '........'] },
+    // fase 35 = chefe final do trecho: Kukulkán desperto (6 vidas), ídolos amaldiçoados caindo e musgo nos cantos
+    { moves: 20, colors: 6, goals: [{ type: 'boss', target: 1 }], bossKind: 'serpent', bossHp: 6, boss: true, bombSpawn: 0.04, bombMax: 1, bombTimer: 12, layout: [
+      'm......m', '........', '........', '........', '........', '........', '........', 'mr.rr.rm'] },
   ];
   // estrelas: [1, 2, 3] em pontos — calibradas pelo tools/simular.js (13/10/2026, 60 partidas por fase)
   // ganhar já dá 1 estrela; 2 = pontuação mediana de quem ganha; 3 = os 20% melhores
@@ -61,6 +96,10 @@
     [5000, 17500, 27500], [4500, 14500, 24000], [7500, 19000, 24500], [5500, 18500, 26500], [7500, 29500, 39000], // fase 10 = onça (14/10)
     [3500, 15500, 22000], [5000, 18000, 28500], [4500, 12500, 16500], [5000, 15500, 21500], [9500, 33000, 42000], // fase 15 = ídolo (14/10)
     [7500, 20500, 24500], [5000, 15000, 21000], [4000, 12000, 14500], [3000, 12000, 15500], [5000, 14500, 19000], // fase 20 = serpente (14/10)
+    // fases 21-35 (16/10, simulador 60 partidas): robô vence 78-100%, sobrando ~7-12 jogadas
+    [4000, 11000, 17500], [4000, 12000, 17000], [6000, 17000, 26500], [7500, 24500, 36500], [8500, 27000, 40000], // fase 25 = onça forte
+    [8000, 26500, 40000], [5500, 22500, 33000], [4500, 11500, 14000], [5000, 16000, 21500], [14000, 37500, 52000], // fase 30 = ídolo forte
+    [5000, 13500, 15500], [4000, 11500, 16000], [9000, 21500, 27000], [7000, 22500, 31500], [5500, 15500, 19000], // fase 35 = Kukulkán desperto
   ];
   // Chefes (14/10), simulador com robô que caça o chefe e enxerga as joias que vão cair (joga melhor que gente;
   // vale como comparação): fase 5 vence 100% sobrando 18 jogadas (ele testou e aprovou), 10 = 98%/12,
