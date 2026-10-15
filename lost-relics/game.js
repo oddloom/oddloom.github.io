@@ -1684,7 +1684,7 @@
     const vs = 'attribute vec2 p; varying vec2 v; void main(){ v = p * 0.5 + 0.5; v.y = 1.0 - v.y; gl_Position = vec4(p, 0.0, 1.0); }';
     const fs = 'precision mediump float; varying vec2 v; uniform sampler2D img, dep; uniform vec2 cam; uniform float top, span, left, spanX, k;' +
       'void main(){ vec2 uv = vec2(left + v.x * spanX, top + v.y * span); vec2 t = uv;' +
-      ' for (int i = 0; i < 3; i++) { float d = texture2D(dep, t).r; t = uv + cam * k * (d - 0.5); }' +
+      ' for (int i = 0; i < 2; i++) { float d = texture2D(dep, t).r; t = uv + cam * k * (d - 0.5); }' +
       ' vec3 c = texture2D(img, t).rgb; float d = texture2D(dep, t).r; c *= 0.86 + 0.22 * d; gl_FragColor = vec4(c, 1.0); }';
     const sh = (ty, s) => { const o = gl.createShader(ty); gl.shaderSource(o, s); gl.compileShader(o); return o; };
     const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr);
@@ -1712,10 +1712,16 @@
   function mapGLFrame(t) {
     MAP3.raf = 0;
     if (scene !== 'map' || !MAP3.cam) return;
-    const { gl, U, cam } = MAP3, scroll = $('mapScroll');
+    const { gl, U, cam } = MAP3, V = MAP3.view;
     const dt = Math.min(0.05, MAP3.lastT ? (t - MAP3.lastT) / 1000 : 0.016); MAP3.lastT = t;
     // inclinação: velocidade da rolagem + balanço lento (a maquete "respira" mesmo parada)
-    const top = scroll.scrollTop, vy = (top - MAP3.lastTop) / Math.max(0.001, dt); MAP3.lastTop = top;
+    // rolagem do próprio jogo (arrasto + inércia + deslize até um alvo), no mesmo quadro do desenho: sem descompasso
+    if (V && !V.drag) {
+      if (V.target != null) { V.top += (V.target - V.top) * Math.min(1, dt * 6); if (Math.abs(V.target - V.top) < 0.5) { V.top = V.target; V.target = null; } }
+      else if (Math.abs(V.vel) > 8) { V.top += V.vel * dt; V.vel *= Math.pow(0.06, dt); } else V.vel = 0;
+    }
+    if (V) { V.top = Math.max(0, Math.min(V.max, V.top)); if (V.top === 0 || V.top === V.max) V.vel = 0; V.frame(); }
+    const top = V ? V.top : 0, vy = (top - MAP3.lastTop) / Math.max(0.001, dt); MAP3.lastTop = top;
     const tgt = [Math.sin(t / 2300) * 0.2, Math.max(-1, Math.min(1, vy / 1400)) + Math.cos(t / 3100) * 0.14];
     MAP3.tilt[0] += (tgt[0] - MAP3.tilt[0]) * Math.min(1, dt * 5); MAP3.tilt[1] += (tgt[1] - MAP3.tilt[1]) * Math.min(1, dt * 5);
     const K = REDUCED ? 0 : 0.026, tx = MAP3.tilt[0], ty = MAP3.tilt[1] * (572 / 1024);
@@ -1730,8 +1736,32 @@
     for (const nd of MAP3.nodes) { const d = mapDepthAt(nd.x, nd.y) - 0.5; nd.el.style.translate = (-tx * px * d).toFixed(1) + 'px ' + (-MAP3.tilt[1] * px * d).toFixed(1) + 'px'; }
     MAP3.raf = requestAnimationFrame(mapGLFrame);
   }
+  // arrasto com inércia e roda do mouse; um arrasto não vira clique numa fase
+  function mapView(scroll, inner, max) {
+    const old = MAP3.view;
+    if (old && old.off) old.off();
+    scroll.scrollTop = 0; scroll.style.overflowY = 'hidden'; scroll.style.touchAction = 'none'; inner.style.willChange = 'transform';
+    const V = { top: old ? Math.min(old.top, max) : 0, target: null, vel: 0, max, drag: null, moved: false, frame: () => {} };
+    const down = (e) => { V.drag = { y: e.clientY, top: V.top, lastY: e.clientY, lastT: performance.now() }; V.target = null; V.vel = 0; V.moved = false; };
+    const move = (e) => {
+      const d = V.drag; if (!d) return;
+      const tm = performance.now(), dy = e.clientY - d.y;
+      if (Math.abs(dy) > 6) V.moved = true;
+      V.top = Math.max(0, Math.min(V.max, d.top - dy));
+      const dts = (tm - d.lastT) / 1000; if (dts > 0) V.vel = V.vel * 0.3 + (-(e.clientY - d.lastY) / dts) * 0.7;
+      d.lastY = e.clientY; d.lastT = tm;
+    };
+    const up = () => { if (!V.drag) return; if (performance.now() - V.drag.lastT > 90) V.vel = 0; V.drag = null; };
+    const wheel = (e) => { e.preventDefault(); V.target = Math.max(0, Math.min(V.max, (V.target == null ? V.top : V.target) + e.deltaY)); };
+    const click = (e) => { if (V.moved) { e.stopPropagation(); e.preventDefault(); V.moved = false; } };
+    scroll.addEventListener('pointerdown', down); window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+    scroll.addEventListener('wheel', wheel, { passive: false }); scroll.addEventListener('click', click, true);
+    V.off = () => { scroll.removeEventListener('pointerdown', down); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); scroll.removeEventListener('wheel', wheel); scroll.removeEventListener('click', click, true); };
+    MAP3.view = V;
+    return V;
+  }
   function mapGLResize(fullW, w, h) {
-    const cv = MAP3.cv, dpr = Math.min(2, window.devicePixelRatio || 1);
+    const cv = MAP3.cv, dpr = Math.min(1.5, window.devicePixelRatio || 1);
     cv.style.left = Math.round((fullW - w) / 2) + 'px'; cv.style.width = w + 'px'; cv.style.height = h + 'px';
     cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); MAP3.gl.viewport(0, 0, cv.width, cv.height);
   }
@@ -1800,11 +1830,16 @@
     for (let k = 0; k < 40; k++) fx += '<i class="fx-fly" style="left:' + (Math.random() * w).toFixed(0) + 'px;top:' + (Math.random() * mapH).toFixed(0) + 'px;--d:' + (Math.random() * 8).toFixed(2) + 's;--t:' + (6 + Math.random() * 6).toFixed(2) + 's"></i>';
     // câmera: começa na fase atual; se abriu fase nova, a névoa recua revelando o próximo trecho
     const camY = (y) => Math.max(0, Math.min(mapH - h, y - h * 0.62));
+    // mapa 3D: rolagem feita pelo jogo (a nativa anda num ritmo e o relevo em outro, e o mapa parecia travado)
+    const V = NEW3 ? mapView(scroll, inner, mapH - h) : null;
+    if (!NEW3) { scroll.style.overflowY = ''; scroll.style.touchAction = ''; inner.style.transform = ''; }
+    const getTop = () => (V ? V.top : scroll.scrollTop);
+    const setTop = (y, smooth) => { if (V) { if (smooth) V.target = y; else { V.top = y; V.target = null; V.vel = 0; } } else if (smooth) scroll.scrollTo({ top: y, behavior: 'smooth' }); else scroll.scrollTop = y; };
     requestAnimationFrame(() => {
-      scroll.scrollTop = camY(pts[curIdx][1] + (fogPrevIdx < curIdx ? 60 : 0));
+      setTop(camY(pts[curIdx][1] + (fogPrevIdx < curIdx ? 60 : 0)));
       if (fogPrevIdx < curIdx) {
         const fog = inner.querySelector('.map-fog');
-        setTimeout(() => { fog.style.height = fogAt(curIdx).toFixed(0) + 'px'; Sound.play('idol'); scroll.scrollTo({ top: camY(pts[curIdx][1]), behavior: 'smooth' }); }, 600);
+        setTimeout(() => { fog.style.height = fogAt(curIdx).toFixed(0) + 'px'; Sound.play('idol'); setTop(camY(pts[curIdx][1]), true); }, 600);
       }
       save.fogShown = curIdx; persist();
     });
@@ -1821,19 +1856,20 @@
     };
     const pans = inner.querySelectorAll('.map-pan');
     const applyPan = () => {
-      const O = Math.max(w - mapW, Math.min(0, w / 2 - pathX(scroll.scrollTop + h * 0.62)));
+      const O = Math.max(w - mapW, Math.min(0, w / 2 - pathX(getTop() + h * 0.62)));
       pans.forEach((p) => { p.style.transform = 'translateX(' + (O - offX).toFixed(1) + 'px)'; });
       inner.style.backgroundPosition = O.toFixed(1) + 'px ' + offY + 'px';
       if (NEW3) MAP3.cam = { O, w, h, mapW, mapH, s };
     };
     let panRaf = 0;
-    scroll.onscroll = () => { if (!panRaf) panRaf = requestAnimationFrame(() => { panRaf = 0; applyPan(); }); };
+    scroll.onscroll = V ? null : () => { if (!panRaf) panRaf = requestAnimationFrame(() => { panRaf = 0; applyPan(); }); };
+    if (V) V.frame = () => { inner.style.transform = 'translate3d(0,' + (-V.top).toFixed(1) + 'px,0)'; applyPan(); };
     applyPan();
     if (NEW3) {
       mapGLResize(fullW, w, h);
       // posição de cada fase na pintura (pra amostrar a profundidade)
       MAP3.nodes = [...inner.querySelectorAll('.node')].map((el) => { const i = +el.dataset.id - 1, p = pts[i]; return { el, x: (p[0] - offX) / s, y: (p[1] - offY) / s }; });
-      MAP3.lastT = 0; MAP3.lastTop = scroll.scrollTop;
+      MAP3.lastT = 0; MAP3.lastTop = getTop();
       if (!MAP3.raf) MAP3.raf = requestAnimationFrame(mapGLFrame);
     }
     $('mapStars').textContent = totalStars + '/' + n * 3;

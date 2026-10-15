@@ -510,3 +510,8 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 #mapGL { position: absolute; top: 0; z-index: 0; display: block; pointer-events: none; }
 #mapInner.gl { background: none !important; }
 #mapInner.gl .map-pan { transition: none; }
+/* martelo (15/10, pedido dele): brilho dourado atrás pra destacar do cenário */
+.tool-btn.painted { background: var(--h-btn) center / 84% no-repeat, radial-gradient(circle, rgba(255,214,120,.55) 0%, rgba(255,190,80,.22) 48%, rgba(255,190,80,0) 70%); animation: hammerGlow 2.4s ease-in-out infinite; }
+@keyframes hammerGlow { 0%, 100% { filter: drop-shadow(0 5px 8px rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(255,200,90,.55)); } 50% { filter: drop-shadow(0 5px 8px rgba(0,0,0,.7)) drop-shadow(0 0 16px rgba(255,205,100,.85)); } }
+.tool-btn.painted.on { animation: hammerArm 1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .tool-btn.painted { animation: none; } }
