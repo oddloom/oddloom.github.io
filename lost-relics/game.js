@@ -1601,7 +1601,7 @@
   // ---------- janelas ----------
   function openModal(html) {
     const card = $('modalCard');
-    card.classList.remove('codex');
+    card.classList.remove('codex', 'tshop');
     card.innerHTML = html;
     $('modal').hidden = false;
     const first = card.querySelector('.btn');
@@ -1792,60 +1792,68 @@
       { id: 'trail.jade', art: 'skjade', value: 'jade', price: 400 },
       { id: 'trail.fire', art: 'skfire', value: 'fire', price: 400 }] },
   ];
+  // Loja do Templo (16/10, no formato do modelo que ele fez): placa com o título, abas, páginas com setas e,
+  // em cada página, 2 ofertas lado a lado (moldura grande com a arte + nome, descrição e botão COMPRAR embaixo).
+  // Peças pintadas que já existem: placa (cxplate), moldura (cxcard), seta (navarrow) e o botão do kit (.btn).
+  // Quando chegar o kit do Gemini no estilo do modelo, só troca a arte (classes ts-*).
   function openShop(back, startTab) {
-    if (!ART.nodeImg('cxbook')) return openShopList(back);
+    if (!ART.nodeImg('cxcard')) return openShopList(back);
     Sound.play('click');
-    let tab = startTab || 'items', sel = startTab ? null : SHOP[0].id;
+    let tab = startTab || 'items', page = 0;
+    const PER = 2;
     const coin = (n, sz) => '<img class="coin" alt="" src="' + ART.icon('coin', sz) + '">' + n;
-    const plate = (cls, inner, dis) => '<button class="cx-buy ' + cls + '" type="button"' + (dis ? ' disabled' : '') + ' style="background-image:url(' + ART.nodeImg('cxplate') + ')">' + inner + '</button>';
     const render = () => {
       const T0 = CODEX_TABS.find((t) => t.id === tab);
       const owns = (s) => s.value == null || save.owned.includes(s.id);
       const inUse = (s) => (save.skins[T0.slot] || null) === s.value;
-      const cards = tab === 'items'
-        ? SHOP.map((it) => ({ key: it.id, img: itemImg(it, 96), label: coin(it.price, 32), have: save.items[it.id] }))
-        : T0.skins.map((s) => ({ key: s.id, img: s.art && ART.nodeImg(s.art), skin: s, soon: s.soon,
-          label: s.soon ? T('codex.soon') : inUse(s) ? T('codex.inuse') : owns(s) ? T('codex.owned') : coin(s.price, 32) }));
-      while (cards.length < 6) cards.push(null);
-      const cur = cards.find((c) => c && c.key === sel) || cards[0];
-      sel = cur.key;
-      const it = tab === 'items' && SHOP.find((x) => x.id === sel), sk = cur.skin;
-      const tabBtn = (t, k) => '<button type="button" class="cx-tab t' + k + (t.id === tab ? ' on' : '') + '" data-tab="' + t.id + '" aria-label="' + T('codex.tab.' + t.id) + '"><img alt="" src="' + ART.nodeImg(t.icon) + '"></button>';
-      let detail;
-      if (it) detail = '<b>' + T('item.' + it.id) + '</b><span>' + T('item.' + it.id + '.d') + '</span><small>' + T('shop.have', { n: save.items[it.id] }) + '</small>' + plate('buy', coin(it.price, 48), save.coins < it.price);
-      else if (sk.soon) detail = '<b>' + T('codex.' + sk.id) + '</b><span>' + T('codex.soon.d') + '</span>';
-      else detail = '<b>' + T('codex.' + sk.id) + '</b><span>' + T('codex.' + tab + '.d') + '</span>' +
-        (inUse(sk) ? '<small>' + T('codex.inuse') + '</small>' : owns(sk) ? plate('use', T('codex.use')) : plate('buy', coin(sk.price, 48), save.coins < sk.price));
+      const offers = tab === 'items'
+        ? SHOP.map((it) => ({ key: it.id, img: itemImg(it, 128), name: T('item.' + it.id), desc: T('item.' + it.id + '.d'),
+          note: T('shop.have', { n: save.items[it.id] }), btn: 'buy', price: it.price, it }))
+        : T0.skins.map((sk) => ({ key: sk.id, img: sk.art && ART.nodeImg(sk.art), sk,
+          name: T('codex.' + sk.id), desc: T(sk.soon ? 'codex.soon.d' : 'codex.' + tab + '.d'),
+          note: sk.soon ? T('codex.soon') : inUse(sk) ? T('codex.inuse') : owns(sk) ? T('codex.owned') : '',
+          btn: sk.soon || inUse(sk) ? null : owns(sk) ? 'use' : 'buy', price: sk.price }));
+      const pages = Math.max(1, Math.ceil(offers.length / PER));
+      page = Math.min(page, pages - 1);
+      const shown = offers.slice(page * PER, page * PER + PER);
+      const arrow = ART.nodeImg('navarrow');
       const card = openModal(
-        '<div class="cx-head"><div class="eyebrow">' + T('codex.tab.' + tab) + '</div>' +
-        '<div class="cx-wallet" style="background-image:url(' + ART.nodeImg('cxplate') + ')">' + coin('<b>' + save.coins.toLocaleString() + '</b>', 64) + '</div></div>' +
-        '<div class="cx-book" style="background-image:url(' + ART.nodeImg('cxbook') + ')">' +
-          CODEX_TABS.map(tabBtn).join('') +
-          '<button type="button" class="cx-tab t4 cx-close" aria-label="' + T('close') + '"><img alt="" src="' + ART.nodeImg('cxback') + '"></button>' +
-          '<div class="cx-grid">' + cards.map((c) => c
-            ? '<button type="button" class="cx-card' + (c.key === sel ? ' on' : '') + (c.soon ? ' soon' : '') + '" data-k="' + c.key + '" style="background-image:url(' + ART.nodeImg('cxcard') + ')">' +
-              (c.img ? '<img alt="" src="' + c.img + '">' : '<i>?</i>') + (c.have ? '<em>×' + c.have + '</em>' : '') + '<span>' + c.label + '</span></button>'
-            : '<div class="cx-card empty" style="background-image:url(' + ART.nodeImg('cxcard') + ')"></div>').join('') + '</div>' +
-        '</div>' +
-        '<div class="cx-detail">' + detail + '</div>' +
-        '<p class="shop-note">' + T('shop.note') + '</p>');
-      card.classList.add('codex');
-      card.querySelectorAll('.cx-tab[data-tab]').forEach((b) => { b.onclick = () => { Sound.play('click'); tab = b.dataset.tab; sel = null; render(); }; });
-      card.querySelectorAll('.cx-card[data-k]').forEach((b) => { b.onclick = () => { Sound.play('click'); sel = b.dataset.k; render(); }; });
-      const equip = () => { save.skins[T0.slot] = sk.value; persist(); applySkins(); };
-      const buy = card.querySelector('.cx-buy.buy');
-      if (buy) buy.onclick = () => {
-        if (it) { if (save.coins < it.price) return; save.coins -= it.price; save.items[it.id]++; }
-        else { if (save.coins < sk.price) return; save.coins -= sk.price; save.owned.push(sk.id); equip(); }
+        '<div class="ts-title" style="background-image:url(' + ART.nodeImg('cxplate') + ')"><span>' + T('shop.title') + '</span></div>' +
+        '<div class="wallet"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '"><b>' + save.coins.toLocaleString() + '</b></div>' +
+        '<div class="ts-tabs">' + CODEX_TABS.map((t) => '<button type="button" class="' + (t.id === tab ? 'btn small on' : 'btn dark small') + ' ts-tab" data-tab="' + t.id + '"><img alt="" src="' + ART.nodeImg(t.icon) + '"><span>' + T('shop.tab.' + t.id) + '</span></button>').join('') + '</div>' +
+        (pages > 1 ? '<div class="ts-pager"><button type="button" class="ts-prev"' + (page === 0 ? ' disabled' : '') + ' aria-label="<" style="background-image:url(' + arrow + ')"></button><span>' + T('shop.page', { n: page + 1, t: pages }) + '</span>' +
+          '<button type="button" class="ts-next"' + (page >= pages - 1 ? ' disabled' : '') + ' aria-label=">" style="background-image:url(' + arrow + ')"></button></div>' : '') +
+        '<div class="ts-offers">' + shown.map((o) =>
+          '<div class="ts-offer' + (o.sk && o.sk.soon ? ' soon' : '') + '">' +
+            '<div class="ts-frame" style="background-image:url(' + ART.nodeImg('cxcard') + ')">' + (o.img ? '<img alt="" src="' + o.img + '">' : '<i>?</i>') + (o.it && save.items[o.it.id] ? '<em>×' + save.items[o.it.id] + '</em>' : '') + '</div>' +
+            '<div class="ts-info"><b>' + o.name + '</b><span>' + o.desc + '</span>' + (o.note ? '<small>' + o.note + '</small>' : '') +
+              (o.btn === 'buy' ? '<button type="button" class="btn small stack ts-buy" data-k="' + o.key + '"' + (save.coins < o.price ? ' disabled' : '') + '>' + T('shop.buy') + '<span class="sub">' + coin(o.price, 32) + '</span></button>'
+                : o.btn === 'use' ? '<button type="button" class="btn dark small ts-use" data-k="' + o.key + '">' + T('codex.use') + '</button>' : '') +
+            '</div></div>').join('') + '</div>' +
+        '<p class="shop-note">' + T('shop.note') + '</p>' +
+        '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('close') + '</button></div>');
+      card.classList.add('tshop');
+      card.querySelectorAll('.ts-tab').forEach((b) => { b.onclick = () => { Sound.play('click'); tab = b.dataset.tab; page = 0; render(); }; });
+      const prev = card.querySelector('.ts-prev'), next = card.querySelector('.ts-next');
+      if (prev) prev.onclick = () => { Sound.play('click'); page--; render(); };
+      if (next) next.onclick = () => { Sound.play('click'); page++; render(); };
+      const find = (k) => offers.find((o) => o.key === k);
+      card.querySelectorAll('.ts-buy').forEach((b) => { b.onclick = () => {
+        const o = find(b.dataset.k); if (!o || save.coins < o.price) return;
+        save.coins -= o.price;
+        if (o.it) save.items[o.it.id]++;
+        else { save.owned.push(o.sk.id); save.skins[T0.slot] = o.sk.value; applySkins(); }
         persist(); Sound.play('chest'); render(); paintWallet();
-      };
-      const use = card.querySelector('.cx-buy.use');
-      if (use) use.onclick = () => { equip(); Sound.play('create'); render(); };
-      card.querySelector('.cx-close').onclick = () => { Sound.play('click'); closeModal(); if (back) back(); };
+      }; });
+      card.querySelectorAll('.ts-use').forEach((b) => { b.onclick = () => {
+        const o = find(b.dataset.k); if (!o) return;
+        save.skins[T0.slot] = o.sk.value; persist(); applySkins(); Sound.play('create'); render();
+      }; });
+      card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); if (back) back(); };
     };
     render();
     // prévias das skins vêm no pacote extra: se a loja abriu antes dele chegar, redesenha quando chegar
-    if (!EXTRA.done) extraReady().then(() => { if (modalOpen() && $('modalCard').classList.contains('codex')) render(); });
+    if (!EXTRA.done) extraReady().then(() => { if (modalOpen() && $('modalCard').classList.contains('tshop')) render(); });
   }
   // loja antiga em lista (reserva se a arte do Códice não carregar)
   function openShopList(back) {
@@ -2136,7 +2144,9 @@
     if (FX.disc) fx += '<i class="fx-disc" style="' + pos(FX.disc) + ';--r:' + (300 * s) + 'px"></i>';
     for (let k = 0; k < 40; k++) fx += '<i class="fx-fly" style="left:' + (Math.random() * w).toFixed(0) + 'px;top:' + (Math.random() * mapH).toFixed(0) + 'px;--d:' + (Math.random() * 8).toFixed(2) + 's;--t:' + (6 + Math.random() * 6).toFixed(2) + 's"></i>';
     // câmera: começa na fase atual; se abriu fase nova, a névoa recua revelando o próximo trecho
-    const camY = (y) => Math.max(0, Math.min(mapH - h, y - h * 0.62));
+    // 16/10 (pedido dele): a rolagem para quando a fase 1 aparece embaixo; não desce pelo resto da maquete vazia
+    const maxTop = Math.max(0, Math.min(mapH - h, pts[0][1] + 120 - h));
+    const camY = (y) => Math.max(0, Math.min(maxTop, y - h * 0.62));
     // mapa 3D, rolagem (16/10, pedido dele: nem setas nem o arrasto programado): o celular rola de verdade, com o embalo
     // nativo, mas o desenho fica parado numa "janela" grudada no topo (sticky); a cada quadro o jogo lê a posição da
     // rolagem e move a maquete 3D e as fases juntas. Assim o relevo não fica atrás das fases como na rolagem nativa pura.
@@ -2149,11 +2159,11 @@
     }
     if (port) {
       port.style.cssText = NEW3 ? 'position:sticky;top:0;height:' + h + 'px;overflow:hidden' : '';
-      spacer.style.height = NEW3 ? Math.max(0, mapH - h) + 'px' : '0';
+      spacer.style.height = NEW3 ? maxTop + 'px' : '0';
     }
     scroll.style.overflowY = NEW3 ? 'auto' : ''; scroll.style.touchAction = NEW3 ? 'pan-y' : ''; scroll.style.overscrollBehavior = 'contain';
     inner.style.transform = ''; inner.style.willChange = NEW3 ? 'transform' : '';
-    const V = NEW3 ? { native: true, el: scroll, top: 0, max: mapH - h, frame: () => {} } : null;
+    const V = NEW3 ? { native: true, el: scroll, top: 0, max: maxTop, frame: () => {} } : null;
     MAP3.view = V;
     const getTop = () => (V ? V.top : scroll.scrollTop);
     const setTop = (y, smooth) => {

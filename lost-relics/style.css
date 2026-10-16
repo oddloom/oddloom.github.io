@@ -425,7 +425,9 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 @keyframes auraPulse { 0%, 100% { scale: .9; opacity: .55; } 50% { scale: 1.06; opacity: .95; } }
 @media (prefers-reduced-motion: reduce) { .node .node-aura { animation: none; } }
 /* anúncio FASE N pintado: --L = altura da letra; as imagens têm folga de brilho em volta, por isso os fatores */
-.announce .ann-art { --L: min(54px, 12vw); display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 4px 0 rgba(40,18,0,.7)) drop-shadow(0 0 30px rgba(255,190,90,.6)); }
+/* 16/10: menor (cabia "FASE 9", mas "FASE 26" passava da tela e cortava o número) e com a largura do próprio conteúdo, centrada */
+.announce:has(.ann-art) { width: max-content; max-width: 96vw; }
+.announce .ann-art { --L: min(42px, 8vw); display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 4px 0 rgba(40,18,0,.7)) drop-shadow(0 0 30px rgba(255,190,90,.6)); }
 .announce .ann-fase { height: calc(var(--L) * 2.33); width: auto; margin-right: calc(var(--L) * .1); }
 .announce .ann-num { height: calc(var(--L) * 2); width: auto; margin: 0 calc(var(--L) * -.15); transform: translateY(calc(var(--L) * .14)); }
 /* elogios pintados (Solar): cada nível maior que o anterior */
@@ -591,3 +593,36 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 #mapBack img { width: 100%; height: 100%; object-fit: contain; }
 #mapBack .digits { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-weight: 900; font-size: 16px; color: #f7e2a1; }
 #mapBack .digits img { width: auto; height: 20px; margin: 0 -2px; }
+/* ---------- Loja do Templo no formato do modelo dele (16/10) ---------- */
+.tshop .ts-title { align-self: center; width: min(260px, 70%); aspect-ratio: 304 / 134; background: center / contain no-repeat; display: grid; place-items: center; filter: drop-shadow(0 6px 10px rgba(0,0,0,.6)); }
+.tshop .ts-title span { font-family: var(--f-display); font-weight: 900; font-size: clamp(15px, 4.4vw, 20px); letter-spacing: .06em; color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.6); text-transform: uppercase; }
+.tshop .wallet { margin-top: -6px; font-size: 24px; }
+.tshop .wallet img.coin { width: 32px; height: 32px; }
+.tshop .ts-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+.ui-kit .tshop .ts-tab, .tshop .ts-tab { --be: 26px; --be2: 24px; min-height: 46px; padding: 0 20px; font-size: 13px; letter-spacing: .04em; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.tshop .ts-tab img { width: 24px; height: 24px; object-fit: contain; flex: none; }
+.tshop .ts-pager { display: flex; align-items: center; justify-content: center; gap: 14px; font-family: var(--f-body); font-weight: 600; font-size: 13px; letter-spacing: .2em; color: var(--bone-dim); }
+.tshop .ts-pager button { width: 36px; height: 30px; border: 0; padding: 0; background: center / contain no-repeat; cursor: pointer; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+.tshop .ts-prev { transform: scaleX(-1); }
+.tshop .ts-pager button:disabled { opacity: .25; cursor: default; }
+.tshop .ts-offers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+.tshop .ts-offer { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.tshop .ts-frame { position: relative; width: 82%; aspect-ratio: 219 / 231; background: center / contain no-repeat; display: grid; place-items: center; filter: drop-shadow(0 6px 10px rgba(0,0,0,.6)); z-index: 1; }
+.tshop .ts-frame img { width: 58%; height: 58%; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
+.tshop .ts-frame i { font-family: var(--f-display); font-style: normal; font-weight: 900; font-size: 30px; color: rgba(243,210,122,.5); }
+.tshop .ts-frame em { position: absolute; right: 6%; top: 4%; font-style: normal; font-family: var(--f-display); font-weight: 900; font-size: 12px; color: #f7e2a1; background: rgba(20,14,6,.85); border-radius: 8px; padding: 1px 6px; box-shadow: 0 0 0 1px rgba(212,168,75,.7); }
+/* painel de descrição: verde-escuro com filete dourado e a pontinha encostando na moldura (como no modelo) */
+.tshop .ts-info { position: relative; margin-top: -10px; width: 100%; padding: 16px 8px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 178px;
+  background: linear-gradient(180deg, rgba(18,44,36,.96), rgba(8,22,18,.96)); box-shadow: inset 0 0 0 1px rgba(212,168,75,.85), inset 0 0 0 3px rgba(0,0,0,.5), 0 8px 16px rgba(0,0,0,.5); }
+.tshop .ts-info::before { content: ''; position: absolute; top: -7px; left: 50%; width: 12px; height: 12px; transform: translateX(-50%) rotate(45deg); background: #12302a; box-shadow: -1px -1px 0 0 rgba(212,168,75,.85); }
+.tshop .ts-info b { font-family: var(--f-display); font-size: 15px; line-height: 1.1; color: #f7e2a1; text-shadow: 0 2px 0 #000; text-align: center; }
+.tshop .ts-info > span { font-family: var(--f-body); font-size: 12.5px; line-height: 1.3; color: var(--bone); text-align: center; flex: 1; }
+.tshop .ts-info small { font-family: var(--f-body); font-weight: 600; font-size: 10.5px; letter-spacing: .1em; color: var(--jade); }
+.ui-kit .tshop .ts-info .btn, .tshop .ts-info .btn { --be: 22px; --be2: 22px; width: 100%; min-height: 54px; padding: 0 16px; font-size: 13px; margin-top: 4px; }
+.tshop .ts-info .btn .sub img.coin { width: 1.1em; height: 1.1em; }
+.tshop .ts-info .btn:disabled { filter: grayscale(1) brightness(.6); cursor: not-allowed; }
+.tshop .ts-offer.soon .ts-frame { filter: grayscale(.8) brightness(.7) drop-shadow(0 6px 10px rgba(0,0,0,.6)); }
+.tshop .shop-note { font-size: 12px !important; }.tshop .ts-offers { align-items: stretch; }
+.tshop .ts-offer { height: 100%; }
+.tshop .ts-info { flex: 1; }
+.tshop .ts-info .btn, .tshop .ts-info > small:last-child { margin-top: auto; }
