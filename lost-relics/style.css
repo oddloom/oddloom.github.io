@@ -583,3 +583,11 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .streak-up { color: var(--gold-hi, #f3d27a) !important; }
 .streak-lost { color: var(--ember) !important; }
 .cx-buy.use { font-size: 18px; letter-spacing: .1em; }
+/* mapa (16/10): rolagem nativa; botão discreto que volta pra fase atual (só aparece quando ela sai da tela) */
+#mapBack { position: absolute; right: 12px; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); z-index: 3; width: 54px; height: 54px; border: 0; padding: 0; background: none; cursor: pointer;
+  opacity: 0; pointer-events: none; transform: scale(.85); transition: opacity .25s, transform .25s; filter: drop-shadow(0 3px 6px rgba(0,0,0,.6)); }
+#mapBack.on { opacity: .85; pointer-events: auto; transform: none; }
+#mapBack:active { transform: scale(.92); }
+#mapBack img { width: 100%; height: 100%; object-fit: contain; }
+#mapBack .digits { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-weight: 900; font-size: 16px; color: #f7e2a1; }
+#mapBack .digits img { width: auto; height: 20px; margin: 0 -2px; }

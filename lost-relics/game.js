@@ -2010,7 +2010,9 @@
     const dt = Math.min(0.05, MAP3.lastT ? (t - MAP3.lastT) / 1000 : 0.016); MAP3.lastT = t;
     // inclinação: velocidade da rolagem + balanço lento (a maquete "respira" mesmo parada)
     // rolagem do próprio jogo (arrasto + inércia + deslize até um alvo), no mesmo quadro do desenho: sem descompasso
-    if (V && !V.drag) {
+    // rolagem nativa (16/10): o dedo rola o próprio celular; aqui só lemos a posição e desenhamos tudo no mesmo quadro
+    if (V && V.native) V.top = V.el.scrollTop;
+    else if (V && !V.drag) {
       if (V.target != null) { V.top += (V.target - V.top) * Math.min(1, dt * 6); if (Math.abs(V.target - V.top) < 0.5) { V.top = V.target; V.target = null; } }
       else if (Math.abs(V.vel) > 8) { V.top += V.vel * dt; V.vel *= Math.pow(0.06, dt); } else V.vel = 0;
     }
@@ -2135,11 +2137,29 @@
     for (let k = 0; k < 40; k++) fx += '<i class="fx-fly" style="left:' + (Math.random() * w).toFixed(0) + 'px;top:' + (Math.random() * mapH).toFixed(0) + 'px;--d:' + (Math.random() * 8).toFixed(2) + 's;--t:' + (6 + Math.random() * 6).toFixed(2) + 's"></i>';
     // câmera: começa na fase atual; se abriu fase nova, a névoa recua revelando o próximo trecho
     const camY = (y) => Math.max(0, Math.min(mapH - h, y - h * 0.62));
-    // mapa 3D: rolagem feita pelo jogo (a nativa anda num ritmo e o relevo em outro, e o mapa parecia travado)
-    const V = NEW3 ? mapView(scroll, inner, mapH - h) : null;
-    if (!NEW3) { scroll.style.overflowY = ''; scroll.style.touchAction = ''; inner.style.transform = ''; }
+    // mapa 3D, rolagem (16/10, pedido dele: nem setas nem o arrasto programado): o celular rola de verdade, com o embalo
+    // nativo, mas o desenho fica parado numa "janela" grudada no topo (sticky); a cada quadro o jogo lê a posição da
+    // rolagem e move a maquete 3D e as fases juntas. Assim o relevo não fica atrás das fases como na rolagem nativa pura.
+    if (MAP3.view && MAP3.view.off) MAP3.view.off();
+    let port = $('mapPort'), spacer = $('mapSpacer');
+    if (NEW3 && !port) {
+      port = document.createElement('div'); port.id = 'mapPort';
+      spacer = document.createElement('div'); spacer.id = 'mapSpacer';
+      scroll.insertBefore(port, inner); port.appendChild(inner); scroll.appendChild(spacer);
+    }
+    if (port) {
+      port.style.cssText = NEW3 ? 'position:sticky;top:0;height:' + h + 'px;overflow:hidden' : '';
+      spacer.style.height = NEW3 ? Math.max(0, mapH - h) + 'px' : '0';
+    }
+    scroll.style.overflowY = NEW3 ? 'auto' : ''; scroll.style.touchAction = NEW3 ? 'pan-y' : ''; scroll.style.overscrollBehavior = 'contain';
+    inner.style.transform = ''; inner.style.willChange = NEW3 ? 'transform' : '';
+    const V = NEW3 ? { native: true, el: scroll, top: 0, max: mapH - h, frame: () => {} } : null;
+    MAP3.view = V;
     const getTop = () => (V ? V.top : scroll.scrollTop);
-    const setTop = (y, smooth) => { if (V) { if (smooth) V.target = y; else { V.top = y; V.target = null; V.vel = 0; } } else if (smooth) scroll.scrollTo({ top: y, behavior: 'smooth' }); else scroll.scrollTop = y; };
+    const setTop = (y, smooth) => {
+      if (smooth) scroll.scrollTo({ top: y, behavior: 'smooth' }); else scroll.scrollTop = y;
+      if (V) { V.top = scroll.scrollTop; V.frame(); }
+    };
     requestAnimationFrame(() => {
       setTop(camY(pts[curIdx][1] + (fogPrevIdx < curIdx ? 60 : 0)));
       if (fogPrevIdx < curIdx) {
@@ -2167,27 +2187,27 @@
       if (NEW3) MAP3.cam = { O, w, h, mapW, mapH, s };
     };
     let panRaf = 0;
-    scroll.onscroll = V ? null : () => { if (!panRaf) panRaf = requestAnimationFrame(() => { panRaf = 0; applyPan(); }); };
+    // rolagem nativa: as fases andam já no evento de rolagem (mesmo quadro); o relevo 3D acompanha no próximo desenho
+    scroll.onscroll = V ? () => { V.top = scroll.scrollTop; V.frame(); } : () => { if (!panRaf) panRaf = requestAnimationFrame(() => { panRaf = 0; applyPan(); }); };
     if (V) V.frame = () => { inner.style.transform = 'translate3d(0,' + (-V.top).toFixed(1) + 'px,0)'; applyPan(); };
-    // setas pintadas pra ir de fase em fase (pedido dele 15/10) e, ao soltar o dedo, o mapa plana até a fase mais perto
+    // setas de fase em fase (15/10) saíram em 16/10; fica só um botão discreto que volta pra fase atual,
+    // e ele só aparece quando a fase atual sai da tela
+    if ($('mapNav')) $('mapNav').hidden = true;
+    let back = $('mapBack');
     if (V) {
-      let fi = curIdx;
-      let nav = $('mapNav');
-      if (!nav) {
-        nav = document.createElement('div'); nav.id = 'mapNav';
-        nav.innerHTML = '<button type="button" class="up" aria-label="Próxima fase"></button><button type="button" class="dn" aria-label="Fase anterior"></button>';
-        $('screen-map').appendChild(nav);
+      if (!back) {
+        back = document.createElement('button'); back.type = 'button'; back.id = 'mapBack'; back.setAttribute('aria-label', T('map.current'));
+        $('screen-map').appendChild(back);
       }
-      nav.hidden = false;
-      const [bu, bd] = nav.querySelectorAll('button'), arrow = ART.nodeImg('navarrow');
-      if (arrow) [bu, bd].forEach((b) => { b.style.backgroundImage = 'url(' + arrow + ')'; });
-      const navPaint = () => { bu.disabled = fi >= curIdx; bd.disabled = fi <= 0; };
-      const goTo = (i) => { fi = Math.max(0, Math.min(curIdx, i)); V.target = camY(pts[fi][1]); V.vel = 0; navPaint(); };
-      bu.onclick = () => { Sound.play('click'); goTo(fi + 1); };
-      bd.onclick = () => { Sound.play('click'); goTo(fi - 1); };
-      V.snapAt = (top) => { const c = top + h * 0.62; let best = 0; for (let i = 0; i <= curIdx; i++) if (Math.abs(pts[i][1] - c) < Math.abs(pts[best][1] - c)) best = i; goTo(best); };
-      navPaint();
-    } else if ($('mapNav')) $('mapNav').hidden = true;
+      back.innerHTML = '<img alt="" src="' + (ART.nodeImg('current') || ART.nodeImg('done') || '') + '"><span class="digits">' + (ART.nodeImg('s0') ? digitsHTML(curIdx + 1) : curIdx + 1) + '</span>';
+      back.onclick = () => { Sound.play('click'); setTop(camY(pts[curIdx][1]), true); };
+      const curTop = camY(pts[curIdx][1]);
+      V.frame = () => {
+        inner.style.transform = 'translate3d(0,' + (-V.top).toFixed(1) + 'px,0)'; applyPan();
+        const off = Math.abs(V.top - curTop) > h * 0.55;
+        if (back.classList.contains('on') !== off) back.classList.toggle('on', off);
+      };
+    } else if (back) back.classList.remove('on');
     applyPan();
     if (NEW3) {
       mapGLResize(fullW, w, h);
@@ -2260,6 +2280,8 @@
     else if (location.hash === '#fxdemo') { startLevel(5); setTimeout(() => { state.grid[3][2].special = 'lineH'; state.grid[5][5].special = 'barrel'; state.grid[6][1] = { id: 9997, kind: 'gem', color: null, special: 'idol', armed: false, vine: false }; setInterval(() => { if (Math.random() < 0.34) blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); else if (Math.random() < 0.5) blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); else blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 1400); if (0) setInterval(() => { blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 900); }, 1500); }
     else if (/^#evento-/.test(location.hash)) { if (location.hash === '#evento-anton') document.documentElement.classList.add('ev-anton'); startLevel(3); setTimeout(() => { const p3 = I18N.lang === 'pt' && ART.nodeImg('p3'); showPraise(T('praise.3'), p3 ? 'art p3' : '', p3); const b = document.createElement('div'); const ra = I18N.lang === 'pt' && ART.nodeImg('rush'); b.className = 'praise ' + (ra ? 'art rush' : 'banner'); if (ra) b.innerHTML = '<img alt="" src="' + ra + '">'; else b.textContent = T('rush'); b.style.top = '62%'; b.style.animation = 'none'; b.style.transform = 'translate(-50%,-50%)'; document.body.appendChild(b); const a = document.querySelector('.praise:not(.banner)'); if (a) { a.style.animation = 'none'; a.style.transform = 'translate(-50%,-50%)'; a.style.opacity = '1'; a.style.top = '40%'; setTimeout(() => document.body.appendChild(a), 1); } }, 2600); }
     else if (location.hash === '#mapa') openMap();
+    // #maparolaN: mapa com a fase N aberta, rolado meia tela pra baixo (confere a rolagem nativa e o botão de voltar)
+    else if (/^#maparola\d*$/.test(location.hash)) { const u = +location.hash.slice(9) || 20; save.unlocked = u; save.fogShown = u - 1; for (let i = 1; i < u; i++) save.stars[i] = (i % 3) + 1; openMap(); setTimeout(() => { $('mapScroll').scrollTop += 700; }, 5000); }
     else if (/^#mapademo\d*$/.test(location.hash)) { const u = +location.hash.slice(9) || 7; save.unlocked = u; save.fogShown = u - 2; for (let i = 1; i < u; i++) save.stars[i] = (i % 3) + 1; openMap(); }
     else if (/^#loja/.test(location.hash)) { const m2 = /^#loja-(\w+)(?:-(\w+))?/.exec(location.hash); if (m2 && m2[2]) { save.skins[{ gems: 'gem', words: 'word', trail: 'trail' }[m2[1]]] = m2[2]; applySkins(); } openMap(); openShop(null, m2 ? m2[1] : null); }
     // #pelesN: fase N com a skin de joia/rastro dada (#peles3-gold-fire), pra print
