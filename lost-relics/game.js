@@ -1800,7 +1800,7 @@
     if (!ART.nodeImg('cxcard')) return openShopList(back);
     Sound.play('click');
     let tab = startTab || 'items', page = 0;
-    const PER = 2;
+    const PER = 1; // 16/10, pedido dele: um item por página, centralizado
     const coin = (n, sz) => '<img class="coin" alt="" src="' + ART.icon('coin', sz) + '">' + n;
     const render = () => {
       const T0 = CODEX_TABS.find((t) => t.id === tab);

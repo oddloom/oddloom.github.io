@@ -625,4 +625,16 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .tshop .shop-note { font-size: 12px !important; }.tshop .ts-offers { align-items: stretch; }
 .tshop .ts-offer { height: 100%; }
 .tshop .ts-info { flex: 1; }
-.tshop .ts-info .btn, .tshop .ts-info > small:last-child { margin-top: auto; }
+.tshop .ts-info .btn, .tshop .ts-info > small:last-child { margin-top: auto; }/* 16/10 (print dele no iPhone): abas passavam da moldura pela direita; 1 oferta por página, centrada; título só "Loja" */
+.tshop .ts-tabs { width: 100%; box-sizing: border-box; }
+.ui-kit .tshop .ts-tab, .tshop .ts-tab { --be: 20px; --be2: 18px; min-width: 0; width: 100%; box-sizing: border-box; padding: 0 12px; font-size: 12px; overflow: hidden; }
+.tshop .ts-tab img { width: 20px; height: 20px; }
+.tshop .ts-offers { grid-template-columns: 1fr; justify-items: center; }
+.tshop .ts-offer { width: min(250px, 80%); }
+.tshop .ts-frame { width: 66%; }
+.tshop .ts-info { min-height: 0; padding: 18px 14px 12px; }
+.tshop .ts-info b { font-size: 18px; }
+.tshop .ts-info > span { font-size: 14px; }
+.ui-kit .tshop .ts-info .btn, .tshop .ts-info .btn { width: 80%; }
+.tshop .ts-title { width: min(200px, 55%); }
+.tshop .ts-title span { font-size: clamp(18px, 5.5vw, 24px); }
