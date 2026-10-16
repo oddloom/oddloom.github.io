@@ -637,4 +637,6 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .tshop .ts-info > span { font-size: 14px; }
 .ui-kit .tshop .ts-info .btn, .tshop .ts-info .btn { width: 80%; }
 .tshop .ts-title { width: min(200px, 55%); }
-.tshop .ts-title span { font-size: clamp(18px, 5.5vw, 24px); }
+.tshop .ts-title span { font-size: clamp(18px, 5.5vw, 24px); }/* 16/10: botão de comprar só com moeda + preço, maior */
+.ui-kit .tshop .ts-info .ts-buy, .tshop .ts-info .ts-buy { font-size: 20px; letter-spacing: .02em; min-height: 56px; }
+.tshop .ts-buy img.coin { width: 26px; height: 26px; vertical-align: -6px; margin-right: 6px; }

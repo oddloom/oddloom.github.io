@@ -1827,7 +1827,7 @@
           '<div class="ts-offer' + (o.sk && o.sk.soon ? ' soon' : '') + '">' +
             '<div class="ts-frame" style="background-image:url(' + ART.nodeImg('cxcard') + ')">' + (o.img ? '<img alt="" src="' + o.img + '">' : '<i>?</i>') + (o.it && save.items[o.it.id] ? '<em>×' + save.items[o.it.id] + '</em>' : '') + '</div>' +
             '<div class="ts-info"><b>' + o.name + '</b><span>' + o.desc + '</span>' + (o.note ? '<small>' + o.note + '</small>' : '') +
-              (o.btn === 'buy' ? '<button type="button" class="btn small stack ts-buy" data-k="' + o.key + '"' + (save.coins < o.price ? ' disabled' : '') + '>' + T('shop.buy') + '<span class="sub">' + coin(o.price, 32) + '</span></button>'
+              (o.btn === 'buy' ? '<button type="button" class="btn small ts-buy" data-k="' + o.key + '" aria-label="' + T('shop.buy') + ' ' + o.price + '"' + (save.coins < o.price ? ' disabled' : '') + '>' + coin(o.price, 48) + '</button>' // 16/10: só o preço (pedido dele)
                 : o.btn === 'use' ? '<button type="button" class="btn dark small ts-use" data-k="' + o.key + '">' + T('codex.use') + '</button>' : '') +
             '</div></div>').join('') + '</div>' +
         '<p class="shop-note">' + T('shop.note') + '</p>' +
