@@ -1969,7 +1969,7 @@
       ART.loadExtra(E, finish);
     };
     if (window.ART_EXTRA) return go();
-    const sc = document.createElement('script'); sc.src = 'art-extra.js'; sc.onload = go; sc.onerror = finish;
+    const sc = document.createElement('script'); sc.src = 'art-extra.js' + (window.LR_VER && LR_VER['art-extra.js'] ? '?v=' + LR_VER['art-extra.js'] : ''); sc.onload = go; sc.onerror = finish;
     document.head.appendChild(sc);
   }
 
@@ -2161,7 +2161,7 @@
       port.style.cssText = NEW3 ? 'position:sticky;top:0;height:' + h + 'px;overflow:hidden' : '';
       spacer.style.height = NEW3 ? maxTop + 'px' : '0';
     }
-    scroll.style.overflowY = NEW3 ? 'auto' : ''; scroll.style.touchAction = NEW3 ? 'pan-y' : ''; scroll.style.overscrollBehavior = 'contain';
+    scroll.style.overflowY = NEW3 ? 'auto' : ''; scroll.style.touchAction = NEW3 ? 'pan-y' : ''; scroll.style.overscrollBehavior = NEW3 ? 'none' : 'contain'; // sem elástico no fim (iPhone)
     inner.style.transform = ''; inner.style.willChange = NEW3 ? 'transform' : '';
     const V = NEW3 ? { native: true, el: scroll, top: 0, max: maxTop, frame: () => {} } : null;
     MAP3.view = V;
@@ -2198,7 +2198,8 @@
     };
     let panRaf = 0;
     // rolagem nativa: as fases andam já no evento de rolagem (mesmo quadro); o relevo 3D acompanha no próximo desenho
-    scroll.onscroll = V ? () => { V.top = scroll.scrollTop; V.frame(); } : () => { if (!panRaf) panRaf = requestAnimationFrame(() => { panRaf = 0; applyPan(); }); };
+    // o limite vale também durante o "elástico" do iPhone (a rolagem passa do fim e volta): o desenho para no limite
+    scroll.onscroll = V ? () => { V.top = Math.max(0, Math.min(V.max, scroll.scrollTop)); V.frame(); } : () => { if (!panRaf) panRaf = requestAnimationFrame(() => { panRaf = 0; applyPan(); }); };
     if (V) V.frame = () => { inner.style.transform = 'translate3d(0,' + (-V.top).toFixed(1) + 'px,0)'; applyPan(); };
     // setas de fase em fase (15/10) saíram em 16/10; fica só um botão discreto que volta pra fase atual,
     // e ele só aparece quando a fase atual sai da tela
