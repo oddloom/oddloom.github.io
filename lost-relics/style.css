@@ -640,3 +640,10 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .tshop .ts-title span { font-size: clamp(18px, 5.5vw, 24px); }/* 16/10: botão de comprar só com moeda + preço, maior */
 .ui-kit .tshop .ts-info .ts-buy, .tshop .ts-info .ts-buy { font-size: 20px; letter-spacing: .02em; min-height: 56px; }
 .tshop .ts-buy img.coin { width: 26px; height: 26px; vertical-align: -6px; margin-right: 6px; }
+/* mundos (16/10): setas pintadas dos lados do título trocam de mundo; a do próximo fica apagada até abrir a 1ª fase dele */
+#mapWorlds button { position: absolute; top: 62px; z-index: 4; width: 44px; height: 36px; border: 0; padding: 0; background: center / contain no-repeat; cursor: pointer; filter: drop-shadow(0 2px 4px rgba(0,0,0,.7)); opacity: .9; }
+#mapWorlds .wprev { left: 14px; transform: scaleX(-1); }
+#mapWorlds .wnext { right: 14px; }
+#mapWorlds button:disabled { opacity: .25; filter: grayscale(1) drop-shadow(0 2px 4px rgba(0,0,0,.7)); cursor: default; }
+#mapWorlds button:not(:disabled):active { transform: scale(.9); }
+#mapWorlds .wprev:not(:disabled):active { transform: scaleX(-1) scale(.9); }

@@ -1629,7 +1629,7 @@
       return '<div class="goal-row"><img alt="" src="' + goalIcon(g, 80, L) + '"><span>' + goalText(gg, L) + '</span></div>';
     }).join('');
     const card = openModal(
-      '<div class="eyebrow">' + T('map.title').toUpperCase() + '</div>' +
+      '<div class="eyebrow">' + T('map.title' + (worldOf(id) ? worldOf(id) + 1 : '')).toUpperCase() + '</div>' +
       '<h2 class="metal">' + T('level') + ' ' + id + '</h2><div class="orn"><i></i></div>' +
       (L.boss ? '<div class="boss-tag">' + T('boss') + '</div>' : '') +
       '<div class="goal-list">' + rows + '</div>' +
@@ -1964,7 +1964,7 @@
     const go = () => {
       const E = window.ART_EXTRA, D = window.ART_DATA;
       if (!E || !D) return finish();
-      D.map3 = E.map3; D.mapDepth = E.mapDepth;
+      D.map3 = E.map3; D.mapDepth = E.mapDepth; D.map3b = E.map3b; D.mapDepthB = E.mapDepthB;
       if (scene === 'map' && !MAP3.gl) buildMap();
       ART.loadExtra(E, finish);
     };
@@ -1996,16 +1996,23 @@
     const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     MAP3.U = {}; for (const u of ['cam', 'top', 'span', 'left', 'spanX', 'k']) MAP3.U[u] = gl.getUniformLocation(pr, u);
     gl.uniform1i(gl.getUniformLocation(pr, 'img'), 0); gl.uniform1i(gl.getUniformLocation(pr, 'dep'), 1);
-    let loaded = 0;
-    const tex = (src, unit, onImg) => { const im = new Image(); im.onload = () => {
-      gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    // texturas do mundo (16/10: cada mundo tem a sua maquete + profundidade; trocar de mundo recarrega as duas)
+    const texs = [gl.createTexture(), gl.createTexture()];
+    let loaded = 0, ticket = 0;
+    const tex = (src, unit, my, onImg) => { const im = new Image(); im.onload = () => {
+      if (my !== ticket) return; // chegou atrasada de outro mundo
+      gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, texs[unit]);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
       for (const [p, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, p, v);
       if (onImg) onImg(im);
       if (++loaded === 2) MAP3.ready = true;
     }; im.src = src; };
-    tex(D.map3, 0);
-    tex(D.mapDepth, 1, (im) => { const c = document.createElement('canvas'); c.width = 572; c.height = 1024; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 572, 1024); MAP3.depth = x.getImageData(0, 0, 572, 1024).data; });
+    MAP3.setWorld = (W) => {
+      if (MAP3.texWorld === W) return;
+      MAP3.texWorld = W; MAP3.ready = false; loaded = 0; const my = ++ticket;
+      tex(D[W.map], 0, my);
+      tex(D[W.depth], 1, my, (im) => { const c = document.createElement('canvas'); c.width = 572; c.height = 1024; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 572, 1024); MAP3.depth = x.getImageData(0, 0, 572, 1024).data; });
+    };
     MAP3.gl = gl; MAP3.cv = cv;
     $('screen-map').insertBefore(cv, $('mapScroll'));
     return true;
@@ -2080,12 +2087,29 @@
     cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); MAP3.gl.viewport(0, 0, cv.width, cv.height);
   }
 
+  // ---------- mundos (16/10) ----------
+  // Cada mundo tem a sua maquete 3D, a sua profundidade e o seu caminho (px da pintura 572x1024, de baixo pra cima).
+  // Mundo 2 = Cenote Sagrado (maquete do Gemini, 16/10); caminho conferido com tools\previa-caminho.ps1.
+  const WORLDS = [
+    { from: 1, to: 20, map: 'map3', depth: 'mapDepth', pathKey: 'mapPath3' },
+    { from: 21, to: 35, map: 'map3b', depth: 'mapDepthB', path: [[300, 1005], [320, 935], [300, 870], [240, 835], [235, 770], [265, 715], [190, 680], [110, 610], [85, 530], [130, 455], [215, 420], [300, 400], [385, 410], [455, 440], [470, 380], [400, 330], [395, 250]] },
+  ];
+  const worldOf = (id) => Math.max(0, WORLDS.findIndex((w) => id >= w.from && id <= w.to));
+  let mapWorld = null; // mundo aberto no mapa (null = o da fase atual)
   function buildMap() {
     const inner = $('mapInner'), scroll = $('mapScroll');
-    const n = LEVELS.length, D = window.ART_DATA || {};
+    const D = window.ART_DATA || {};
     const NEW3 = mapGLInit();
+    const lastId = Math.min(save.unlocked, LEVELS.length);
+    if (mapWorld == null || save.unlocked < WORLDS[mapWorld].from) mapWorld = worldOf(lastId);
+    // sem 3D ou sem a arte do mundo ainda (pacote extra chegando): mostra o mundo 1
+    const WI = mapWorld > 0 && (!NEW3 || !D[WORLDS[mapWorld].map]) ? 0 : mapWorld;
+    const Wd = WORLDS[WI], base = Wd.from - 1, WL = LEVELS.slice(base, Wd.to), n = WL.length;
+    if (NEW3) MAP3.setWorld(Wd);
+    const sfx = WI ? String(WI + 1) : '';
+    [['small', 'map.world'], ['strong', 'map.title'], ['em', 'map.sub']].forEach(([tag, k]) => { const el = document.querySelector('.map-title ' + tag); if (el) { el.dataset.t = k + sfx; el.textContent = T(k + sfx); } });
     let totalStars = 0;
-    for (let i = 1; i <= n; i++) totalStars += save.stars[i] || 0;
+    for (let i = Wd.from; i <= Wd.to; i++) totalStars += save.stars[i] || 0;
     // câmera de jornada (estilo Mario/DK/Crash): o mapa fica ~1,9x a altura da tela e rola;
     // só o caminho até a fase atual aparece, o resto fica escondido na névoa
     const fullW = scroll.clientWidth || W, h = scroll.clientHeight || H;
@@ -2093,13 +2117,13 @@
     // 16/10: 35 fases no mesmo caminho; o mapa cresce na proporção pra manter a distância entre as fases
     const IW = NEW3 ? 572 : 832, IH = NEW3 ? 1024 : 1248, mapH = Math.round(h * (NEW3 ? 2.4 : 1.9) * Math.max(1, n / 20)), s = mapH / IH, mapW = IW * s;
     // centraliza na horizontal na fase atual (o caminho serpenteia de um lado pro outro)
-    const RP = (NEW3 ? D.mapPath3 : D.mapPath) || [[416, 1200], [416, 150]]; let rTot = 0; const rSeg = [];
+    const RP = (NEW3 ? Wd.path || D[Wd.pathKey] : D.mapPath) || [[416, 1200], [416, 150]]; let rTot = 0; const rSeg = [];
     for (let i = 0; i < RP.length - 1; i++) { const l = Math.hypot(RP[i + 1][0] - RP[i][0], RP[i + 1][1] - RP[i][1]); rSeg.push(l); rTot += l; }
     const rAt = (dd) => { for (let i = 0; i < rSeg.length; i++) { if (dd <= rSeg[i] || i === rSeg.length - 1) { const k = Math.min(1, dd / rSeg[i]); return [RP[i][0] + (RP[i + 1][0] - RP[i][0]) * k, RP[i][1] + (RP[i + 1][1] - RP[i][1]) * k]; } dd -= rSeg[i]; } return RP[RP.length - 1]; };
-    const curRaw = rAt((rTot * (Math.min(save.unlocked, n) - 0.5)) / n);
+    const curRaw = rAt((rTot * (Math.min(save.unlocked - base, n) - 0.5)) / n);
     const offX = Math.max(w - mapW, Math.min(0, w / 2 - curRaw[0] * s)), offY = 0;
     inner.style.height = mapH + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
-    const bgMap = NEW3 ? D.map3 : D.map;
+    const bgMap = NEW3 ? D[Wd.map] : D.map;
     $('screen-map').style.backgroundImage = bgMap ? 'url("' + bgMap + '")' : 'none';
     // mapa 3D: o fundo é o canvas WebGL atrás da coluna; sem isso, a pintura fica como fundo da coluna
     inner.style.backgroundImage = !NEW3 && D.map ? 'url("' + D.map + '")' : 'none';
@@ -2110,16 +2134,17 @@
     const seg = []; let tot = 0;
     for (let i = 0; i < P.length - 1; i++) { const l = Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]); seg.push(l); tot += l; }
     const at = (d) => { for (let i = 0; i < seg.length; i++) { if (d <= seg[i] || i === seg.length - 1) { const k = Math.min(1, d / seg[i]); return [P[i][0] + (P[i + 1][0] - P[i][0]) * k, P[i][1] + (P[i + 1][1] - P[i][1]) * k]; } d -= seg[i]; } return P[P.length - 1]; };
-    const pts = LEVELS.map((L, i) => at((tot * (i + 0.5)) / n));
-    const curIdx = Math.min(save.unlocked, n) - 1;
+    const pts = WL.map((L, i) => at((tot * (i + 0.5)) / n));
+    const curIdx = Math.min(save.unlocked - base, n) - 1;
     // borda da névoa: no meio do caminho entre a fase atual e a próxima
     const fogAt = (i) => (i >= n - 1 ? pts[n - 1][1] - 90 * s : (pts[i][1] + pts[i + 1][1]) / 2 + 10);
-    const fogPrevIdx = Math.min(curIdx, save.fogShown == null ? curIdx : save.fogShown);
+    // fogShown = índice global (0 = fase 1) da última fase já revelada
+    const fogPrevIdx = Math.min(curIdx, Math.max(0, save.fogShown == null ? curIdx : save.fogShown - base));
     const lock = '<svg class="lock" viewBox="0 0 20 20"><path d="M6 8V6a4 4 0 1 1 8 0v2h1v10H5V8zm2 0h4V6a2 2 0 1 0-4 0z"/></svg>';
     let html = '';
-    LEVELS.forEach((L, i) => {
+    WL.forEach((L, i) => {
       if (i > curIdx) return;   // fases à frente: mistério
-      const id = i + 1, st = save.stars[id] || 0;
+      const id = base + i + 1, st = save.stars[id] || 0;
       const locked = id > save.unlocked, current = id === save.unlocked && !st;
       const gem = locked ? (L.boss ? 'g-amethyst' : 'g-night') : 'g-emerald';
       const cls = 'node' + (st ? ' done' : '') + (L.boss ? ' boss' : '') + (locked ? ' locked' : '') + (current ? ' current' : '');
@@ -2176,7 +2201,7 @@
         const fog = inner.querySelector('.map-fog');
         setTimeout(() => { fog.style.height = fogAt(curIdx).toFixed(0) + 'px'; Sound.play('idol'); setTop(camY(pts[curIdx][1]), true); }, 600);
       }
-      save.fogShown = curIdx; persist();
+      save.fogShown = Math.max(save.fogShown || 0, base + curIdx); persist();
     });
     // tudo que acompanha o desenho (efeitos + fases) fica numa camada que desliza de lado; a névoa não
     // duas camadas que deslizam juntas: efeitos por baixo da névoa, fases por cima (como era o z-index antes)
@@ -2210,7 +2235,7 @@
         back = document.createElement('button'); back.type = 'button'; back.id = 'mapBack'; back.setAttribute('aria-label', T('map.current'));
         $('screen-map').appendChild(back);
       }
-      back.innerHTML = '<img alt="" src="' + (ART.nodeImg('current') || ART.nodeImg('done') || '') + '"><span class="digits">' + (ART.nodeImg('s0') ? digitsHTML(curIdx + 1) : curIdx + 1) + '</span>';
+      back.innerHTML = '<img alt="" src="' + (ART.nodeImg('current') || ART.nodeImg('done') || '') + '"><span class="digits">' + (ART.nodeImg('s0') ? digitsHTML(base + curIdx + 1) : base + curIdx + 1) + '</span>';
       back.onclick = () => { Sound.play('click'); setTop(camY(pts[curIdx][1]), true); };
       const curTop = camY(pts[curIdx][1]);
       V.frame = () => {
@@ -2223,11 +2248,20 @@
     if (NEW3) {
       mapGLResize(fullW, w, h);
       // posição de cada fase na pintura (pra amostrar a profundidade)
-      MAP3.nodes = [...inner.querySelectorAll('.node')].map((el) => { const i = +el.dataset.id - 1, p = pts[i]; return { el, x: (p[0] - offX) / s, y: (p[1] - offY) / s }; });
+      MAP3.nodes = [...inner.querySelectorAll('.node')].map((el) => { const i = +el.dataset.id - 1 - base, p = pts[i]; return { el, x: (p[0] - offX) / s, y: (p[1] - offY) / s }; });
       MAP3.lastT = 0; MAP3.lastTop = getTop();
       if (!MAP3.raf) MAP3.raf = requestAnimationFrame(mapGLFrame);
     }
     $('mapStars').textContent = totalStars + '/' + n * 3;
+    let wn = $('mapWorlds');
+    if (!wn) { wn = document.createElement('div'); wn.id = 'mapWorlds'; wn.innerHTML = '<button type="button" class="wprev"></button><button type="button" class="wnext"></button>'; $('screen-map').appendChild(wn); }
+    const [wp, wx] = wn.querySelectorAll('button'), arw = ART.nodeImg('navarrow');
+    [wp, wx].forEach((b) => { if (arw) b.style.backgroundImage = 'url(' + arw + ')'; });
+    const nextOpen = WI + 1 < WORLDS.length && save.unlocked >= WORLDS[WI + 1].from && NEW3 && D[WORLDS[WI + 1].map];
+    wp.hidden = WI === 0; wx.hidden = WI + 1 >= WORLDS.length; wx.disabled = !nextOpen;
+    wp.setAttribute('aria-label', T('map.world' + (WI > 1 ? WI : ''))); wx.setAttribute('aria-label', T('map.world' + (WI + 2)));
+    const goWorld = (k) => { Sound.play('click'); mapWorld = k; wipe(buildMap); };
+    wp.onclick = () => goWorld(WI - 1); wx.onclick = () => { if (nextOpen) goWorld(WI + 1); };
     $('mapStarIc').src = ART.icon('star', 44);
     $('mapCoinIc').src = ART.icon('coin', 64);
     paintWallet();
