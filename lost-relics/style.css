@@ -646,4 +646,5 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 #mapWorlds .wnext { right: 14px; }
 #mapWorlds button:disabled { opacity: .25; filter: grayscale(1) drop-shadow(0 2px 4px rgba(0,0,0,.7)); cursor: default; }
 #mapWorlds button:not(:disabled):active { transform: scale(.9); }
-#mapWorlds .wprev:not(:disabled):active { transform: scaleX(-1) scale(.9); }
+#mapWorlds .wprev:not(:disabled):active { transform: scaleX(-1) scale(.9); }/* 16/10: o cabeçalho do mapa (z-index 40) cobria as setas de mundo e engolia o toque */
+#mapWorlds button { z-index: 45; }

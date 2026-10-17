@@ -1780,7 +1780,7 @@
   const CODEX_TABS = [
     { id: 'items', icon: 'ixmoves' },
     { id: 'gems', icon: 'ixpalette', slot: 'gem', skins: [
-      { id: 'gem.classic', art: 'ixpalette', value: null },
+      { id: 'gem.classic', art: 'skclassic', value: null },
       { id: 'gem.gold', art: 'skgold', value: 'gold', price: 800 },
       { id: 'gem.obsidian', art: 'skobsidian', value: 'obsidian', price: 800 }] },
     { id: 'words', icon: 'ixorb', slot: 'word', skins: [
@@ -2326,6 +2326,9 @@
     else if (/^#evento-/.test(location.hash)) { if (location.hash === '#evento-anton') document.documentElement.classList.add('ev-anton'); startLevel(3); setTimeout(() => { const p3 = I18N.lang === 'pt' && ART.nodeImg('p3'); showPraise(T('praise.3'), p3 ? 'art p3' : '', p3); const b = document.createElement('div'); const ra = I18N.lang === 'pt' && ART.nodeImg('rush'); b.className = 'praise ' + (ra ? 'art rush' : 'banner'); if (ra) b.innerHTML = '<img alt="" src="' + ra + '">'; else b.textContent = T('rush'); b.style.top = '62%'; b.style.animation = 'none'; b.style.transform = 'translate(-50%,-50%)'; document.body.appendChild(b); const a = document.querySelector('.praise:not(.banner)'); if (a) { a.style.animation = 'none'; a.style.transform = 'translate(-50%,-50%)'; a.style.opacity = '1'; a.style.top = '40%'; setTimeout(() => document.body.appendChild(a), 1); } }, 2600); }
     else if (location.hash === '#mapa') openMap();
     // #maparolaN: mapa com a fase N aberta, rolado meia tela pra baixo (confere a rolagem nativa e o botão de voltar)
+    // #mapavoltaN: abre o mapa na fase N e toca de verdade (elementFromPoint) na seta de mundo; anota o título em body[data-teste]
+    else if (/^#mapavolta\d+$/.test(location.hash)) { const u = +location.hash.slice(10); save.unlocked = u; save.fogShown = u - 1; for (let i = 1; i < u; i++) save.stars[i] = 1; openMap();
+      setTimeout(() => { const r = document.querySelector('#mapWorlds .wprev').getBoundingClientRect(); const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); document.body.dataset.teste = 'toque em: ' + (el && (el.className || el.id || el.tagName)); el && el.click(); setTimeout(() => { document.body.dataset.teste += ' | titulo: ' + document.querySelector('.map-title strong').textContent; if (/Cenote/.test(document.querySelector('.map-title strong').textContent)) { mapWorld = 0; buildMap(); document.body.dataset.teste += ' | sem cortina: ' + document.querySelector('.map-title strong').textContent + ', fases na tela: ' + document.querySelectorAll('#mapInner .node').length; mapWorld = 1; buildMap(); document.body.dataset.teste += ' | volta ao 2: ' + document.querySelector('.map-title strong').textContent; } }, 2500); }, 4000); }
     else if (/^#maparola\d*$/.test(location.hash)) { const u = +location.hash.slice(9) || 20; save.unlocked = u; save.fogShown = u - 1; for (let i = 1; i < u; i++) save.stars[i] = (i % 3) + 1; openMap(); setTimeout(() => { $('mapScroll').scrollTop += 700; }, 5000); }
     else if (/^#mapademo\d*$/.test(location.hash)) { const u = +location.hash.slice(9) || 7; save.unlocked = u; save.fogShown = u - 2; for (let i = 1; i < u; i++) save.stars[i] = (i % 3) + 1; openMap(); }
     else if (/^#loja/.test(location.hash)) { const m2 = /^#loja-(\w+)(?:-(\w+))?/.exec(location.hash); if (m2 && m2[2]) { save.skins[{ gems: 'gem', words: 'word', trail: 'trail' }[m2[1]]] = m2[2]; applySkins(); } openMap(); openShop(null, m2 ? m2[1] : null); }
