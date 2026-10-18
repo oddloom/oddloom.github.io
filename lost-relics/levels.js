@@ -70,8 +70,9 @@
     // fase 25 = chefe: a Onça de Jade volta mais forte, com musgo nos cantos
     { moves: 18, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'jaguar', bossHp: 7, boss: true, layout: [
       'mm....mm', 'm......m', '........', '........', '........', '........', 'm......m', 'mm....mm'] },
-    { moves: 18, colors: 5, goals: [{ type: 'make', special: 'barrel', target: 2 }, { type: 'make', special: 'idol', target: 1 }], layout: FULL },
-    { moves: 17, colors: 5, goals: [{ type: 'artifact', target: 2 }], artifacts: 2, artifactMax: 1, bombSpawn: 0.05, bombMax: 2, bombTimer: 9, layout: [
+    // fase 27 (18/10): pedido do Sacerdote com a SUPERNOVA: criar 1 Sol Ardente (6 em linha). O robô quase não planeja 6 em linha, então a taxa dele é baixa de propósito
+    { moves: 34, colors: 5, goals: [{ type: 'make', special: 'nova', target: 1 }], tut: 'nova', layout: FULL },
+    { moves: 12, colors: 5, goals: [{ type: 'artifact', target: 2 }], artifacts: 2, artifactMax: 1, bombSpawn: 0.05, bombMax: 2, bombTimer: 9, clockSpawn: 0.08, clockMax: 2, layout: [
       '...a....', '........', '........', '........', '........', '........', '........', '........'] },
     { moves: 22, colors: 6, goals: [{ type: 'vine', target: 12 }, { type: 'moss' }], layout: [
       '........', '.v.mm.v.', '..v..v..', 'v.v..v.v', 'v.v..v.v', '..v..v..', '.v....v.', '........'] },
@@ -84,7 +85,7 @@
       '........', '.mm..mm.', '........', '........', '........', '........', '.mm..mm.', '........'] },
     { moves: 15, colors: 6, goals: [{ type: 'boss', target: 1 }], bossKind: 'frog', bossHp: 4, bombSpawn: 0.05, bombMax: 2, bombTimer: 10, layout: [
       '........', '.b....b.', '........', '........', '........', '........', '........', '........'] },
-    { moves: 33, colors: 6, goals: [{ type: 'sand' }], bombTimer: 16, layout: [
+    { moves: 24, colors: 6, goals: [{ type: 'sand' }], bombTimer: 16, clockSpawn: 0.08, clockMax: 2, layout: [
       '........', '..b..b..', 'SS....SS', 'SSssssSS', '.ssssss.', '..ssss..', '........', '........'] },
     { moves: 14, colors: 5, goals: [{ type: 'boss', target: 1 }, { type: 'sand' }], bossKind: 'boa', bossHp: 4, layout: [
       '........', '........', 'm......m', '.ssssss.', '.ssssss.', 'm......m', '........', '........'] },
@@ -101,8 +102,8 @@
     [7500, 20500, 24500], [5000, 15000, 21000], [4500, 12500, 15500], [3000, 12000, 15500], [5000, 14500, 19000], // fase 20 = serpente (14/10)
     // fases 21-35 (16/10, simulador 60 partidas): robô vence 78-100%, sobrando ~7-12 jogadas
     [4000, 11000, 17500], [4000, 12000, 17000], [6000, 17000, 26500], [7500, 24500, 36500], [8500, 27000, 40000], // fase 25 = onça forte
-    [8000, 26500, 40000], [5500, 22500, 33000], [4500, 11500, 14000], [5000, 16000, 21500], [14000, 37500, 52000], // fase 30 = ídolo forte
-    [5000, 13500, 15500], [4000, 11500, 16000], [9000, 21500, 27000], [7000, 22500, 31500], [5500, 15500, 19000], // fase 35 = Kukulkán desperto
+    [9000, 45000, 70000], [6000, 21500, 34500], [4500, 11500, 14000], [5000, 16000, 21500], [14000, 37500, 52000], // fase 30 = ídolo forte
+    [5000, 13500, 15500], [4000, 11500, 16000], [7000, 23000, 30500], [7000, 22500, 31500], [5500, 15500, 19000], // fase 35 = Kukulkán desperto
   ];
   // Chefes (14/10), simulador com robô que caça o chefe e enxerga as joias que vão cair (joga melhor que gente;
   // vale como comparação): fase 5 vence 100% sobrando 18 jogadas (ele testou e aprovou), 10 = 98%/12,

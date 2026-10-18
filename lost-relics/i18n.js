@@ -3,6 +3,9 @@
   const STRINGS = {
     pt: {
       'title.sub': 'Uma expedição de joias',
+      'daily.btn': 'JOGADA DO DIA', 'daily.title': 'JOGADA DO DIA', 'daily.hint': 'UMA JOGADA SÓ. ACHE A MELHOR!', 'daily.perfect': 'PERFEITO! Você achou a melhor jogada.', 'daily.close': 'Quase! Dá pra fazer mais.', 'daily.low': 'Existe uma jogada bem melhor... tente de novo!',
+      'daily.pct': '{p}% da melhor', 'daily.best': 'melhor possível: {n}', 'daily.coins': '+{n} moedas pela jogada do dia', 'daily.shareBtn': 'COMPARTILHAR', 'daily.retry': 'TENTAR DE NOVO', 'daily.copied': 'Texto copiado!',
+      'daily.share': 'Jogada do Dia {d} no Lost Relics: fiz {n} pontos com 1 jogada só ({p}% da melhor). Será que você acha a melhor?', 'menu.back': 'MENU',
       'menu.play': 'JOGAR', 'menu.continue': 'CONTINUAR', 'menu.sound': 'SOM', 'menu.music': 'MÚSICA',
       'on': 'LIGADO', 'off': 'DESLIGADO', 'lang': 'ENGLISH',
       'map.title': 'Selva Esmeralda', 'map.sub': 'Maldição da Pirâmide', 'map.world': 'MUNDO 1', 'map.world2': 'MUNDO 2', 'map.title2': 'Cenote Sagrado', 'map.sub2': 'Águas da Serpente', 'map.soon': 'Próximo mundo: Pirâmides do Egito, em breve',
@@ -17,7 +20,7 @@
       'codex.owned': 'É SUA', 'codex.use': 'USAR', 'codex.gems.d': 'Muda o visual de todas as joias do tabuleiro.', 'codex.words.d': 'Muda as palavras de FASE e os elogios ÓTIMO, INCRÍVEL e LENDÁRIO.', 'codex.trail.d': 'Muda o rastro da Joia Flecha e o estouro da Joia Selo.',
       'goal.onca': 'Derrote a Onça-pintada', 'tut.onca': 'Uma ONÇA-PINTADA caça no templo! Ela fica em cima de uma joia: quebre a joia dela ou uma encostada pra dar um golpe, e ela salta pra longe. A cada 3 jogadas ela crava a garra e transforma 2 joias perto dela em PEDRA. Quatro golpes e ela foge!',
       'goal.frog': 'Espante o sapo', 'tut.frog': 'Um SAPO venenoso pulou numa joia! Quebre a joia dele ou uma encostada pra dar um golpe, e ele pula pra longe. Se você demorar 2 jogadas, ele CUSPA GOSMA em 2 joias perto dele: elas ficam presas e precisam de 2 combinações pra soltar.',
-      'goal.moss': 'Limpe todo o musgo', 'goal.make.line': 'Crie {n} Joias Flecha', 'goal.make.barrel': 'Crie {n} Joias Selo', 'goal.make.idol': 'Crie {n} Orbe(s) Solar',
+      'goal.moss': 'Limpe todo o musgo', 'goal.make.line': 'Crie {n} Joias Flecha', 'goal.make.barrel': 'Crie {n} Joias Selo', 'goal.make.idol': 'Crie {n} Orbe(s) Solar', 'goal.make.nova': 'Crie {n} Sol Ardente', 'tut.nova': 'SUPERNOVA! Combine 6 ou mais joias iguais em linha pra criar o SOL ARDENTE: ao explodir ele limpa um quadrado 3x3 e ainda a linha e a coluna inteiras. Crie um!',
       'tut.moss': 'MUSGO VIVO cobre o templo! Quebre o musgo com uma combinação encostada ou uma explosão. Cuidado: em toda jogada que nenhum musgo for quebrado, ele CRESCE e engole uma joia vizinha.',
       'tut.make': 'O SACERDOTE fez um pedido: crie Joias Flecha. Combine 4 iguais em linha pra criar uma. Cada Flecha criada conta, mesmo sem explodir.',
       'tut.bomb': 'ÍDOLOS AMALDIÇOADOS! Essas joias têm um número que cai a cada jogada. Se algum chegar a zero, a maldição acaba com a fase. Quebre a joia (combinando ou explodindo) pra desarmar.',
@@ -58,6 +61,9 @@
     },
     en: {
       'title.sub': 'A jewel expedition',
+      'daily.btn': 'MOVE OF THE DAY', 'daily.title': 'MOVE OF THE DAY', 'daily.hint': 'ONE MOVE ONLY. FIND THE BEST!', 'daily.perfect': 'PERFECT! You found the best move.', 'daily.close': 'Close! You can do more.', 'daily.low': 'There is a much better move... try again!',
+      'daily.pct': '{p}% of the best', 'daily.best': 'best possible: {n}', 'daily.coins': '+{n} coins for the daily move', 'daily.shareBtn': 'SHARE', 'daily.retry': 'TRY AGAIN', 'daily.copied': 'Text copied!',
+      'daily.share': 'Lost Relics Move of the Day {d}: I scored {n} points in just 1 move ({p}% of the best). Can you find the best one?', 'menu.back': 'MENU',
       'menu.play': 'PLAY', 'menu.continue': 'CONTINUE', 'menu.sound': 'SOUND', 'menu.music': 'MUSIC',
       'on': 'ON', 'off': 'OFF', 'lang': 'PORTUGUÊS',
       'map.title': 'Emerald Jungle', 'map.sub': 'Curse of the Pyramid', 'map.world': 'WORLD 1', 'map.world2': 'WORLD 2', 'map.title2': 'Sacred Cenote', 'map.sub2': 'Waters of the Serpent', 'map.soon': 'Next world: Pyramids of Egypt, coming soon',
@@ -72,7 +78,7 @@
       'codex.owned': 'OWNED', 'codex.use': 'USE', 'codex.gems.d': 'Changes the look of every jewel on the board.', 'codex.words.d': 'Changes the LEVEL word and the GREAT, AMAZING and LEGENDARY praise.', 'codex.trail.d': 'Changes the Arrow Jewel trail and the Seal Jewel burst.',
       'goal.onca': 'Defeat the Jaguar', 'tut.onca': 'A JAGUAR is hunting in the temple! It sits on a jewel: break its jewel or one next to it to hit it, and it leaps away. Every 3 moves it slams its claw and turns 2 nearby jewels into STONE. Four hits and it runs off!',
       'goal.frog': 'Scare off the frog', 'tut.frog': 'A poison FROG jumped onto a jewel! Break its jewel or one next to it to hit it, and it hops away. If you take 2 moves, it SPITS SLIME on 2 jewels nearby: they get stuck and need 2 matches to break free.',
-      'goal.moss': 'Clear all the moss', 'goal.make.line': 'Create {n} Arrow Jewels', 'goal.make.barrel': 'Create {n} Seal Jewels', 'goal.make.idol': 'Create {n} Solar Orb(s)',
+      'goal.moss': 'Clear all the moss', 'goal.make.line': 'Create {n} Arrow Jewels', 'goal.make.barrel': 'Create {n} Seal Jewels', 'goal.make.idol': 'Create {n} Solar Orb(s)', 'goal.make.nova': 'Create {n} Blazing Sun', 'tut.nova': 'SUPERNOVA! Match 6 or more jewels in a row to create the BLAZING SUN: when it explodes it clears a 3x3 square plus the whole row and column. Make one!',
       'tut.moss': 'LIVING MOSS covers the temple! Break it with a match next to it or an explosion. Careful: every move that breaks no moss, it GROWS and swallows a nearby jewel.',
       'tut.make': 'The PRIEST has a request: create Arrow Jewels. Match 4 in a row to make one. Every Arrow you create counts, even without exploding it.',
       'tut.bomb': 'CURSED IDOLS! These jewels have a number that drops every move. If one reaches zero, the curse ends the level. Break the jewel (match or blast it) to defuse it.',

@@ -132,11 +132,11 @@
   const cellX = (x) => ox + (x + 0.5) * cs, cellY = (y) => oy + (y + 0.5) * cs;
 
   async function startLevel(id, boosts) {
-    if ((LEVELS[id - 1].bossKind || LEVELS[id - 1].scarab) && !EXTRA.done) await extraReady();
-    level = LEVELS[id - 1];
-    state = LR.createState(level, ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
-    applyBoosts(boosts || {});
-    applyStreak();
+    const Ld = id === 'daily' ? dailyLevel() : LEVELS[id - 1];
+    if ((Ld.bossKind || Ld.scarab) && !EXTRA.done) await extraReady();
+    level = Ld;
+    state = level.daily ? dailyState(level) : LR.createState(level, ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
+    if (!level.daily) { applyBoosts(boosts || {}); applyStreak(); } // a Jogada do Dia é igual pra todos: sem vantagem de loja nem trilha
     hammerMode = false;
     RUIN_KEYS.forEach(nodeImgObj);
     vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = []; serpTrail = []; bombTick = {}; barShown = null; barHp = null; barHitT = -9;
@@ -150,6 +150,7 @@
     scene = 'play';
     $('screen-map').hidden = true; $('screen-menu').hidden = true; $('hud').hidden = false;
     buildGoalChips();
+    if (level.daily) { $('goals').innerHTML = ''; chipEls = []; }
     renderHUD();
     fitBoard();
     Ads.gameplay(true);
@@ -161,7 +162,7 @@
       const v = V(p, x, y - state.H - 1);
       proms.push(tween(v, { y }, 0.42, 'in', x * 0.025 + (state.H - y) * 0.035).then(() => { v.sq = 0.1; tween(v, { sq: 0 }, 0.14); }));
     }
-    announceLevel(level);
+    if (level.daily) showPraise(T('daily.hint'), 'info'); else announceLevel(level);
     intro = null;
     if (level.boss || level.bossKind) startIntro(level);
     await Promise.all(proms);
@@ -179,7 +180,7 @@
     if (n >= 2 && l.length) take().special = 'barrel';
     if (n >= 3 && l.length) { const p = take(); p.special = 'idol'; p.color = null; }
   }
-  const breakStreak = () => { if (save.streak) { save.streak = 0; persist(); } };
+  const breakStreak = () => { if (!(level && level.daily) && save.streak) { save.streak = 0; persist(); } };
   // fileira da trilha na janela antes da fase: 3 vantagens, acesas até a sequência atual
   const streakHTML = () => {
     const n = Math.min(3, save.streak || 0);
@@ -1577,7 +1578,7 @@
   };
   const bossKindOf = (L) => (L && (L.bossKind || (L.scarab ? 'scarab' : null))) || 'scarab';
   // musgo e Pedido do Sacerdote usam a arte pintada (bloco de musgo, ícones da loja)
-  const MAKE_ART = { line: 'ixarrow', barrel: 'ixseal', idol: 'ixorb' };
+  const MAKE_ART = { line: 'ixarrow', barrel: 'ixseal', idol: 'ixorb', nova: 'ixorb' };
   const goalIcon = (g, size, L) => (g.type === 'boss' && ART.nodeImg(BOSS_SPR[bossKindOf(L || level)].idle)) ||
     (g.type === 'moss' && ART.nodeImg('ruin2')) || (g.type === 'make' && ART.nodeImg(MAKE_ART[g.special])) || ART.icon(goalIconKey(g), size);
   const goalIconKey = (g) => (g.type === 'score' ? 'star' : g.type === 'collect' ? 'gem' + g.color : g.type === 'sand' ? 'sand' : g.type === 'rock' ? 'rock' : g.type === 'vine' ? 'vine' : 'chest');
@@ -1674,7 +1675,7 @@
     const s = T('goal.' + g.type, { n: g.type === 'score' ? g.target.toLocaleString() : g.target });
     return s.replace('baú(s)', g.target === 1 ? 'baú' : 'baús').replace('chest(s)', g.target === 1 ? 'chest' : 'chests');
   };
-  const TUT_ART = { moss: 'ruin2', make: 'ixseal', bomb: 'ixorb' }; // tutoriais das fases 21+ com arte pintada
+  const TUT_ART = { moss: 'ruin2', make: 'ixseal', bomb: 'ixorb', nova: 'ixorb' }; // tutoriais das fases 21+ com arte pintada
   const TUT_ICON = { swap: 'gem3', collect: 'gem0', line: 'dynamite', sand: 'sand', barrel: 'barrel', artifact: 'chest', idol: 'idol', rock: 'rock', diamond: 'gem5', vine: 'vine' };
 
   function openPre(id) {
@@ -1710,6 +1711,7 @@
   }
 
   async function showWin() {
+    if (level.daily) return showDaily();
     Ads.gameplay(false);
     const id = level.id, stars = LR.stars(state);
     const prevBest = save.best[id] || 0, isNew = state.score > prevBest && prevBest > 0;
@@ -1977,10 +1979,83 @@
     await afterMove();
   }
 
+  // ---------- Jogada do Dia (18/10) ----------
+  // Tabuleiro fixo pela data (semente = AAAAMMDD) com 2 joias especiais, 1 movimento só. O jogo calcula a melhor jogada possível
+  // (testa todas) e compara: 100% = achou. Dá estrelas, 20 moedas na 1ª vez do dia e um texto pra compartilhar (TikTok/WhatsApp).
+  const todayKey = () => { const d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+  const dailyCache = {};
+  function dailyState(L) {
+    const s = LR.createState(L, L.seed);
+    const plain = [];
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) { const p = s.grid[y][x]; if (p && p.kind === 'gem' && !p.special) plain.push(p); }
+    const kinds = ['lineH', 'lineV', 'barrel', 'idol'];
+    for (let k = 0; k < 2 && plain.length; k++) {
+      const p = plain.splice(Math.floor(LR.rand(s) * plain.length), 1)[0], sp = kinds[Math.floor(LR.rand(s) * kinds.length)];
+      p.special = sp; if (sp === 'idol') p.color = null;
+    }
+    if (!LR.findMove(s)) LR.shuffle(s);
+    return s;
+  }
+  function dailyBest(L) {
+    const s0 = dailyState(L); let best = 0;
+    for (const m of LR.allMoves(s0)) {
+      const c = LR.cloneState(s0), st = LR.doSwap(c, m[0], m[1]);
+      if (!st) continue;
+      LR.runAll(LR.resolve(c, st));
+      best = Math.max(best, c.score);
+    }
+    return Math.max(best, 1);
+  }
+  function dailyLevel() {
+    const date = todayKey();
+    if (dailyCache.date === date) return dailyCache.L;
+    // dentre 12 tabuleiros da data (todo mundo gera os mesmos), fica o que tem a jogada mais valiosa: o desafio precisa ter uma jogada "uau"
+    let L = null;
+    for (let k = 0; k < 12; k++) {
+      const c = { id: 'daily', daily: true, date, seed: (date * 7 + 13 + k * 977) >>> 0, moves: 1, colors: 6, goals: [{ type: 'score', target: 1 }], layout: Array(8).fill('........'), stars: [1, 2, 3] };
+      c.best = dailyBest(c);
+      if (!L || c.best > L.best) L = c;
+    }
+    L.stars = [Math.round(L.best * 0.5), Math.round(L.best * 0.8), L.best];
+    dailyCache.date = date; dailyCache.L = L;
+    return L;
+  }
+  function showDaily() {
+    Ads.gameplay(false);
+    const best = level.best, sc = state.score, p = Math.min(100, Math.round((100 * sc) / best));
+    const first = !save.daily || save.daily.date !== level.date;
+    if (first) { save.coins += 20; save.daily = { date: level.date, best: sc, tries: 1 }; }
+    else { save.daily.best = Math.max(save.daily.best, sc); save.daily.tries++; }
+    persist();
+    Sound.play('win'); buzz([30, 60, 30]);
+    const n = (v) => v.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
+    const dd = String(level.date % 100).padStart(2, '0') + '/' + String(Math.floor(level.date / 100) % 100).padStart(2, '0');
+    const msg = p >= 100 ? 'daily.perfect' : p >= 80 ? 'daily.close' : 'daily.low';
+    const stars = p >= 100 ? 3 : p >= 80 ? 2 : 1;
+    const card = openModal(
+      '<div class="eyebrow">' + dd + '</div><h2 class="metal">' + T('daily.title') + '</h2><div class="orn"><i></i></div>' +
+      '<div class="daily-score">' + n(sc) + '</div>' +
+      '<div class="daily-stars">' + '★'.repeat(stars) + '<span>' + '★'.repeat(3 - stars) + '</span></div>' +
+      '<p>' + T(msg) + '</p><div class="moves-line">' + T('daily.pct', { p }) + ' · ' + T('daily.best', { n: n(best) }) + '</div>' +
+      (first ? '<div class="moves-line streak-up">' + T('daily.coins', { n: 20 }) + '</div>' : '') +
+      '<div class="btns"><button class="btn" id="mShare" type="button">' + T('daily.shareBtn') + '</button>' +
+      '<button class="btn dark small" id="mRetry" type="button">' + T('daily.retry') + '</button>' +
+      '<button class="btn dark small" id="mMap" type="button">' + T('menu.back') + '</button></div>');
+    card.querySelector('#mShare').onclick = () => {
+      Sound.play('click');
+      const txt = T('daily.share', { d: dd, n: n(sc), p }) + ' ' + location.href.split('#')[0];
+      if (navigator.share) navigator.share({ text: txt }).catch(() => {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => showPraise(T('daily.copied'), 'info')).catch(() => {});
+    };
+    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel('daily')); };
+    card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMenu); };
+  }
+
   // ---------- menu ----------
   function paintMenu() {
     document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = T(el.dataset.t); });
     $('btnPlay').textContent = save.unlocked > 1 ? T('menu.continue') : T('menu.play');
+    $('btnDaily').textContent = (save.daily && save.daily.date === todayKey() ? '✓ ' : '') + T('daily.btn');
     for (const [id, on, key] of [['btnSfx', Sound.sfx, 'menu.sound'], ['btnMusic', Sound.music, 'menu.music']]) {
       const b = $(id); b.classList.toggle('off', !on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', T(key) + ': ' + T(on ? 'on' : 'off')); b.title = T(key);
     }
@@ -1996,6 +2071,7 @@
     Sound.init(); Sound.play('click');
     wipe(() => { openMap(); if (save.unlocked === 1 && !save.stars[1]) openPre(1); });
   };
+  $('btnDaily').onclick = () => { Sound.init(); Sound.play('click'); wipe(() => startLevel('daily')); };
   $('btnSfx').onclick = () => { Sound.init(); Sound.setSfx(!Sound.sfx); paintMenu(); Sound.play('click'); };
   $('btnMusic').onclick = () => { Sound.init(); Sound.setMusic(!Sound.music); paintMenu(); };
   $('btnLang').onclick = () => { I18N.toggle(); paintMenu(); Sound.play('click'); };
@@ -2413,6 +2489,8 @@
     }
     // #novademo: Supernova, gosma e Joia de Tempo no tabuleiro; #sapodemo: fase 18 com o sapo (sprites provisórios)
     else if (location.hash === '#novademo') { startLevel(3); setTimeout(() => { const g = state.grid; g[3][3].special = 'nova'; g[5][2].vine = true; g[5][2].slime = 2; g[2][5].vine = true; g[2][5].slime = 1; g[6][5].clock = true; g[1][1].clock = true; }, 700); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 50) clearInterval(iv); }, 50); }
+    else if (location.hash === '#diario') { startLevel('daily'); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 60) clearInterval(iv); }, 50); }
+    else if (location.hash === '#diarioresultado') { startLevel('daily').then(() => { state.score = Math.round(level.best * 0.87); setTimeout(() => showDaily(), 300); }); }
     else if (location.hash === '#oncademo') { startLevel(9); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
     else if (location.hash === '#sapodemo') { startLevel(19); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
     // #serpdemo: fase 20 com o laço rodando por timer (o Chrome sem janela não roda requestAnimationFrame) e um rastro em curva
