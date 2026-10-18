@@ -92,6 +92,37 @@
     // fase 35 = chefe final do trecho: Kukulkán desperto (6 vidas), ídolos amaldiçoados caindo e musgo nos cantos
     { moves: 20, colors: 6, goals: [{ type: 'boss', target: 1 }], bossKind: 'serpent', bossHp: 6, boss: true, bombSpawn: 0.04, bombMax: 1, bombTimer: 12, layout: [
       'm......m', '........', '........', '........', '........', '........', '........', 'mr.rr.rm'] },
+    // ---- Mundo 3 (18/10): Vale das Pirâmides, fases 37-51. Escaravelhos (Egito), cobra (jiboia), ídolo; musgo, ídolo amaldiçoado, relógios e Sol Ardente ----
+    { /*37*/ moves: 18, colors: 5, goals: [{ type: 'sand' }], layout: [
+      '........', '........', '.ssssss.', '.ssssss.', '.ssssss.', '.ssssss.', '........', '........'] },
+    { /*38*/ moves: 22, colors: 6, goals: [{ type: 'collect', color: 3, target: 30 }], layout: FULL },
+    { /*39*/ moves: 26, colors: 6, goals: [{ type: 'rock', target: 12 }], layout: [
+      '........', '..RR.RR.', '........', '.R....R.', '.R....R.', '........', '..RR.RR.', '........'] },
+    // fase 40 = chefe: ESCARAVELHOS REAIS, 4 de 2 vidas (o Egito é a casa deles)
+    { /*40*/ moves: 16, colors: 6, goals: [{ type: 'boss', target: 4 }], scarab: 4, scarabHp: 2, boss: true, layout: FULL },
+    { /*41*/ moves: 16, colors: 6, goals: [{ type: 'moss' }], bombTimer: 12, layout: [
+      '........', '.b....b.', '..mm.mm.', '........', '........', '..mm.mm.', '.b....b.', '........'] },
+    { /*42*/ moves: 24, colors: 6, goals: [{ type: 'artifact', target: 3 }], artifacts: 3, artifactMax: 1, bombSpawn: 0.04, bombMax: 1, bombTimer: 10, clockSpawn: 0.06, clockMax: 2, layout: [
+      '...a....', '........', '........', '........', '........', '........', '........', '........'] },
+    { /*43*/ moves: 34, colors: 6, goals: [{ type: 'vine', target: 12 }, { type: 'sand' }], layout: [
+      '........', '.v.ss.v.', '.v.ss.v.', '..vssv..', '..vssv..', '.v.ss.v.', '.v.ss.v.', '........'] },
+    { /*44*/ moves: 32, colors: 6, goals: [{ type: 'make', special: 'line', target: 4 }, { type: 'make', special: 'barrel', target: 2 }], layout: FULL },
+    // fase 45 = a COBRA DO DESERTO (a jiboia) numa fase de areia
+    { /*45*/ moves: 15, colors: 5, goals: [{ type: 'boss', target: 1 }, { type: 'sand' }], bossKind: 'boa', bossHp: 4, layout: [
+      '........', '........', '.ssssss.', '.ssssss.', '.ssssss.', '.ssssss.', '........', '........'] },
+    { /*46*/ moves: 20, colors: 6, goals: [{ type: 'score', target: 22000 }], clockSpawn: 0.08, clockMax: 3, layout: FULL },
+    { /*47*/ moves: 36, colors: 6, goals: [{ type: 'collect', color: 5, target: 28 }, { type: 'moss' }], layout: [
+      'm......m', '........', '........', '........', '........', '........', '........', 'm......m'] },
+    { /*48*/ moves: 38, colors: 5, goals: [{ type: 'rock', target: 12 }, { type: 'make', special: 'nova', target: 1 }], layout: [
+      '........', '..rr.rr.', '.R....R.', '........', '........', '.R....R.', '..rr.rr.', '........'] },
+    { /*49*/ moves: 34, colors: 6, goals: [{ type: 'sand' }], bombTimer: 14, layout: [
+      '........', '..b..b..', 'ss.ss.ss', 'ssssssss', 'ssssssss', 'ss.ss.ss', '........', '........'] },
+    // fase 50 = chefe: o ÍDOLO DA ESFINGE (ídolo de pedra com 4 vidas e musgo nos cantos)
+    { /*50*/ moves: 32, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 4, statueAt: [3, 3], boss: true, layout: [
+      'm......m', '........', '........', '........', '........', '........', '........', 'm......m'] },
+    // fase 51 = chefe final do Mundo 3: enxame real de 5 escaravelhos + meta de pontos, ídolos amaldiçoados caindo e relógios
+    { /*51*/ moves: 24, colors: 6, goals: [{ type: 'boss', target: 5 }, { type: 'score', target: 15000 }], scarab: 5, scarabHp: 2, boss: true, bombSpawn: 0.03, bombMax: 1, bombTimer: 12, clockSpawn: 0.05, clockMax: 2, layout: [
+      'm......m', '........', '........', '........', '........', '........', '........', 'm......m'] },
   ];
   // estrelas: [1, 2, 3] em pontos — calibradas pelo tools/simular.js (13/10/2026, 60 partidas por fase)
   // ganhar já dá 1 estrela; 2 = pontuação mediana de quem ganha; 3 = os 20% melhores
@@ -104,6 +135,10 @@
     [4000, 11000, 17500], [4000, 12000, 17000], [6000, 17000, 26500], [7500, 24500, 36500], [8500, 27000, 40000], // fase 25 = onça forte
     [9000, 45000, 70000], [6000, 21500, 34500], [4500, 11500, 14000], [5000, 16000, 21500], [14000, 37500, 52000], // fase 30 = ídolo forte
     [5000, 13500, 15500], [4000, 11500, 16000], [7000, 23000, 30500], [7000, 22500, 31500], [5500, 15500, 19000], // fase 35 = Kukulkán desperto
+    // fases 37-51 (18/10): calibradas com tools/calibrar.js (robô vence 80-95%) + folga de movimentos pra jogador humano nas curtas
+    /*37*/[5000, 15000, 22000], /*38*/[5000, 16500, 21000], /*39*/[4500, 13500, 18500], /*40*/[4000, 10500, 14000], /*41*/[3000, 8500, 11000],
+    /*42*/[5500, 16000, 19500], /*43*/[9000, 23500, 29500], /*44*/[9000, 21000, 26000], /*45*/[6500, 23000, 35500], /*46*/[12500, 32500, 38000],
+    /*47*/[10000, 26000, 31500], /*48*/[13500, 40000, 84000], /*49*/[9500, 22500, 28500], /*50*/[15000, 39000, 55000], /*51*/[9000, 24000, 27500],
   ];
   // Chefes (14/10), simulador com robô que caça o chefe e enxerga as joias que vão cair (joga melhor que gente;
   // vale como comparação): fase 5 vence 100% sobrando 18 jogadas (ele testou e aprovou), 10 = 98%/12,

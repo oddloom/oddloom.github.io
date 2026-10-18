@@ -700,7 +700,7 @@
         b.claw = (b.claw || 0) + 1;
         if (b.claw >= JAG_CLAW) {
           b.claw = 0;
-          const from = bossPos(s, b), cells = petrify(s, from, JAG_STONES);
+          const from = bossPos(s, b), cells = petrify(s, from, JAG_STONES, b.kind);
           if (cells.length) yield { type: 'bossclaw', idx, from, cells };
         }
         continue;
@@ -821,7 +821,7 @@
     return [[x, y]];
   }
   // garra da onça: vira em pedra as n joias comuns mais perto dela (não a joia onde ela está)
-  function petrify(s, from, n) {
+  function petrify(s, from, n, kind) {
     if (!from) return [];
     const taken = takenIds(s), cand = [];
     for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
@@ -833,7 +833,7 @@
     cand.sort((a, b) => a.d - b.d);
     const out = [];
     for (const c of cand.slice(0, n)) {
-      s.grid[c.y][c.x] = { id: s.nextId++, kind: 'rock', hp: 1, claw: true };
+      s.grid[c.y][c.x] = { id: s.nextId++, kind: 'rock', hp: 1, claw: kind === 'onca' ? 'onca' : true };
       out.push([c.x, c.y]);
     }
     return out;

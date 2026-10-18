@@ -143,7 +143,7 @@
     // fase de chefe: já carrega toda a arte dele (vidas, golpe, morte), senão o 1º golpe aparece sem desenho
     if (level.bossKind || level.scarab) { // chefe ou enxame de escaravelhos em fase comum
       for (const k of Object.values(BOSS_SPR[bossKindOf(level)])) if (typeof k === 'string') nodeImgObj(k);
-      nodeImgObj('sshield'); nodeImgObj('jstone'); nodeImgObj('alump');
+      nodeImgObj('sshield'); nodeImgObj('jstone'); nodeImgObj('ostone'); nodeImgObj('alump');
       ['hpbar', 'hpgreen', 'hpred', 'hpcrack', 'name_' + bossKindOf(level)].forEach(nodeImgObj);
     }
     hint = null; selected = null; drag = null; usedExtra = false; idle = 0; shake = 0;
@@ -1313,7 +1313,7 @@
       if (vine) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.sin(now * 1.3 + p.id) * 0.12); ctx.globalAlpha = v.a * 0.95; ctx.drawImage(vine, -w * 0.52, -h * 0.52, w * 1.04, h * 1.04); ctx.restore(); }
       ctx.globalAlpha = 1; return;
     }
-    const stoneIm = (p.claw && nodeImgObj('jstone')) || (p.lump && nodeImgObj('alump'));
+    const stoneIm = (p.claw && nodeImgObj(p.claw === 'onca' ? 'ostone' : 'jstone')) || (p.lump && nodeImgObj('alump'));
     if (stoneIm) { ctx.drawImage(stoneIm, cx - w * 0.48, cy - h * 0.48, w * 0.96, h * 0.96); ctx.globalAlpha = 1; return; }
     // feitiço: aura da cor da pedra que "respira" devagar, cada joia no seu ritmo
     if (p.kind === 'gem' && !p.special && p.color != null && ART.hasAI) {
@@ -1614,6 +1614,12 @@
   const paintedBar = () => !!(ART.uiImages().bar && ART.uiImages().barfill && ART.nodeImg('vstar'));
   const SOCK = [12.1, 51.6, 87.7]; // centro dos encaixes na arte da barra (% da largura)
   const digitsHTML = (n) => String(n).split('').map((d) => '<img alt="" src="' + (ART.nodeImg('s' + d) || ART.nodeImg('n' + d)) + '">').join('');
+  // "Você tem N moedas" (16/10 ele achou texto solto): moeda pintada + dígitos Solar
+  const fxURLs = {};
+  const fxURL = (k) => { if (fxURLs[k]) return fxURLs[k]; const o = ART.fx(k); if (!o) return ''; return (fxURLs[k] = o.toDataURL ? o.toDataURL('image/png') : o.src); };
+  const walletHTML = () => (ART.nodeImg('s0')
+    ? '<span class="wallet-row"><img class="coin" alt="" src="' + ART.icon('coin', 64) + '"><span class="digits" aria-label="' + save.coins + '">' + digitsHTML(save.coins) + '</span></span>'
+    : T('wallet', { n: save.coins.toLocaleString() }));
   const lastShown = {};
   function setNum(id, n) {
     if (lastShown[id] === n) return;
@@ -1734,7 +1740,7 @@
       (ART.uiImages().coinbar && ART.nodeImg('s0')
         ? '<div class="final-score painted"><span id="mScore" class="digits"></span></div>'
         : '<div class="final-score"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '">+<span id="mScore">0</span></div>') +
-      '<div class="best' + (isNew ? ' new' : '') + '">' + (isNew ? T('win.new') + ' · ' : '') + T('wallet', { n: save.coins.toLocaleString() }) + '</div>' +
+      '<div class="best' + (isNew ? ' new' : '') + '">' + (isNew ? T('win.new') + ' · ' : '') + walletHTML() + '</div>' +
       '<div class="moves-line streak-up">' + T('streak.up', { n: save.streak }) + '</div>' +
       (last ? '<p>' + T('map.soon') + '</p>' : '') +
       '<div class="btns">' + (last ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
@@ -2098,7 +2104,7 @@
     const go = () => {
       const E = window.ART_EXTRA, D = window.ART_DATA;
       if (!E || !D) return finish();
-      D.map3 = E.map3; D.mapDepth = E.mapDepth; D.map3b = E.map3b; D.mapDepthB = E.mapDepthB;
+      D.map3 = E.map3; D.mapDepth = E.mapDepth; D.map3b = E.map3b; D.mapDepthB = E.mapDepthB; D.map3c = E.map3c; D.mapDepthC = E.mapDepthC;
       if (scene === 'map' && !MAP3.gl) buildMap();
       ART.loadExtra(E, finish);
     };
@@ -2227,6 +2233,8 @@
   const WORLDS = [
     { from: 1, to: 21, map: 'map3', depth: 'mapDepth', pathKey: 'mapPath3' },
     { from: 22, to: 36, map: 'map3b', depth: 'mapDepthB', path: [[300, 1005], [320, 935], [300, 870], [240, 835], [235, 770], [265, 715], [190, 680], [110, 610], [85, 530], [130, 455], [215, 420], [300, 400], [385, 410], [455, 440], [470, 380], [400, 330], [395, 250]] },
+    // Mundo 3 = Vale das Pirâmides (maquete do Gemini, 18/10); caminho conferido com tools\previa-caminho.ps1
+    { from: 37, to: 51, map: 'map3c', depth: 'mapDepthC', path: [[257, 880], [290, 856], [320, 836], [338, 808], [350, 776], [324, 751], [298, 730], [267, 712], [229, 698], [193, 684], [162, 665], [139, 640], [120, 614], [110, 585], [125, 551], [156, 525], [190, 502], [227, 487], [275, 470], [318, 462], [352, 441], [362, 413], [345, 388], [303, 372], [271, 352], [262, 322], [261, 296], [298, 270], [330, 245]] },
   ];
   const worldOf = (id) => Math.max(0, WORLDS.findIndex((w) => id >= w.from && id <= w.to));
   let mapWorld = null; // mundo aberto no mapa (null = o da fase atual)
@@ -2270,6 +2278,11 @@
     const at = (d) => { for (let i = 0; i < seg.length; i++) { if (d <= seg[i] || i === seg.length - 1) { const k = Math.min(1, d / seg[i]); return [P[i][0] + (P[i + 1][0] - P[i][0]) * k, P[i][1] + (P[i + 1][1] - P[i][1]) * k]; } d -= seg[i]; } return P[P.length - 1]; };
     const pts = WL.map((L, i) => at((tot * (i + 0.5)) / n));
     const curIdx = Math.min(save.unlocked - base, n) - 1;
+    // Orbe Solar (o símbolo dele no lugar do explorador): flutua em cima da fase atual; se a fase andou desde a última vez
+    // que o mapa abriu, ele pula da anterior até a nova (hx, hy = distância entre as duas)
+    const prevIdx = save.orbAt != null ? save.orbAt - base : -1;
+    const hop = prevIdx >= 0 && prevIdx < curIdx ? [pts[prevIdx][0] - pts[curIdx][0], pts[prevIdx][1] - pts[curIdx][1]] : null;
+    save.orbAt = base + curIdx;
     // borda da névoa: no meio do caminho entre a fase atual e a próxima
     const fogAt = (i) => (i >= n - 1 ? pts[n - 1][1] - 90 * s : (pts[i][1] + pts[i + 1][1]) / 2 + 10);
     // fogShown = índice global (0 = fase 1) da última fase já revelada
@@ -2290,6 +2303,7 @@
         // 14/10: sem rótulo "FASE" em cima da fase atual (pedido dele: o sol e o número já bastam)
         // fase atual = medalhão limpo + aura solar pintada atrás (a arte "current" tinha brilho verde que serrilhava no recorte)
         (current && NI('aura') ? '<img class="node-aura" alt="" src="' + NI('aura') + '"><img class="node-aura b" alt="" src="' + NI('aura') + '">' : '') +
+        (current && ART.fx('sunorb') ? '<span class="node-orb"' + (hop ? ' style="--hx:' + hop[0].toFixed(0) + 'px;--hy:' + hop[1].toFixed(0) + 'px" data-hop="1"' : '') + '><img alt="" src="' + fxURL('sunorb') + '"></span>' : '') +
         // número em dígitos Solar pintados (a Uncial tem algarismos "antigos": o 4 e o 9 descem e ficam fora do centro)
         (NI('done') ? '<img class="node-img" alt="" src="' + NI(locked ? (L.boss ? 'boss' : 'locked') : L.boss ? 'boss' : 'done') + '">' + (locked ? '' : NI('s0') ? '<span class="num digits">' + digitsHTML(id) + '</span>' : '<span class="num">' + id + '</span>') : '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face) +
         (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
