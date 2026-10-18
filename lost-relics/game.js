@@ -738,7 +738,8 @@
       if (at) { if (at !== 'hide' && boss.hp > 0 && !hasBossBar()) drawBossLives(boss, K, kind, at[0], at[1]); return; }
     }
     const cells = boss.hp > 0 ? bossScreenCells(boss) : [];
-    const bob = kind === 'statue' || kind === 'boa' ? 0 : Math.sin(now * 3.2 + i * 2.1) * cs * 0.04;
+    // 18/10: sapo também parado (pedido dele), como o ídolo e a jiboia
+    const bob = kind === 'statue' || kind === 'boa' || kind === 'frog' ? 0 :Math.sin(now * 3.2 + i * 2.1) * cs * 0.04;
     let key = K.idle, x = null, y = null, a = 1, sc = 1, dir = null; // dir = cabeça - cauda (serpente)
     if (cells.length) [x, y] = midOf(cells);
     if (kind === 'serpent' && cells.length === 2) dir = [cells[0][0] - cells[1][0], cells[0][1] - cells[1][1]];

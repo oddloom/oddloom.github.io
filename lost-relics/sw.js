@@ -1,6 +1,6 @@
 // Gerado por tools/build-site.js - nao editar a mao. Lost Relics offline.
-const CACHE = 'lostrelics-a14e42cfcd';
-const FILES = ["./","ads.js?v=b33cb754","art-data.js?v=808c2354","art-extra.js?v=af02dad5","art.js?v=77f5aa81","assets/fonts/anton-400.woff2","assets/fonts/comico-400.woff2","assets/fonts/switzer-400.woff2","assets/fonts/switzer-600.woff2","assets/fonts/switzer-700.woff2","assets/fonts/uncial-latin-ext.woff2","assets/fonts/uncial-latin.woff2","assets/icon-192.png","assets/icon-512.png","assets/icon-maskable-512.png","assets/logo.png","engine.js?v=9310f6bb","fonts.css?v=a99eca64","game.js?v=a8f2d342","gems3d.js?v=0505a951","i18n.js?v=042640ea","index.html","levels.js?v=cdd8997b","manifest.json","sound.js?v=d40e4fc9","style.css?v=c4301b77","textures.js?v=b46ed567","ui-art.js?v=f6e2bcd0"];
+const CACHE = 'lostrelics-6887409ad6';
+const FILES = ["./","ads.js?v=b33cb754","art-data.js?v=808c2354","art-extra.js?v=af02dad5","art.js?v=77f5aa81","assets/fonts/anton-400.woff2","assets/fonts/comico-400.woff2","assets/fonts/switzer-400.woff2","assets/fonts/switzer-600.woff2","assets/fonts/switzer-700.woff2","assets/fonts/uncial-latin-ext.woff2","assets/fonts/uncial-latin.woff2","assets/icon-192.png","assets/icon-512.png","assets/icon-maskable-512.png","assets/logo.png","engine.js?v=9310f6bb","fonts.css?v=a99eca64","game.js?v=f84a66f9","gems3d.js?v=0505a951","i18n.js?v=042640ea","index.html","levels.js?v=cdd8997b","manifest.json","sound.js?v=d40e4fc9","style.css?v=c4301b77","textures.js?v=b46ed567","ui-art.js?v=f6e2bcd0"];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => Promise.all(FILES.map((u) => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));
 });
