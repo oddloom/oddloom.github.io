@@ -2246,7 +2246,9 @@
   // Mundo 2 = Cenote Sagrado (maquete do Gemini, 16/10); caminho conferido com tools\previa-caminho.ps1.
   // 18/10: Mundo 1 = Amazônia (maquete do Gemini, trilha de troncos em S); os outros andaram +15.
   const WORLDS = [
-    { from: 1, to: 15, map: 'map3a', depth: 'mapDepthA', path: [[290, 915], [258, 885], [245, 850], [272, 810], [275, 782], [320, 750], [322, 725], [320, 697], [292, 655], [250, 625], [220, 590], [232, 555], [285, 520], [325, 495], [348, 465], [352, 432], [332, 400], [302, 378], [278, 350], [282, 320], [293, 292]] },
+    { from: 1, to: 15, map: 'map3a', depth: 'mapDepthA', path: [[290, 918], [260, 885], [245, 850], [254, 816], [273, 783], [305, 758], [322, 730], [321, 696], [291, 654], [248, 624], [218, 588], [230, 555], [285, 520], [325, 494], [350, 462], [351, 430], [332, 402], [299, 378], [279, 350], [282, 319], [293, 290]],
+      // nodes = posição exata de cada fase (centro do tronco); sem isso as fases ficam espalhadas por igual no caminho
+      nodes: [[290, 918], [260, 885], [254, 816], [273, 783], [322, 730], [321, 696], [248, 624], [218, 588], [230, 555], [325, 494], [350, 462], [332, 402], [299, 378], [282, 319], [293, 290]] },
     { from: 16, to: 36, map: 'map3', depth: 'mapDepth', pathKey: 'mapPath3' },
     { from: 37, to: 51, map: 'map3b', depth: 'mapDepthB', path: [[300, 1005], [320, 935], [300, 870], [240, 835], [235, 770], [265, 715], [190, 680], [110, 610], [85, 530], [130, 455], [215, 420], [300, 400], [385, 410], [455, 440], [470, 380], [400, 330], [395, 250]] },
     // Mundo 3 = Vale das Pirâmides (maquete do Gemini, 18/10); caminho conferido com tools\previa-caminho.ps1
@@ -2278,7 +2280,8 @@
     const RP = (NEW3 ? Wd.path || D[Wd.pathKey] : D.mapPath) || [[416, 1200], [416, 150]]; let rTot = 0; const rSeg = [];
     for (let i = 0; i < RP.length - 1; i++) { const l = Math.hypot(RP[i + 1][0] - RP[i][0], RP[i + 1][1] - RP[i][1]); rSeg.push(l); rTot += l; }
     const rAt = (dd) => { for (let i = 0; i < rSeg.length; i++) { if (dd <= rSeg[i] || i === rSeg.length - 1) { const k = Math.min(1, dd / rSeg[i]); return [RP[i][0] + (RP[i + 1][0] - RP[i][0]) * k, RP[i][1] + (RP[i + 1][1] - RP[i][1]) * k]; } dd -= rSeg[i]; } return RP[RP.length - 1]; };
-    const curRaw = rAt((rTot * (Math.min(save.unlocked - base, n) - 0.5)) / n);
+    const NODES = NEW3 && Wd.nodes && Wd.nodes.length === n ? Wd.nodes : null;
+    const curRaw = NODES ? NODES[Math.min(save.unlocked - base, n) - 1] : rAt((rTot * (Math.min(save.unlocked - base, n) - 0.5)) / n);
     const offX = Math.max(w - mapW, Math.min(0, w / 2 - curRaw[0] * s)), offY = 0;
     inner.style.height = mapH + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
     const bgMap = NEW3 ? D[Wd.map] : D.map;
@@ -2292,7 +2295,7 @@
     const seg = []; let tot = 0;
     for (let i = 0; i < P.length - 1; i++) { const l = Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]); seg.push(l); tot += l; }
     const at = (d) => { for (let i = 0; i < seg.length; i++) { if (d <= seg[i] || i === seg.length - 1) { const k = Math.min(1, d / seg[i]); return [P[i][0] + (P[i + 1][0] - P[i][0]) * k, P[i][1] + (P[i + 1][1] - P[i][1]) * k]; } d -= seg[i]; } return P[P.length - 1]; };
-    const pts = WL.map((L, i) => at((tot * (i + 0.5)) / n));
+    const pts = NODES ? NODES.map(([x, y]) => [offX + x * s, offY + y * s]) : WL.map((L, i) => at((tot * (i + 0.5)) / n));
     const curIdx = Math.min(save.unlocked - base, n) - 1;
     // Orbe Solar (o símbolo dele no lugar do explorador): flutua em cima da fase atual; se a fase andou desde a última vez
     // que o mapa abriu, ele pula da anterior até a nova (hx, hy = distância entre as duas)

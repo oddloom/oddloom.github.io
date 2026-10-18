@@ -3,6 +3,7 @@
 //   'adsense'          site próprio (AdSense para jogos / Ad Placement API)
 //   'crazygames'       CrazyGames (SDK v3)
 //   'gamedistribution' GameDistribution (SDK HTML5)
+//   'admob'            app Android (Capacitor + @capacitor-community/admob)
 // Sem provider (ou AdSense sem ID) roda em modo SIMULADO: tela "anúncio de teste".
 // Com provider 'none' não mostra anúncio nenhum.
 //
@@ -148,6 +149,52 @@
     },
   };
 
+  // ---------- AdMob (app Android via Capacitor, 18/10) ----------
+  // O build do app (tools/build-app.js) põe provider 'admob'. Sem IDs próprios usa os blocos de TESTE do Google.
+  // Carrega um intersticial e um recompensado de reserva; depois de mostrar, já carrega o próximo.
+  const AM = {
+    inter: cfg.interstitialId || 'ca-app-pub-3940256099942544/1033173712',
+    reward: cfg.rewardId || 'ca-app-pub-3940256099942544/5224354917',
+    testing: !cfg.interstitialId,
+  };
+  let am = null, amInter = false, amReward = false, amDone = null, amGranted = false;
+  const amLoad = (kind) => {
+    if (!am) return;
+    const p = kind === 'reward' ? am.prepareRewardVideoAd({ adId: AM.reward, isTesting: AM.testing }) : am.prepareInterstitial({ adId: AM.inter, isTesting: AM.testing });
+    p.then(() => { if (kind === 'reward') amReward = true; else amInter = true; }, () => setTimeout(() => amLoad(kind), 30000));
+  };
+  const amEnd = (kind) => { hooks.resume(); const d = amDone; amDone = null; if (d) d(kind === 'reward' ? amGranted : true); amLoad(kind); };
+  const admob = {
+    init() {
+      const C = root.Capacitor;
+      am = C && ((C.Plugins && C.Plugins.AdMob) || (C.registerPlugin && C.registerPlugin('AdMob')));
+      if (!am) return;
+      am.addListener('onInterstitialAdDismissed', () => amEnd('inter'));
+      am.addListener('onInterstitialAdFailedToShow', () => amEnd('inter'));
+      am.addListener('onRewardedVideoAdReward', () => { amGranted = true; });
+      am.addListener('onRewardedVideoAdDismissed', () => amEnd('reward'));
+      am.addListener('onRewardedVideoAdFailedToShow', () => amEnd('reward'));
+      // consentimento (Europa/LGPD): o próprio AdMob decide se precisa mostrar o formulário
+      am.initialize({ initializeForTesting: AM.testing })
+        .then(() => am.requestConsentInfo().then((i) => (i.isConsentFormAvailable && i.status === 'REQUIRED' ? am.showConsentForm() : null)).catch(() => {}))
+        .then(() => { amLoad('inter'); amLoad('reward'); }, () => {});
+    },
+    interstitial(cb) {
+      if (!am || !amInter) { cb(); return; }
+      amInter = false; amDone = () => cb(); hooks.pause();
+      am.showInterstitial().catch(() => amEnd('inter'));
+    },
+    offerReward({ onAvailable, onReward, onSkip }) {
+      if (!am || !amReward) return;
+      onAvailable(() => {
+        if (!amReward) { if (onSkip) onSkip(); return; }
+        amReward = false; amGranted = false; hooks.pause();
+        amDone = (ok) => (ok ? onReward() : onSkip && onSkip());
+        am.showRewardVideoAd().catch(() => amEnd('reward'));
+      });
+    },
+  };
+
   // ---------- simulação / desligado ----------
   const simulated = {
     init() {},
@@ -161,7 +208,7 @@
 
   const impl = {
     adsense: typeof root.adBreak === 'function' ? adsense : simulated,
-    crazygames, gamedistribution, none,
+    crazygames, gamedistribution, admob, none,
   }[provider] || simulated;
   impl.init();
 
