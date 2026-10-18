@@ -389,7 +389,7 @@
     const p = serpAt(pts, s), q = serpAt(pts, s + cs * 0.1);
     let dx = p[0] - q[0], dy = p[1] - q[1]; const d = Math.hypot(dx, dy) || 1; dx /= d; dy /= d;
     const u = s / cs, env = u < 1 ? Math.sin(Math.PI * u) : Math.min(1, (u - 1) * 1.6);
-    const o = cs * 0.1 * env * Math.sin(now * 4.2 - u * 3.4);
+    const o = 0; // 17/10 (pedido dele): parada de verdade, sem ondular (era cs * 0.1 * env * Math.sin(now * 4.2 - u * 3.4))
     return [p[0] - dy * o, p[1] + dx * o];
   }
   // ângulo (apontando pra cabeça) no trecho em volta de s
@@ -431,7 +431,7 @@
     } else if (live.length === 2) [head, tail] = live;
     if (!head || alpha <= 0.01) return 'hide'; // no meio do mergulho: nada na tela (nem as vidas)
     // sibilo de vez em quando: abre a boca por um instante
-    if (!roar && roarIm) roar = ((now + i * 1.7) % 5.5) < 0.45;
+    // (sem o sibilo aleatório de antes: boca só abre quando ela apanha)
     const pts = serpPolyline(i, head, tail);
     ctx.save(); ctx.globalAlpha = alpha;
     // marca as 2 casas que valem golpe: brilho de jade pulsando por baixo
@@ -444,16 +444,16 @@
     ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = cs * 0.18; ctx.shadowOffsetY = cs * 0.07;
     const S = scale;
     // cabeça: balança de leve; ruge no golpe e de vez em quando. A crista de penas fica por baixo do corpo
-    const aH = serpAngle(pts, cs * 0.1) + Math.sin(now * 2.2 + i) * 0.07;
+    const aH = serpAngle(pts, cs * 0.1);
     const hIm = roar && roarIm ? roarIm : headIm, hW = cs * 2.1 * S * (roar ? 1.05 : 1);
     drawSerpPart(hIm, head[0], head[1], aH, hW, 0.8);
     // cauda de penas (balança um pouco além da ondulação)
     const sT = cs * 1.25;
-    const pT = serpWave(pts, sT), aT = serpAngle(pts, sT + cs * 0.6) + Math.sin(now * 2.6 + i) * 0.1;
+    const pT = serpWave(pts, sT), aT = serpAngle(pts, sT + cs * 0.6);
     drawSerpPart(tailIm, pT[0], pT[1], aT, cs * 2.3 * S, 0.97);
     // anéis do corpo, de trás pra frente
     for (const u of [1.15, 0.8, 0.45]) {
-      const p = serpWave(pts, cs * u), breathe = 1 + 0.03 * Math.sin(now * 3 + u * 4);
+      const p = serpWave(pts, cs * u), breathe = 1;
       drawSerpPart(seg, p[0], p[1], serpAngle(pts, cs * u), cs * 1.15 * S * breathe, 0.5);
     }
     // crânio de novo por cima do pescoço
