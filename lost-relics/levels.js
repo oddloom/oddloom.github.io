@@ -1,4 +1,4 @@
-// Mundo 1 — Selva e templo maia. 20 fases.
+// Mundo 1 Amazônia (1-15) · 2 Selva Esmeralda (16-36) · 3 Cenote (37-51) · 4 Vale Dourado (52-66).
 // Pra ajustar a dificuldade, mude só os números daqui (moves, target, stars).
 // Joias: 0 rubi · 1 esmeralda · 2 safira · 3 topázio · 4 ametista · 5 diamante
 // Layout: . joia  x sem casa  s/S areia 1/2  r/R/T rocha 1/2/3  v cipó  w/W cipó sobre areia 1/2  a baú
@@ -6,37 +6,68 @@
 (function (root) {
   const FULL = ['........', '........', '........', '........', '........', '........', '........', '........'];
   const LEVELS = [
-    { moves: 15, colors: 5, goals: [{ type: 'score', target: 2000 }], tut: 'swap', layout: FULL },
-    { moves: 18, colors: 5, goals: [{ type: 'collect', color: 0, target: 30 }], tut: 'collect', layout: FULL },
-    { moves: 13, colors: 5, goals: [{ type: 'score', target: 6000 }], tut: 'line', layout: FULL },
-    { moves: 15, colors: 5, goals: [{ type: 'sand' }], tut: 'sand', layout: [
+    // ---- Mundo 1 = AMAZÔNIA (18/10, pedido dele): fases 1-15, introdutórias, com todos os tutoriais e os bichos da floresta ----
+    // (onça-pintada, jiboia, sapo). As fases que eram 1-51 andaram +15 (save.v3 no game.js migra o progresso).
+    { /*1*/ moves: 15, colors: 5, goals: [{ type: 'score', target: 1500 }], tut: 'swap', layout: FULL },
+    { /*2*/ moves: 18, colors: 5, goals: [{ type: 'collect', color: 0, target: 25 }], tut: 'collect', layout: FULL },
+    { /*3*/ moves: 14, colors: 5, goals: [{ type: 'score', target: 5000 }], tut: 'line', layout: FULL },
+    { /*4*/ moves: 15, colors: 5, goals: [{ type: 'sand' }], tut: 'sand', layout: [
+      '........', '........', '........', '...ss...', '..ssss..', '...ss...', '........', '........'] },
+    { /*5*/ moves: 18, colors: 5, goals: [{ type: 'sand' }], tut: 'barrel', layout: [
+      '........', '.ss..ss.', '.ss..ss.', '........', '........', '.ss..ss.', '.ss..ss.', '........'] },
+    // fase 6 = 1º chefe: ONÇA-PINTADA (mansa: 3 golpes)
+    { /*6*/ moves: 16, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'onca', bossHp: 3, boss: true, tut: 'onca', layout: FULL },
+    { /*7*/ moves: 16, colors: 5, goals: [{ type: 'artifact', target: 1 }], artifacts: 1, artifactMax: 1, tut: 'artifact', layout: [
+      '....a...', '........', '........', '........', '........', '........', '........', '........'] },
+    { /*8*/ moves: 18, colors: 5, goals: [{ type: 'vine', target: 8 }], tut: 'vine', layout: [
+      '........', '........', '..v..v..', '...vv...', '...vv...', '..v..v..', '........', '........'] },
+    { /*9*/ moves: 14, colors: 5, goals: [{ type: 'rock', target: 7 }], tut: 'rock', layout: [
+      '........', '........', '........', '........', '........', 'r.rr.rr.', '.r....r.', '........'] },
+    // fase 10 = JIBOIA na margem do rio (areia)
+    { /*10*/ moves: 16, colors: 5, goals: [{ type: 'boss', target: 1 }, { type: 'sand' }], bossKind: 'boa', bossHp: 3, tut: 'boa', layout: [
+      '........', '........', '........', '..ssss..', '..ssss..', '........', '........', '........'] },
+    { /*11*/ moves: 16, colors: 5, goals: [{ type: 'score', target: 9000 }], tut: 'idol', layout: FULL },
+    { /*12*/ moves: 20, colors: 6, goals: [{ type: 'collect', color: 5, target: 20 }], tut: 'diamond', layout: FULL },
+    // fase 13 = SAPO venenoso nas vitórias-régias
+    { /*13*/ moves: 20, colors: 6, goals: [{ type: 'boss', target: 1 }], bossKind: 'frog', bossHp: 3, tut: 'frog', layout: [
+      'xx....xx', 'x......x', '........', '........', '........', '........', 'x......x', 'xx....xx'] },
+    { /*14*/ moves: 28, colors: 6, goals: [{ type: 'sand' }, { type: 'vine', target: 4 }], layout: [
+      '........', '........', '.vssssv.', '..s..s..', '..s..s..', '.vssssv.', '........', '........'] },
+    // fase 15 = chefe final da Amazônia: a ONÇA-PINTADA volta mais forte, com pedras na trilha
+    { /*15*/ moves: 16, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'onca', bossHp: 5, boss: true, layout: [
+      'r......r', '........', '........', '........', '........', '........', '........', 'r..rr..r'] },
+    // ---- Mundo 2 = Selva Esmeralda (eram as fases 1-21) ----
+    { moves: 15, colors: 5, goals: [{ type: 'score', target: 2000 }], layout: FULL },
+    { moves: 18, colors: 5, goals: [{ type: 'collect', color: 0, target: 30 }], layout: FULL },
+    { moves: 13, colors: 5, goals: [{ type: 'score', target: 6000 }], layout: FULL },
+    { moves: 15, colors: 5, goals: [{ type: 'sand' }], layout: [
       '........', '........', '........', '..ssss..', '..ssss..', '........', '........', '........'] },
     // fase 5 = 1º chefe (14/10, ideia dele): Escaravelho Dourado, 3 golpes. Antes era "35 esmeraldas + 35 safiras".
     // 3 escaravelhos x 3 vidas, 24 movimentos (pedido dele 14/10: com 1 escaravelho de 3 vidas ficou fácil e rápido).
     // Simulação (120 sementes, jogador médio): vence ~61%, quem vence leva ~10 jogadas (antes: 77% em 5 jogadas).
     // Com 2 vidas cada ainda morria em ~7 jogadas; só a própria joia valer golpe ficou impossível (<20%).
     { moves: 24, colors: 5, goals: [{ type: 'boss', target: 3 }], scarab: 3, scarabHp: 3, boss: true, tut: 'boss', layout: FULL },
-    { moves: 17, colors: 5, goals: [{ type: 'sand' }], tut: 'barrel', layout: [
+    { moves: 17, colors: 5, goals: [{ type: 'sand' }], layout: [
       'xx....xx', 'x.ssss.x', '..s..s..', '.ss..ss.', '.ss..ss.', '..s..s..', 'x.ssss.x', 'xx....xx'] },
-    { moves: 15, colors: 5, goals: [{ type: 'artifact', target: 1 }], artifacts: 1, artifactMax: 1, tut: 'artifact', layout: [
+    { moves: 15, colors: 5, goals: [{ type: 'artifact', target: 1 }], artifacts: 1, artifactMax: 1, layout: [
       '...a....', '........', '........', '........', '........', '........', '........', '........'] },
     // fase 8 (15/10, pedido dele: escaravelhos também em fase comum): ENXAME, 4 escaravelhos de 1 vida + a meta de pontos.
-    { moves: 14, colors: 5, goals: [{ type: 'boss', target: 4 }, { type: 'score', target: 9000 }], scarab: 4, scarabHp: 1, tut: 'idol', layout: FULL },
+    { moves: 14, colors: 5, goals: [{ type: 'boss', target: 4 }, { type: 'score', target: 9000 }], scarab: 4, scarabHp: 1, layout: FULL },
     // fase 9 (18/10, pedido dele): ONÇA-PINTADA normal, antes da Onça de Jade (que ele não gostou do design). Mesma regra da jade, mais mansa:
     // a cada 3 jogadas crava a garra e vira 2 joias em pedra. Daqui pra frente tudo andou 1 fase (a jade virou a 11).
-    { moves: 17, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'onca', bossHp: 4, boss: true, tut: 'onca', layout: FULL },
+    { moves: 17, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'onca', bossHp: 4, boss: true, layout: FULL },
     { moves: 18, colors: 5, goals: [{ type: 'artifact', target: 2 }], artifacts: 2, artifactMax: 1, layout: ['....a...', '........', '........', '........', '........', '........', '........', '........'] },
     // fase 10 = 2º chefe (14/10): ONÇA DE JADE. Monta numa joia como o escaravelho (golpe = joia dela ou encostada,
     // 1 por jogada, ela salta pra longe) e a cada 3 jogadas crava a garra: 2 joias perto dela viram pedra.
     { moves: 20, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'jaguar', bossHp: 6, boss: true, tut: 'jaguar', layout: FULL },
-    { moves: 12, colors: 5, goals: [{ type: 'rock', target: 10 }], tut: 'rock', layout: [
+    { moves: 12, colors: 5, goals: [{ type: 'rock', target: 10 }], layout: [
       '........', '........', '........', '........', '........', 'rr.rr.rr', '.r.rr.r.', '........'] },
     // fase 12 (15/10, ideia dele): JIBOIA. Monta numa joia (golpe = joia dela ou encostada, ela foge pra longe);
     // a cada 2 jogadas sem apanhar engole 1 joia encostada, que vira bolo de pedra. Antes: areia + 8 rochas.
-    { moves: 14, colors: 5, goals: [{ type: 'boss', target: 1 }, { type: 'sand' }], bossKind: 'boa', bossHp: 3, tut: 'boa', layout: [
+    { moves: 14, colors: 5, goals: [{ type: 'boss', target: 1 }, { type: 'sand' }], bossKind: 'boa', bossHp: 3, layout: [
       '........', '........', 'r......r', 'rr....rr', '.ssssss.', '.ssssss.', 'rr....rr', 'r......r'] },
-    { moves: 18, colors: 6, goals: [{ type: 'collect', color: 5, target: 25 }], tut: 'diamond', layout: FULL },
-    { moves: 26, colors: 6, goals: [{ type: 'vine', target: 10 }], tut: 'vine', layout: [
+    { moves: 18, colors: 6, goals: [{ type: 'collect', color: 5, target: 25 }], layout: FULL },
+    { moves: 26, colors: 6, goals: [{ type: 'vine', target: 10 }], layout: [
       '........', '........', '.v....v.', '..v..v..', '...vv...', '..v..v..', '.v....v.', '........'] },
     // fase 15 = 3º chefe (14/10): ÍDOLO DE PEDRA. Bloco 2x2 fixo no meio; combinação comum não faz nada,
     // só explosão de joia especial (Flecha, Selo, Orbe) machuca. Depois de cada golpe, escudo de runas por 1 jogada.
@@ -47,7 +78,7 @@
       '........', '........', '........', '........', 'RR.RR.RR', '........', 'r.rr.rr.', '........'] },
     // fase 18 (15/10, ideia dele): MACACO. Monta numa joia (golpe = joia dele ou encostada, ele pula pra longe);
     // a cada 3 jogadas sem apanhar troca 2 joias de lugar perto dele. Antes: só 7.500 pontos.
-    { moves: 19, colors: 6, goals: [{ type: 'boss', target: 1 }, { type: 'score', target: 7500 }], bossKind: 'frog', bossHp: 3, tut: 'frog', layout: [
+    { moves: 19, colors: 6, goals: [{ type: 'boss', target: 1 }, { type: 'score', target: 7500 }], bossKind: 'frog', bossHp: 3, layout: [
       'xx....xx', 'x......x', '........', '........', '........', '........', 'x......x', 'xx....xx'] },
     { moves: 19, colors: 6, goals: [{ type: 'artifact', target: 2 }, { type: 'rock', target: 8 }], artifacts: 2, artifactMax: 1, layout: [
       '...a....', '........', '........', 'r.r..r.r', '.r.rr.r.', '........', '........', '........'] },
@@ -93,40 +124,43 @@
     { moves: 20, colors: 6, goals: [{ type: 'boss', target: 1 }], bossKind: 'serpent', bossHp: 6, boss: true, bombSpawn: 0.04, bombMax: 1, bombTimer: 12, layout: [
       'm......m', '........', '........', '........', '........', '........', '........', 'mr.rr.rm'] },
     // ---- Mundo 3 (18/10): Vale das Pirâmides, fases 37-51. Escaravelhos (Egito), cobra (jiboia), ídolo; musgo, ídolo amaldiçoado, relógios e Sol Ardente ----
-    { /*37*/ moves: 18, colors: 5, goals: [{ type: 'sand' }], layout: [
+    { /*52*/ moves: 18, colors: 5, goals: [{ type: 'sand' }], layout: [
       '........', '........', '.ssssss.', '.ssssss.', '.ssssss.', '.ssssss.', '........', '........'] },
-    { /*38*/ moves: 22, colors: 6, goals: [{ type: 'collect', color: 3, target: 30 }], layout: FULL },
-    { /*39*/ moves: 26, colors: 6, goals: [{ type: 'rock', target: 12 }], layout: [
+    { /*53*/ moves: 22, colors: 6, goals: [{ type: 'collect', color: 3, target: 30 }], layout: FULL },
+    { /*54*/ moves: 26, colors: 6, goals: [{ type: 'rock', target: 12 }], layout: [
       '........', '..RR.RR.', '........', '.R....R.', '.R....R.', '........', '..RR.RR.', '........'] },
     // fase 40 = chefe: ESCARAVELHOS REAIS, 4 de 2 vidas (o Egito é a casa deles)
-    { /*40*/ moves: 16, colors: 6, goals: [{ type: 'boss', target: 4 }], scarab: 4, scarabHp: 2, boss: true, layout: FULL },
-    { /*41*/ moves: 16, colors: 6, goals: [{ type: 'moss' }], bombTimer: 12, layout: [
+    { /*55*/ moves: 16, colors: 6, goals: [{ type: 'boss', target: 4 }], scarab: 4, scarabHp: 2, boss: true, layout: FULL },
+    { /*56*/ moves: 16, colors: 6, goals: [{ type: 'moss' }], bombTimer: 12, layout: [
       '........', '.b....b.', '..mm.mm.', '........', '........', '..mm.mm.', '.b....b.', '........'] },
-    { /*42*/ moves: 24, colors: 6, goals: [{ type: 'artifact', target: 3 }], artifacts: 3, artifactMax: 1, bombSpawn: 0.04, bombMax: 1, bombTimer: 10, clockSpawn: 0.06, clockMax: 2, layout: [
+    { /*57*/ moves: 24, colors: 6, goals: [{ type: 'artifact', target: 3 }], artifacts: 3, artifactMax: 1, bombSpawn: 0.04, bombMax: 1, bombTimer: 10, clockSpawn: 0.06, clockMax: 2, layout: [
       '...a....', '........', '........', '........', '........', '........', '........', '........'] },
-    { /*43*/ moves: 34, colors: 6, goals: [{ type: 'vine', target: 12 }, { type: 'sand' }], layout: [
+    { /*58*/ moves: 34, colors: 6, goals: [{ type: 'vine', target: 12 }, { type: 'sand' }], layout: [
       '........', '.v.ss.v.', '.v.ss.v.', '..vssv..', '..vssv..', '.v.ss.v.', '.v.ss.v.', '........'] },
-    { /*44*/ moves: 32, colors: 6, goals: [{ type: 'make', special: 'line', target: 4 }, { type: 'make', special: 'barrel', target: 2 }], layout: FULL },
+    { /*59*/ moves: 32, colors: 6, goals: [{ type: 'make', special: 'line', target: 4 }, { type: 'make', special: 'barrel', target: 2 }], layout: FULL },
     // fase 45 = a COBRA DO DESERTO (a jiboia) numa fase de areia
-    { /*45*/ moves: 15, colors: 5, goals: [{ type: 'boss', target: 1 }, { type: 'sand' }], bossKind: 'boa', bossHp: 4, layout: [
+    { /*60*/ moves: 15, colors: 5, goals: [{ type: 'boss', target: 1 }, { type: 'sand' }], bossKind: 'boa', bossHp: 4, layout: [
       '........', '........', '.ssssss.', '.ssssss.', '.ssssss.', '.ssssss.', '........', '........'] },
-    { /*46*/ moves: 20, colors: 6, goals: [{ type: 'score', target: 22000 }], clockSpawn: 0.08, clockMax: 3, layout: FULL },
-    { /*47*/ moves: 36, colors: 6, goals: [{ type: 'collect', color: 5, target: 28 }, { type: 'moss' }], layout: [
+    { /*61*/ moves: 20, colors: 6, goals: [{ type: 'score', target: 22000 }], clockSpawn: 0.08, clockMax: 3, layout: FULL },
+    { /*62*/ moves: 36, colors: 6, goals: [{ type: 'collect', color: 5, target: 28 }, { type: 'moss' }], layout: [
       'm......m', '........', '........', '........', '........', '........', '........', 'm......m'] },
-    { /*48*/ moves: 38, colors: 5, goals: [{ type: 'rock', target: 12 }, { type: 'make', special: 'nova', target: 1 }], layout: [
+    { /*63*/ moves: 38, colors: 5, goals: [{ type: 'rock', target: 12 }, { type: 'make', special: 'nova', target: 1 }], layout: [
       '........', '..rr.rr.', '.R....R.', '........', '........', '.R....R.', '..rr.rr.', '........'] },
-    { /*49*/ moves: 34, colors: 6, goals: [{ type: 'sand' }], bombTimer: 14, layout: [
+    { /*64*/ moves: 34, colors: 6, goals: [{ type: 'sand' }], bombTimer: 14, layout: [
       '........', '..b..b..', 'ss.ss.ss', 'ssssssss', 'ssssssss', 'ss.ss.ss', '........', '........'] },
     // fase 50 = chefe: o ÍDOLO DA ESFINGE (ídolo de pedra com 4 vidas e musgo nos cantos)
-    { /*50*/ moves: 32, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 4, statueAt: [3, 3], boss: true, layout: [
+    { /*65*/ moves: 32, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 4, statueAt: [3, 3], boss: true, layout: [
       'm......m', '........', '........', '........', '........', '........', '........', 'm......m'] },
     // fase 51 = chefe final do Mundo 3: enxame real de 5 escaravelhos + meta de pontos, ídolos amaldiçoados caindo e relógios
-    { /*51*/ moves: 24, colors: 6, goals: [{ type: 'boss', target: 5 }, { type: 'score', target: 15000 }], scarab: 5, scarabHp: 2, boss: true, bombSpawn: 0.03, bombMax: 1, bombTimer: 12, clockSpawn: 0.05, clockMax: 2, layout: [
+    { /*66*/ moves: 24, colors: 6, goals: [{ type: 'boss', target: 5 }, { type: 'score', target: 15000 }], scarab: 5, scarabHp: 2, boss: true, bombSpawn: 0.03, bombMax: 1, bombTimer: 12, clockSpawn: 0.05, clockMax: 2, layout: [
       'm......m', '........', '........', '........', '........', '........', '........', 'm......m'] },
   ];
   // estrelas: [1, 2, 3] em pontos — calibradas pelo tools/simular.js (13/10/2026, 60 partidas por fase)
   // ganhar já dá 1 estrela; 2 = pontuação mediana de quem ganha; 3 = os 20% melhores
   const STARS = [
+    // Amazônia (18/10): calibradas com tools/calibrar.js
+    /*1*/[4000, 12500, 16500], /*2*/[7500, 22500, 27000], /*3*/[5500, 15500, 21500], /*4*/[5000, 15500, 25500], /*5*/[6500, 22000, 31500], /*6*/[5000, 17500, 22500], /*7*/[4500, 14500, 23000], /*8*/[6000, 18000, 24000], /*9*/[4500, 14500, 21500], /*10*/[6000, 19500, 27000], /*11*/[9000, 19500, 26000], /*12*/[4500, 13000, 16500], /*13*/[4500, 12000, 13500], /*14*/[6000, 18000, 21500], /*15*/[7500, 22000, 32000],
+    // Selva Esmeralda (eram 1-21)
     [4500, 12500, 18500], [7000, 21000, 27500], [5000, 16000, 21000], [4500, 13500, 24500], [3000, 13500, 19500], // fase 5 recalibrada pros 3 escaravelhos (14/10)
     [5000, 17500, 27500], [4500, 14500, 24000], [7500, 19000, 24500], [6500, 20500, 28500], [5500, 18500, 26500], [7500, 29500, 39000], // fase 9 = onça normal (18/10, recalibrar); fase 11 = onça de jade
     [3500, 15500, 22000], [5000, 18000, 28500], [4500, 12500, 16500], [5000, 15500, 21500], [9500, 33000, 42000], // fase 15 = ídolo (14/10)
@@ -136,9 +170,9 @@
     [9000, 45000, 70000], [6000, 21500, 34500], [4500, 11500, 14000], [5000, 16000, 21500], [14000, 37500, 52000], // fase 30 = ídolo forte
     [5000, 13500, 15500], [4000, 11500, 16000], [7000, 23000, 30500], [7000, 22500, 31500], [5500, 15500, 19000], // fase 35 = Kukulkán desperto
     // fases 37-51 (18/10): calibradas com tools/calibrar.js (robô vence 80-95%) + folga de movimentos pra jogador humano nas curtas
-    /*37*/[5000, 15000, 22000], /*38*/[5000, 16500, 21000], /*39*/[4500, 13500, 18500], /*40*/[4000, 10500, 14000], /*41*/[3000, 8500, 11000],
-    /*42*/[5500, 16000, 19500], /*43*/[9000, 23500, 29500], /*44*/[9000, 21000, 26000], /*45*/[6500, 23000, 35500], /*46*/[12500, 32500, 38000],
-    /*47*/[10000, 26000, 31500], /*48*/[13500, 40000, 84000], /*49*/[9500, 22500, 28500], /*50*/[15000, 39000, 55000], /*51*/[9000, 24000, 27500],
+    /*52*/[5000, 15000, 22000], /*53*/[5000, 16500, 21000], /*54*/[4500, 13500, 18500], /*55*/[4000, 10500, 14000], /*56*/[3000, 8500, 11000],
+    /*57*/[5500, 16000, 19500], /*58*/[9000, 23500, 29500], /*59*/[9000, 21000, 26000], /*60*/[6500, 23000, 35500], /*61*/[12500, 32500, 38000],
+    /*62*/[10000, 26000, 31500], /*63*/[13500, 40000, 84000], /*64*/[9500, 22500, 28500], /*65*/[15000, 39000, 55000], /*66*/[9000, 24000, 27500],
   ];
   // Chefes (14/10), simulador com robô que caça o chefe e enxerga as joias que vão cair (joga melhor que gente;
   // vale como comparação): fase 5 vence 100% sobrando 18 jogadas (ele testou e aprovou), 10 = 98%/12,

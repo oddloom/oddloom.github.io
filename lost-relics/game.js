@@ -22,6 +22,20 @@
     save.v2 = 1;
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
   }
+  // 18/10: entrou o Mundo 1 = Amazônia (15 fases novas na frente); todo progresso anda +15 (uma vez só, e já grava).
+  // Quem nunca jogou (fase 1 aberta, sem estrela) começa na Amazônia.
+  if (!save.v3) {
+    const played = save.unlocked > 1 || Object.keys(save.stars || {}).length > 0;
+    if (played) {
+      const sh = (o) => { const n = {}; for (const k in (o || {})) n[+k + 15] = o[k]; return n; };
+      save.stars = sh(save.stars); save.best = sh(save.best);
+      save.unlocked += 15;
+      if (save.fogShown != null) save.fogShown += 15;
+      if (save.orbAt != null) save.orbAt += 15;
+    }
+    save.v3 = 1;
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
+  }
   // skins compradas no Códice (16/10): owned = ids comprados; skins = a que está em uso em cada aba (null = a de fábrica)
   save.owned = save.owned || [];
   save.skins = Object.assign({ gem: null, word: null, trail: null }, save.skins);
@@ -1686,7 +1700,7 @@
 
   function openPre(id) {
     const L = LEVELS[id - 1];
-    const tutKey = L.tut ? 'tut.' + L.tut : id === 10 ? 'tip.combo' : null;
+    const tutKey = L.tut ? 'tut.' + L.tut : id === 25 ? 'tip.combo' : null;
     const rows = L.goals.map((g) => {
       const gg = Object.assign({}, g);
       if (g.type === 'sand') { gg.target = L.layout.join('').split('').reduce((n, c) => n + (c === 's' || c === 'w' ? 1 : c === 'S' || c === 'W' ? 2 : 0), 0); }
@@ -2104,7 +2118,7 @@
     const go = () => {
       const E = window.ART_EXTRA, D = window.ART_DATA;
       if (!E || !D) return finish();
-      D.map3 = E.map3; D.mapDepth = E.mapDepth; D.map3b = E.map3b; D.mapDepthB = E.mapDepthB; D.map3c = E.map3c; D.mapDepthC = E.mapDepthC;
+      D.map3 = E.map3; D.mapDepth = E.mapDepth; D.map3b = E.map3b; D.mapDepthB = E.mapDepthB; D.map3c = E.map3c; D.mapDepthC = E.mapDepthC; D.map3a = E.map3a; D.mapDepthA = E.mapDepthA;
       if (scene === 'map' && !MAP3.gl) buildMap();
       ART.loadExtra(E, finish);
     };
@@ -2230,11 +2244,13 @@
   // ---------- mundos (16/10) ----------
   // Cada mundo tem a sua maquete 3D, a sua profundidade e o seu caminho (px da pintura 572x1024, de baixo pra cima).
   // Mundo 2 = Cenote Sagrado (maquete do Gemini, 16/10); caminho conferido com tools\previa-caminho.ps1.
+  // 18/10: Mundo 1 = Amazônia (maquete do Gemini, trilha de troncos em S); os outros andaram +15.
   const WORLDS = [
-    { from: 1, to: 21, map: 'map3', depth: 'mapDepth', pathKey: 'mapPath3' },
-    { from: 22, to: 36, map: 'map3b', depth: 'mapDepthB', path: [[300, 1005], [320, 935], [300, 870], [240, 835], [235, 770], [265, 715], [190, 680], [110, 610], [85, 530], [130, 455], [215, 420], [300, 400], [385, 410], [455, 440], [470, 380], [400, 330], [395, 250]] },
+    { from: 1, to: 15, map: 'map3a', depth: 'mapDepthA', path: [[290, 915], [258, 885], [245, 850], [272, 810], [275, 782], [320, 750], [322, 725], [320, 697], [292, 655], [250, 625], [220, 590], [232, 555], [285, 520], [325, 495], [348, 465], [352, 432], [332, 400], [302, 378], [278, 350], [282, 320], [293, 292]] },
+    { from: 16, to: 36, map: 'map3', depth: 'mapDepth', pathKey: 'mapPath3' },
+    { from: 37, to: 51, map: 'map3b', depth: 'mapDepthB', path: [[300, 1005], [320, 935], [300, 870], [240, 835], [235, 770], [265, 715], [190, 680], [110, 610], [85, 530], [130, 455], [215, 420], [300, 400], [385, 410], [455, 440], [470, 380], [400, 330], [395, 250]] },
     // Mundo 3 = Vale das Pirâmides (maquete do Gemini, 18/10); caminho conferido com tools\previa-caminho.ps1
-    { from: 37, to: 51, map: 'map3c', depth: 'mapDepthC', path: [[257, 880], [290, 856], [320, 836], [338, 808], [350, 776], [324, 751], [298, 730], [267, 712], [229, 698], [193, 684], [162, 665], [139, 640], [120, 614], [110, 585], [125, 551], [156, 525], [190, 502], [227, 487], [275, 470], [318, 462], [352, 441], [362, 413], [345, 388], [303, 372], [271, 352], [262, 322], [261, 296], [298, 270], [330, 245]] },
+    { from: 52, to: 66, map: 'map3c', depth: 'mapDepthC', path: [[257, 880], [290, 856], [320, 836], [338, 808], [350, 776], [324, 751], [298, 730], [267, 712], [229, 698], [193, 684], [162, 665], [139, 640], [120, 614], [110, 585], [125, 551], [156, 525], [190, 502], [227, 487], [275, 470], [318, 462], [352, 441], [362, 413], [345, 388], [303, 372], [271, 352], [262, 322], [261, 296], [298, 270], [330, 245]] },
   ];
   const worldOf = (id) => Math.max(0, WORLDS.findIndex((w) => id >= w.from && id <= w.to));
   let mapWorld = null; // mundo aberto no mapa (null = o da fase atual)
@@ -2505,11 +2521,11 @@
     else if (location.hash === '#novademo') { startLevel(3); setTimeout(() => { const g = state.grid; g[3][3].special = 'nova'; g[5][2].vine = true; g[5][2].slime = 2; g[2][5].vine = true; g[2][5].slime = 1; g[6][5].clock = true; g[1][1].clock = true; }, 700); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 50) clearInterval(iv); }, 50); }
     else if (location.hash === '#diario') { startLevel('daily'); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 60) clearInterval(iv); }, 50); }
     else if (location.hash === '#diarioresultado') { startLevel('daily').then(() => { state.score = Math.round(level.best * 0.87); setTimeout(() => showDaily(), 300); }); }
-    else if (location.hash === '#oncademo') { startLevel(9); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
-    else if (location.hash === '#sapodemo') { startLevel(19); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
+    else if (location.hash === '#oncademo') { startLevel(6); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
+    else if (location.hash === '#sapodemo') { startLevel(13); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
     // #serpdemo: fase 20 com o laço rodando por timer (o Chrome sem janela não roda requestAnimationFrame) e um rastro em curva
     else if (location.hash === '#serpdemo') {
-      startLevel(20);
+      startLevel(36);
       setTimeout(() => {
         const [h, t] = LR.bossCells(state, state.bosses[0]), dx = h[0] - t[0], dy = h[1] - t[1];
         const back = [t[0] - dx, t[1] - dy], side = [back[0] + dy, back[1] + dx];
@@ -2517,7 +2533,7 @@
       }, 300);
       let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50);
     }
-    else if (location.hash === '#chefedemo') { startLevel(5); setTimeout(() => { vis = new Map(); state.bosses[0].hp = 0; state.bosses[1].hp = 1; state.goals[0].count = 1; renderHUD(); }, 1500); }
+    else if (location.hash === '#chefedemo') { startLevel(20); setTimeout(() => { vis = new Map(); state.bosses[0].hp = 0; state.bosses[1].hp = 1; state.goals[0].count = 1; renderHUD(); }, 1500); }
     else if (location.hash === '#derrotademo') { startLevel(1); setTimeout(() => { showLose(); const x = document.getElementById('mExtra'); if (x) x.hidden = false; }, 900); }
     else if (location.hash === '#pontosdemo') { startLevel(1); setTimeout(() => { state.score = 1290; renderHUD(); floats.push({ x: cellX(3), y: cellY(4), text: '+90', num: 90, color: '#ffe08a', t: 0, hold: true }); }, 900); }
     else if (location.hash === '#vitoriademo') { startLevel(1); setTimeout(() => { state.score = 16900; showWin(); }, 1200); setTimeout(() => document.querySelectorAll('.stars-big img').forEach((im, i) => { if (i < 2) { im.src = ART.nodeImg('vstar') || im.src; im.classList.add('on'); } }), 2600); }
