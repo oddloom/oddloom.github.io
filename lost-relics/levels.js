@@ -22,6 +22,9 @@
       '...a....', '........', '........', '........', '........', '........', '........', '........'] },
     // fase 8 (15/10, pedido dele: escaravelhos também em fase comum): ENXAME, 4 escaravelhos de 1 vida + a meta de pontos.
     { moves: 14, colors: 5, goals: [{ type: 'boss', target: 4 }, { type: 'score', target: 9000 }], scarab: 4, scarabHp: 1, tut: 'idol', layout: FULL },
+    // fase 9 (18/10, pedido dele): ONÇA-PINTADA normal, antes da Onça de Jade (que ele não gostou do design). Mesma regra da jade, mais mansa:
+    // a cada 3 jogadas crava a garra e vira 2 joias em pedra. Daqui pra frente tudo andou 1 fase (a jade virou a 11).
+    { moves: 17, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'onca', bossHp: 4, boss: true, tut: 'onca', layout: FULL },
     { moves: 18, colors: 5, goals: [{ type: 'artifact', target: 2 }], artifacts: 2, artifactMax: 1, layout: ['....a...', '........', '........', '........', '........', '........', '........', '........'] },
     // fase 10 = 2º chefe (14/10): ONÇA DE JADE. Monta numa joia como o escaravelho (golpe = joia dela ou encostada,
     // 1 por jogada, ela salta pra longe) e a cada 3 jogadas crava a garra: 2 joias perto dela viram pedra.
@@ -44,7 +47,7 @@
       '........', '........', '........', '........', 'RR.RR.RR', '........', 'r.rr.rr.', '........'] },
     // fase 18 (15/10, ideia dele): MACACO. Monta numa joia (golpe = joia dele ou encostada, ele pula pra longe);
     // a cada 3 jogadas sem apanhar troca 2 joias de lugar perto dele. Antes: só 7.500 pontos.
-    { moves: 17, colors: 6, goals: [{ type: 'boss', target: 1 }, { type: 'score', target: 7500 }], bossKind: 'monkey', bossHp: 3, tut: 'monkey', layout: [
+    { moves: 19, colors: 6, goals: [{ type: 'boss', target: 1 }, { type: 'score', target: 7500 }], bossKind: 'frog', bossHp: 3, tut: 'frog', layout: [
       'xx....xx', 'x......x', '........', '........', '........', '........', 'x......x', 'xx....xx'] },
     { moves: 19, colors: 6, goals: [{ type: 'artifact', target: 2 }, { type: 'rock', target: 8 }], artifacts: 2, artifactMax: 1, layout: [
       '...a....', '........', '........', 'r.r..r.r', '.r.rr.r.', '........', '........', '........'] },
@@ -79,7 +82,7 @@
       'm......m', '........', '........', '........', '........', '........', '........', 'm......m'] },
     { moves: 22, colors: 6, goals: [{ type: 'moss' }], layout: [
       '........', '.mm..mm.', '........', '........', '........', '........', '.mm..mm.', '........'] },
-    { moves: 15, colors: 6, goals: [{ type: 'boss', target: 1 }], bossKind: 'monkey', bossHp: 4, bombSpawn: 0.05, bombMax: 2, bombTimer: 10, layout: [
+    { moves: 15, colors: 6, goals: [{ type: 'boss', target: 1 }], bossKind: 'frog', bossHp: 4, bombSpawn: 0.05, bombMax: 2, bombTimer: 10, layout: [
       '........', '.b....b.', '........', '........', '........', '........', '........', '........'] },
     { moves: 33, colors: 6, goals: [{ type: 'sand' }], bombTimer: 16, layout: [
       '........', '..b..b..', 'SS....SS', 'SSssssSS', '.ssssss.', '..ssss..', '........', '........'] },
@@ -93,9 +96,9 @@
   // ganhar já dá 1 estrela; 2 = pontuação mediana de quem ganha; 3 = os 20% melhores
   const STARS = [
     [4500, 12500, 18500], [7000, 21000, 27500], [5000, 16000, 21000], [4500, 13500, 24500], [3000, 13500, 19500], // fase 5 recalibrada pros 3 escaravelhos (14/10)
-    [5000, 17500, 27500], [4500, 14500, 24000], [7500, 19000, 24500], [5500, 18500, 26500], [7500, 29500, 39000], // fase 10 = onça (14/10)
+    [5000, 17500, 27500], [4500, 14500, 24000], [7500, 19000, 24500], [6500, 20500, 28500], [5500, 18500, 26500], [7500, 29500, 39000], // fase 9 = onça normal (18/10, recalibrar); fase 11 = onça de jade
     [3500, 15500, 22000], [5000, 18000, 28500], [4500, 12500, 16500], [5000, 15500, 21500], [9500, 33000, 42000], // fase 15 = ídolo (14/10)
-    [7500, 20500, 24500], [5000, 15000, 21000], [4000, 12000, 14500], [3000, 12000, 15500], [5000, 14500, 19000], // fase 20 = serpente (14/10)
+    [7500, 20500, 24500], [5000, 15000, 21000], [4500, 12500, 15500], [3000, 12000, 15500], [5000, 14500, 19000], // fase 20 = serpente (14/10)
     // fases 21-35 (16/10, simulador 60 partidas): robô vence 78-100%, sobrando ~7-12 jogadas
     [4000, 11000, 17500], [4000, 12000, 17000], [6000, 17000, 26500], [7500, 24500, 36500], [8500, 27000, 40000], // fase 25 = onça forte
     [8000, 26500, 40000], [5500, 22500, 33000], [4500, 11500, 14000], [5000, 16000, 21500], [14000, 37500, 52000], // fase 30 = ídolo forte

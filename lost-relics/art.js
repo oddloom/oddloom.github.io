@@ -535,15 +535,20 @@
   // Sol Ardente (Supernova, 18/10): joia da cor com sol de fogo e raios em volta. Arte pintada futura entra como fx 'nova'.
   function drawNova(ctx, S, color) {
     const o = AI.fx.nova;
+    if (o) {
+      // arte pintada (Gemini, 18/10): disco de ouro com runas e sol de fogo; a cor da joia aparece como um brilho pequeno no meio
+      const k = S * 1.12 / Math.max(o.width, o.height);
+      ctx.shadowColor = 'rgba(255,120,30,0.9)'; ctx.shadowBlur = S * 0.14;
+      ctx.drawImage(o, -o.width * k / 2, -o.height * k / 2, o.width * k, o.height * k);
+      ctx.shadowBlur = 0; ctx.save(); ctx.scale(0.3, 0.3); paintGem(ctx, GEMS[color], S * 0.4, 0); ctx.restore();
+      return;
+    }
     const g = ctx.createRadialGradient(0, 0, S * 0.05, 0, 0, S * 0.56);
     g.addColorStop(0, 'rgba(255,245,190,1)'); g.addColorStop(0.42, 'rgba(255,140,40,0.95)'); g.addColorStop(1, 'rgba(200,40,20,0)');
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, S * 0.56, 0, Math.PI * 2); ctx.fill();
-    if (o) { const k = S * 1.2 / Math.max(o.width, o.height); ctx.drawImage(o, -o.width * k / 2, -o.height * k / 2, o.width * k, o.height * k); }
-    else {
-      ctx.fillStyle = 'rgba(255,205,90,0.92)';
-      for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(S * 0.22, -S * 0.035); ctx.lineTo(S * 0.5, 0); ctx.lineTo(S * 0.22, S * 0.035); ctx.closePath(); ctx.fill(); }
-      ctx.strokeStyle = '#e8c06a'; ctx.lineWidth = S * 0.045; ctx.beginPath(); ctx.arc(0, 0, S * 0.3, 0, Math.PI * 2); ctx.stroke();
-    }
+    ctx.fillStyle = 'rgba(255,205,90,0.92)';
+    for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(S * 0.22, -S * 0.035); ctx.lineTo(S * 0.5, 0); ctx.lineTo(S * 0.22, S * 0.035); ctx.closePath(); ctx.fill(); }
+    ctx.strokeStyle = '#e8c06a'; ctx.lineWidth = S * 0.045; ctx.beginPath(); ctx.arc(0, 0, S * 0.3, 0, Math.PI * 2); ctx.stroke();
     ctx.save(); ctx.scale(0.62, 0.62); paintGem(ctx, GEMS[color], S * 0.4, 0); ctx.restore();
   }
   function pieceSprite(p, S, f) {

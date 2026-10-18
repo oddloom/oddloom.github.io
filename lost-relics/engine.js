@@ -695,7 +695,7 @@
         }
         continue;
       }
-      if (b.kind === 'jaguar') {
+      if (b.kind === 'jaguar' || b.kind === 'onca') {
         // garra a cada 3 jogadas, tenha apanhado ou não: o tabuleiro vai endurecendo
         b.claw = (b.claw || 0) + 1;
         if (b.claw >= JAG_CLAW) {

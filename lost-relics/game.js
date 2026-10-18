@@ -13,6 +13,15 @@
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.unlocked) save = Object.assign(save, s); } catch (e) {}
   save.coins = save.coins == null ? 300 : save.coins;
   save.items = Object.assign({ moves: 0, dyn: 0, seal: 0, orb: 0, hammer: 1 }, save.items);
+  // 18/10: entrou a Onça normal como fase 9; o progresso que era da fase 9 em diante passa a ser da fase seguinte (uma vez só, e já grava)
+  if (!save.v2) {
+    const sh = (o) => { const n = {}; for (const k in (o || {})) n[+k >= 9 ? +k + 1 : k] = o[k]; return n; };
+    save.stars = sh(save.stars); save.best = sh(save.best);
+    if (save.unlocked >= 9) save.unlocked++;
+    if (save.fogShown != null && save.fogShown >= 8) save.fogShown++;
+    save.v2 = 1;
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
+  }
   // skins compradas no Códice (16/10): owned = ids comprados; skins = a que está em uso em cada aba (null = a de fábrica)
   save.owned = save.owned || [];
   save.skins = Object.assign({ gem: null, word: null, trail: null }, save.skins);
@@ -474,7 +483,7 @@
   // centro de um grupo de pontos já em coordenadas de tela
   const midOf = (pts) => [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length];
   // brilho em volta de cada chefe (marca que é o chefe)
-  const BOSS_GLOW = { scarab: '255,196,70', jaguar: '90,255,150', statue: '70,235,220', serpent: '80,240,200', boa: '215,190,90', monkey: '235,180,110', frog: '110,235,90' };
+  const BOSS_GLOW = { scarab: '255,196,70', jaguar: '90,255,150', statue: '70,235,220', serpent: '80,240,200', boa: '215,190,90', monkey: '235,180,110', frog: '110,235,90', onca: '255,170,60' };
   function bossHit(b) {
     const boss = state.bosses[b.idx], kind = (boss && boss.kind) || 'scarab';
     const cells = b.cells && b.cells.length ? b.cells : [b.from];
@@ -905,6 +914,8 @@
     } else if (b.special === 'nova') {
       Sound.play('barrel'); Sound.play('line');
       beam('h', b.y); beam('v', b.x); ring(b.x, b.y, 'rgba(255,130,40,0.95)', 2.6); fire(b.x, b.y, 34); addShake(0.55);
+      if (ART.fx('novaboom')) parts.push({ type: 'fxsprite', key: 'novaboom', x: cellX(b.x), y: cellY(b.y), s0: 1.5, s1: 6, life: 0, max: 0.6 });
+      if (ART.fx('novacross')) parts.push({ type: 'fxsprite', key: 'novacross', x: cellX(b.x), y: cellY(b.y), s0: 4, s1: 12, life: 0, max: 0.55 });
     } else if (b.special === 'idol') {
       Sound.play('idol');
       if (ART.fx('sunbeam')) { b.area.forEach(([x, y], k) => parts.push({ type: 'fxsprite', key: 'sunbeam', x: cellX(x), y: cellY(y) - cs * 1.4, s0: 1, s1: 1, tall: true, life: -k * 0.02, max: 0.6 })); parts.push({ type: 'fxsprite', key: 'flare2', x: cellX(b.x), y: cellY(b.y), s0: 1, s1: 2.6, life: 0, max: 0.5 }); }
@@ -1556,7 +1567,9 @@
     // jiboia (fase 12): enrolada, golpe, fugindo (também na saída), engolindo; vidas = carapaças do escaravelho (só se faltar a barra)
     // macaco (fase 18): pendurado no cipó, assustado, fugindo, trocando joias
     // sapo (18/10): enquanto não chega a arte própria, usa os desenhos do macaco; trocar os nomes aqui (fidle, fhit...) e no gerar-arte-data.ps1
-    frog: { idle: 'midle', hit: 'mhit', move: 'mflee', dead: 'mflee', eat: 'mswap', l3: 'blife3', l1: 'blife1', size: 1.4 },
+    frog: { idle: 'fidle', hit: 'fhit', move: 'fflee', dead: 'fflee', eat: 'fspit', l3: 'blife3', l1: 'blife1', size: 1.85 },
+    // onça-pintada normal (18/10): poses inteiras (parada, golpe, salto), sem montar em partes como a de jade
+    onca: { idle: 'oidle', hit: 'ohit', move: 'oleap', dead: 'ohit', l3: 'jlife3', l1: 'jlife1', size: 2.3 },
     monkey: { idle: 'midle', hit: 'mhit', move: 'mflee', dead: 'mflee', eat: 'mswap', l3: 'blife3', l1: 'blife1', size: 1.4 },
     boa: { idle: 'aidle', hit: 'ahit', move: 'aflee', dead: 'aflee', eat: 'aeat', l3: 'blife3', l1: 'blife1', size: 1.35 },
     serpent: { idle: 'kidle', hit: 'khit', move: 'kcoil', dead: 'kdead', l3: 'klife3', l1: 'klife1', size: 2.3,
@@ -1666,7 +1679,7 @@
 
   function openPre(id) {
     const L = LEVELS[id - 1];
-    const tutKey = L.tut ? 'tut.' + L.tut : id === 9 ? 'tip.combo' : null;
+    const tutKey = L.tut ? 'tut.' + L.tut : id === 10 ? 'tip.combo' : null;
     const rows = L.goals.map((g) => {
       const gg = Object.assign({}, g);
       if (g.type === 'sand') { gg.target = L.layout.join('').split('').reduce((n, c) => n + (c === 's' || c === 'w' ? 1 : c === 'S' || c === 'W' ? 2 : 0), 0); }
@@ -1680,7 +1693,7 @@
       '<div class="goal-list">' + rows + '</div>' +
       '<div class="moves-line">' + T('moves') + ': <b>' + L.moves + '</b></div>' +
       // (os parênteses importam: sem eles, com a arte do chefe carregada, o texto do tutorial sumia)
-      (tutKey ? '<div class="tut"><img alt="" src="' + (((L.boss || L.tut === 'boa' || L.tut === 'monkey') && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || (TUT_ART[L.tut] && ART.nodeImg(TUT_ART[L.tut])) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><p>' + T(tutKey) + '</p></div>' : '') +
+      (tutKey ? '<div class="tut"><img alt="" src="' + (((L.boss || L.tut === 'boa' || L.tut === 'monkey' || L.tut === 'frog') && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || (TUT_ART[L.tut] && ART.nodeImg(TUT_ART[L.tut])) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><p>' + T(tutKey) + '</p></div>' : '') +
       (ART.nodeImg('ixarrow') ? streakHTML() : '') +
       boostPicker() +
       '<div class="btns"><button class="btn" id="mPlay" type="button">' + T('play') + '</button>' +
@@ -2136,8 +2149,8 @@
   // Cada mundo tem a sua maquete 3D, a sua profundidade e o seu caminho (px da pintura 572x1024, de baixo pra cima).
   // Mundo 2 = Cenote Sagrado (maquete do Gemini, 16/10); caminho conferido com tools\previa-caminho.ps1.
   const WORLDS = [
-    { from: 1, to: 20, map: 'map3', depth: 'mapDepth', pathKey: 'mapPath3' },
-    { from: 21, to: 35, map: 'map3b', depth: 'mapDepthB', path: [[300, 1005], [320, 935], [300, 870], [240, 835], [235, 770], [265, 715], [190, 680], [110, 610], [85, 530], [130, 455], [215, 420], [300, 400], [385, 410], [455, 440], [470, 380], [400, 330], [395, 250]] },
+    { from: 1, to: 21, map: 'map3', depth: 'mapDepth', pathKey: 'mapPath3' },
+    { from: 22, to: 36, map: 'map3b', depth: 'mapDepthB', path: [[300, 1005], [320, 935], [300, 870], [240, 835], [235, 770], [265, 715], [190, 680], [110, 610], [85, 530], [130, 455], [215, 420], [300, 400], [385, 410], [455, 440], [470, 380], [400, 330], [395, 250]] },
   ];
   const worldOf = (id) => Math.max(0, WORLDS.findIndex((w) => id >= w.from && id <= w.to));
   let mapWorld = null; // mundo aberto no mapa (null = o da fase atual)
@@ -2400,7 +2413,8 @@
     }
     // #novademo: Supernova, gosma e Joia de Tempo no tabuleiro; #sapodemo: fase 18 com o sapo (sprites provisórios)
     else if (location.hash === '#novademo') { startLevel(3); setTimeout(() => { const g = state.grid; g[3][3].special = 'nova'; g[5][2].vine = true; g[5][2].slime = 2; g[2][5].vine = true; g[2][5].slime = 1; g[6][5].clock = true; g[1][1].clock = true; }, 700); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 50) clearInterval(iv); }, 50); }
-    else if (location.hash === '#sapodemo') { LEVELS[17] = Object.assign({}, LEVELS[17], { bossKind: 'frog' }); startLevel(18); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
+    else if (location.hash === '#oncademo') { startLevel(9); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
+    else if (location.hash === '#sapodemo') { startLevel(19); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
     // #serpdemo: fase 20 com o laço rodando por timer (o Chrome sem janela não roda requestAnimationFrame) e um rastro em curva
     else if (location.hash === '#serpdemo') {
       startLevel(20);
