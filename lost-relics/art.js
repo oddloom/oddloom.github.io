@@ -532,7 +532,22 @@
     ctx.restore();
     return true;
   }
+  // Sol Ardente (Supernova, 18/10): joia da cor com sol de fogo e raios em volta. Arte pintada futura entra como fx 'nova'.
+  function drawNova(ctx, S, color) {
+    const o = AI.fx.nova;
+    const g = ctx.createRadialGradient(0, 0, S * 0.05, 0, 0, S * 0.56);
+    g.addColorStop(0, 'rgba(255,245,190,1)'); g.addColorStop(0.42, 'rgba(255,140,40,0.95)'); g.addColorStop(1, 'rgba(200,40,20,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, S * 0.56, 0, Math.PI * 2); ctx.fill();
+    if (o) { const k = S * 1.2 / Math.max(o.width, o.height); ctx.drawImage(o, -o.width * k / 2, -o.height * k / 2, o.width * k, o.height * k); }
+    else {
+      ctx.fillStyle = 'rgba(255,205,90,0.92)';
+      for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(S * 0.22, -S * 0.035); ctx.lineTo(S * 0.5, 0); ctx.lineTo(S * 0.22, S * 0.035); ctx.closePath(); ctx.fill(); }
+      ctx.strokeStyle = '#e8c06a'; ctx.lineWidth = S * 0.045; ctx.beginPath(); ctx.arc(0, 0, S * 0.3, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.save(); ctx.scale(0.62, 0.62); paintGem(ctx, GEMS[color], S * 0.4, 0); ctx.restore();
+  }
   function pieceSprite(p, S, f) {
+    if (p.special === 'nova' && p.color != null) return sprite('nova' + p.color, S, (ctx) => drawNova(ctx, S, p.color));
     if (AI.pieces.chest) {
       if (p.kind === 'rock') return sprite('ar' + p.hp, S, (ctx) => drawAIPiece(ctx, 'rock' + Math.min(3, Math.max(1, p.hp)), S, 1.08));
       if (p.kind === 'artifact') return sprite('achest', S, (ctx) => drawAIPiece(ctx, 'chest', S, 1.12));

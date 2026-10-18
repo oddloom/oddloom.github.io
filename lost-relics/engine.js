@@ -7,7 +7,7 @@
 (function (root) {
   'use strict';
 
-  const SCORE = { gem: 30, line: 120, barrel: 200, idol: 300, rock: 40, sand: 60, vine: 40, artifact: 1000, treasure: 250, boss: 500 };
+  const SCORE = { gem: 30, line: 120, barrel: 200, idol: 300, nova: 400, rock: 40, sand: 60, vine: 40, artifact: 1000, treasure: 250, boss: 500 };
   const GEM_NAMES = ['ruby', 'emerald', 'sapphire', 'topaz', 'amethyst', 'diamond'];
 
   // ---------- sorteio com semente (estado copiável) ----------
@@ -110,6 +110,8 @@
   const BOA_EAT = 2;
   // Macaco (fase 18, ideia dele 15/10): a cada MONKEY_SWAP jogadas sem apanhar troca 2 joias de lugar
   const MONKEY_SWAP = 3;
+  // Sapo (17/10, no lugar do macaco): a cada FROG_SPIT jogadas sem apanhar cospe gosma em FROG_SLIME joias perto dele
+  const FROG_SPIT = 2, FROG_SLIME = 2;
   const aliveBosses = (s) => (s.bosses || []).filter((b) => b.hp > 0);
   function idPos(s, id) {
     if (id == null) return null;
@@ -270,6 +272,7 @@
       if (r.dir === 'h') h = true; else v = true;
     }
     const n = longest.cells.length;
+    if (n >= 6) return { type: 'nova', run: longest }; // Supernova (Bejeweled): 6 ou mais em linha
     if (n >= 5) return { type: 'idol', run: longest };
     if (h && v) return { type: 'barrel' };
     if (n === 4) return { type: longest.dir === 'h' ? 'lineV' : 'lineH', run: longest };
@@ -300,6 +303,11 @@
     if (p.special === 'lineH') for (let i = 0; i < s.W; i++) out.push([i, y]);
     else if (p.special === 'lineV') for (let i = 0; i < s.H; i++) out.push([x, i]);
     else if (p.special === 'barrel') for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) out.push([x + dx, y + dy]);
+    else if (p.special === 'nova') { // Sol Ardente: 3x3 + linha + coluna
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) out.push([x + dx, y + dy]);
+      for (let i = 0; i < s.W; i++) out.push([i, y]);
+      for (let i = 0; i < s.H; i++) out.push([x, i]);
+    }
     else if (p.special === 'idol') {
       const c = p.target != null ? p.target : commonColor(s);
       for (let yy = 0; yy < s.H; yy++) for (let xx = 0; xx < s.W; xx++) if (colorAt(s, xx, yy) === c) out.push([xx, yy]);
@@ -335,7 +343,7 @@
   // hits: [{x,y,src:'match'|'blast'}]. Cada casa leva no máximo 1 acerto por chamada.
   function applyHits(s, hits, creates) {
     const done = new Set();
-    const res = { removed: [], sand: [], rocks: [], vines: [], blasts: [], created: [], score: 0 };
+    const res = { removed: [], sand: [], rocks: [], vines: [], blasts: [], created: [], clocks: [], score: 0 };
     const mult = Math.max(1, s.cascade);
     const bpos = aliveBosses(s).map((b) => [b, bossCells(s, b)]); // onde cada chefe estava antes deste acerto
     const blasted = new Set(); // ídolos atingidos por explosão de especial nesta chamada
@@ -361,7 +369,8 @@
         // Ídolo de Pedra: só explosão de joia especial machuca; combinação comum não faz nada nele
         if (p && p.kind === 'statue') { if (h.src === 'blast') blasted.add(p.boss); continue; }
         if (p && p.vine) {
-          p.vine = false; bump(s, 'vine'); res.score += SCORE.vine;
+          if (p.slime > 1) { p.slime--; res.vines.push({ x, y, wave, slime: true }); res.score += SCORE.vine; continue; } // gosma: 1ª combinação só afrouxa
+          p.vine = false; p.slime = 0; bump(s, 'vine'); res.score += SCORE.vine;
           res.vines.push({ x, y, wave });
           continue;
         }
@@ -381,6 +390,7 @@
           }
         }
         s.grid[y][x] = null;
+        if (p.clock) { s.moves += 2; res.clocks.push({ x, y }); } // Joia de Tempo: +2 movimentos
         res.removed.push({ piece: p, x, y, wave, src: h.src });
         if (p.color != null) bump(s, 'collect', p.color);
         res.score += SCORE.gem * mult;
@@ -439,8 +449,10 @@
     }
     const g = newGem(s, randInt(s, s.colors)), L = s.level;
     if (L.bombSpawn && countBombs(s) < (L.bombMax || 2) && rand(s) < L.bombSpawn) g.bomb = L.bombTimer || 10;
+    else if (L.clockSpawn && countClocks(s) < (L.clockMax || 2) && rand(s) < L.clockSpawn) g.clock = true;
     return g;
   }
+  function countClocks(s) { let n = 0; for (const row of s.grid) for (const p of row) if (p && p.clock) n++; return n; }
   function countBombs(s) { let n = 0; for (const row of s.grid) for (const p of row) if (p && p.bomb) n++; return n; }
   function countKind(s, kind) {
     let n = 0;
@@ -551,15 +563,23 @@
         const q = s.grid[y][x];
         if (kind === 'lineH' || kind === 'lineV') { q.special = rand(s) < 0.5 ? 'lineH' : 'lineV'; }
         else if (kind === 'barrel') { q.special = 'barrel'; q.armed = false; }
+        else if (kind === 'nova') { q.special = 'nova'; }
         cells.push([x, y]);
       }
-      return { hits: [{ x: idolCell[0], y: idolCell[1], src: 'blast' }].concat(at(cells)), combo: 'idol+' + (kind ? (kind === 'barrel' ? 'barrel' : 'line') : 'gem'), at: idolCell, color: c, converted: kind ? cells : null };
+      return { hits: [{ x: idolCell[0], y: idolCell[1], src: 'blast' }].concat(at(cells)), combo: 'idol+' + (kind ? (kind === 'barrel' ? 'barrel' : kind === 'nova' ? 'nova' : 'line') : 'gem'), at: idolCell, color: c, converted: kind ? cells : null };
     }
     if (!pa.special || !pb.special) return null;
     const lines = (p) => p.special === 'lineH' || p.special === 'lineV';
     const cells = [];
     let combo;
-    if (lines(pa) && lines(pb)) {
+    if (pa.special === 'nova' || pb.special === 'nova') {
+      combo = 'nova+x'; // Sol Ardente com outro especial: 3 linhas + 3 colunas + quadrado 5x5
+      for (let d = -1; d <= 1; d++) {
+        for (let i = 0; i < s.W; i++) cells.push([i, by + d]);
+        for (let i = 0; i < s.H; i++) cells.push([bx + d, i]);
+      }
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) cells.push([bx + dx, by + dy]);
+    } else if (lines(pa) && lines(pb)) {
       combo = 'line+line';
       for (let i = 0; i < s.W; i++) cells.push([i, by]);
       for (let i = 0; i < s.H; i++) cells.push([bx, i]);
@@ -650,6 +670,16 @@
           b.prank = 0;
           const from = bossPos(s, b), sw = prank(s, from);
           if (sw) yield { type: 'bossswap', idx, from, a: sw[0], b: sw[1] };
+        }
+        continue;
+      }
+      if (b.kind === 'frog') {
+        if (b.hitThisMove) { b.spit = 0; continue; }
+        b.spit = (b.spit || 0) + 1;
+        if (b.spit >= FROG_SPIT) {
+          b.spit = 0;
+          const from = bossPos(s, b), cells = spit(s, from, FROG_SLIME);
+          if (cells.length) yield { type: 'bossspit', idx, from, cells };
         }
         continue;
       }
@@ -761,6 +791,21 @@
       s.grid[a[1]][a[0]] = pa; s.grid[b[1]][b[0]] = pb;
     }
     return null;
+  }
+  // sapo cospe gosma: as n joias comuns mais perto dele ficam presas (cipó) com 2 camadas
+  function spit(s, from, n) {
+    if (!from) return [];
+    const taken = takenIds(s), cand = [];
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+      const p = s.grid[y][x];
+      if (!plainGem(p) || taken.has(p.id)) continue;
+      const d = Math.abs(x - from[0]) + Math.abs(y - from[1]);
+      if (d >= 1 && d <= 3) cand.push({ x, y, d: d + rand(s) * 0.9 });
+    }
+    cand.sort((a, b) => a.d - b.d);
+    const out = [];
+    for (const c of cand.slice(0, n)) { const p = s.grid[c.y][c.x]; p.vine = true; p.slime = 2; out.push([c.x, c.y]); }
+    return out;
   }
   // jiboia engole 1 joia comum encostada (cima/baixo/lados): vira um bolo de pedra (rocha de 1 camada, lump)
   function swallow(s, from) {

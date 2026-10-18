@@ -284,6 +284,7 @@
     if (ev.type === 'bossclaw') return onBossClaw(ev);
     if (ev.type === 'bosseat') return onBossEat(ev);
     if (ev.type === 'bossswap') return onBossSwap(ev);
+    if (ev.type === 'bossspit') return onBossSpit(ev);
     if (ev.type === 'bossmove') return onBossMove(ev);
     if (ev.type === 'mossgrow') return onMossGrow(ev);
     if (ev.type === 'bombtick') return onBombTick(ev);
@@ -311,6 +312,7 @@
       else { const v = V(r.p, r.x, r.y); v.s = 1.15; tween(v, { s: 1 }, 0.22, 'back'); }
     });
     for (const s of ev.sand) later(s.wave * WAVE + 0.04, () => { sandPuff(s.x, s.y); if (!sandSnd) { sandSnd = true; Sound.play('sand'); } });
+    for (const c of ev.clocks || []) later(0.05, () => { floats.push({ x: cellX(c.x), y: cellY(c.y), text: '+2', num: 2, color: '#8ff3ea', t: 0 }); sparks(c.x, c.y, 14, '#7ff3ea'); Sound.play('star', 2); later(0.15, renderHUD); });
     for (const s of ev.vines) later(s.wave * WAVE, () => { leaves(s.x, s.y); if (!vineSnd) { vineSnd = true; Sound.play('vine'); } });
     for (const c of ev.created) {
       const v = V(c.piece, c.x, c.y);
@@ -472,7 +474,7 @@
   // centro de um grupo de pontos já em coordenadas de tela
   const midOf = (pts) => [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length];
   // brilho em volta de cada chefe (marca que é o chefe)
-  const BOSS_GLOW = { scarab: '255,196,70', jaguar: '90,255,150', statue: '70,235,220', serpent: '80,240,200', boa: '215,190,90', monkey: '235,180,110' };
+  const BOSS_GLOW = { scarab: '255,196,70', jaguar: '90,255,150', statue: '70,235,220', serpent: '80,240,200', boa: '215,190,90', monkey: '235,180,110', frog: '110,235,90' };
   function bossHit(b) {
     const boss = state.bosses[b.idx], kind = (boss && boss.kind) || 'scarab';
     const cells = b.cells && b.cells.length ? b.cells : [b.from];
@@ -510,6 +512,19 @@
     await wait(0.75);
   }
   // macaco troca 2 joias: as duas cruzam em arco até o lugar novo (o motor já trocou na grade)
+  // sapo cospe gosma: as joias perto dele viram bolhas verdes presas (2 camadas)
+  async function onBossSpit(ev) {
+    bossAnims[ev.idx] = { type: 'eat', t0: now, from: ev.from ? [cellX(ev.from[0]), cellY(ev.from[1])] : null };
+    Sound.play('vine'); buzz([25, 30, 25]); addShake(0.3);
+    ev.cells.forEach(([x, y], k) => {
+      const p = state.grid[y][x];
+      if (!p) return;
+      const v = V(p, x, y); v.s = 0;
+      later(0.2 + k * 0.12, () => { tween(v, { s: 1 }, 0.3, 'back'); ring(x, y, 'rgba(110,235,90,0.95)', 1.2); leaves(x, y); Sound.play('rock'); });
+    });
+    later(0.75, () => { if (bossAnims[ev.idx] && bossAnims[ev.idx].type === 'eat') bossAnims[ev.idx] = null; });
+    await wait(0.8);
+  }
   async function onBossSwap(ev) {
     bossAnims[ev.idx] = { type: 'eat', t0: now };
     Sound.play('swap'); buzz([20, 40, 20]);
@@ -699,7 +714,7 @@
       if (at) { if (at !== 'hide' && boss.hp > 0 && !hasBossBar()) drawBossLives(boss, K, kind, at[0], at[1]); return; }
     }
     const cells = boss.hp > 0 ? bossScreenCells(boss) : [];
-    const bob = kind === 'statue' ? 0 : Math.sin(now * 3.2 + i * 2.1) * cs * 0.04;
+    const bob = kind === 'statue' || kind === 'boa' ? 0 : Math.sin(now * 3.2 + i * 2.1) * cs * 0.04;
     let key = K.idle, x = null, y = null, a = 1, sc = 1, dir = null; // dir = cabeça - cauda (serpente)
     if (cells.length) [x, y] = midOf(cells);
     if (kind === 'serpent' && cells.length === 2) dir = [cells[0][0] - cells[1][0], cells[0][1] - cells[1][1]];
@@ -868,6 +883,10 @@
       Sound.play('line'); Sound.play('barrel');
       for (let d = -1; d <= 1; d++) { beam('h', ay + d); beam('v', ax + d); }
       addShake(0.5); praise(2);
+    } else if (start.combo === 'nova+x') {
+      Sound.play('barrel'); Sound.play('line');
+      for (let d = -1; d <= 1; d++) { beam('h', ay + d); beam('v', ax + d); }
+      ring(ax, ay, 'rgba(255,130,40,0.95)', 3.2); fire(ax, ay, 44); addShake(0.7); praise(3);
     } else if (start.combo === 'barrel+barrel') {
       Sound.play('barrel');
       ring(ax, ay, 'rgba(255,140,40,0.9)', 2.8); fire(ax, ay, 40); addShake(0.6); praise(2);
@@ -883,6 +902,9 @@
       Sound.play('barrel'); addShake(0.35);
       if (ART.fx('shock')) { parts.push({ type: 'fxsprite', key: 'shock', x: cellX(b.x), y: cellY(b.y), s0: 0.6, s1: 3.6, life: 0, max: 0.55 }); sparks(b.x, b.y, 14, '#7ff3ea'); }
       else { ring(b.x, b.y, 'rgba(255,150,50,0.95)', 1.7); fire(b.x, b.y, 22); }
+    } else if (b.special === 'nova') {
+      Sound.play('barrel'); Sound.play('line');
+      beam('h', b.y); beam('v', b.x); ring(b.x, b.y, 'rgba(255,130,40,0.95)', 2.6); fire(b.x, b.y, 34); addShake(0.55);
     } else if (b.special === 'idol') {
       Sound.play('idol');
       if (ART.fx('sunbeam')) { b.area.forEach(([x, y], k) => parts.push({ type: 'fxsprite', key: 'sunbeam', x: cellX(x), y: cellY(y) - cs * 1.4, s0: 1, s1: 1, tall: true, life: -k * 0.02, max: 0.6 })); parts.push({ type: 'fxsprite', key: 'flare2', x: cellX(b.x), y: cellY(b.y), s0: 1, s1: 2.6, life: 0, max: 0.5 }); }
@@ -1350,7 +1372,28 @@
         ctx.restore();
       }
     }
-    if (p.vine) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(now * 0.35 + p.id); ctx.globalAlpha = v.a * (0.85 + 0.15 * Math.sin(now * 3 + p.id)); ctx.drawImage(ART.vineSprite(S), -(cs * s) / 2, -(cs * s) / 2, cs * s, cs * s); ctx.restore(); }
+    // Gosma do Sapo (18/10): bolha verde brilhante em cima da joia (2 camadas = grossa; 1 = rachada). Arte própria entra como nó 'slime'/'slime2'
+    if (p.vine && p.slime) {
+      const r = cs * s * 0.5, im = nodeImgObj(p.slime > 1 ? 'slime' : 'slime2'), wob = 1 + 0.03 * Math.sin(now * 3 + p.id);
+      ctx.save(); ctx.globalAlpha = v.a; ctx.translate(cx, cy); ctx.scale(wob, 2 - wob);
+      if (im) ctx.drawImage(im, -r, -r, r * 2, r * 2);
+      else {
+        const g = ctx.createRadialGradient(-r * 0.25, -r * 0.3, r * 0.1, 0, 0, r);
+        g.addColorStop(0, p.slime > 1 ? 'rgba(170,255,120,0.78)' : 'rgba(170,255,120,0.5)'); g.addColorStop(0.7, p.slime > 1 ? 'rgba(60,170,60,0.74)' : 'rgba(60,170,60,0.42)'); g.addColorStop(1, 'rgba(20,90,30,0.85)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, r * 0.95, r * 0.9, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.ellipse(-r * 0.3, -r * 0.35, r * 0.22, r * 0.12, -0.5, 0, Math.PI * 2); ctx.fill();
+        if (p.slime <= 1) { ctx.strokeStyle = 'rgba(20,70,20,0.9)'; ctx.lineWidth = r * 0.08; ctx.beginPath(); ctx.moveTo(-r * 0.4, -r * 0.1); ctx.lineTo(0, r * 0.1); ctx.lineTo(r * 0.3, -r * 0.2); ctx.stroke(); }
+      }
+      ctx.restore();
+    } else if (p.vine) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(now * 0.35 + p.id); ctx.globalAlpha = v.a * (0.85 + 0.15 * Math.sin(now * 3 + p.id)); ctx.drawImage(ART.vineSprite(S), -(cs * s) / 2, -(cs * s) / 2, cs * s, cs * s); ctx.restore(); }
+    // Joia de Tempo (18/10): ampulheta turquesa no canto; combinar dá +2 movimentos
+    if (p.clock) {
+      const im = nodeImgObj('ixmoves'), r = cs * s * 0.25, bx = cx + cs * s * 0.27, by = cy - cs * s * 0.27, pulse = 1 + 0.08 * Math.sin(now * 4 + p.id);
+      ctx.save(); ctx.globalAlpha = v.a; ctx.fillStyle = 'rgba(8,20,24,0.88)'; ctx.beginPath(); ctx.arc(bx, by, r * 1.25 * pulse, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(143,243,234,0.95)'; ctx.lineWidth = Math.max(1.5, cs * 0.03); ctx.stroke();
+      if (im) ctx.drawImage(im, bx - r * pulse, by - r * pulse, r * 2 * pulse, r * 2 * pulse);
+      ctx.restore();
+    }
     if (p.special === 'lineH' || p.special === 'lineV') {
       const [fx, fy] = ART.fusePoint(cs * s, p.special === 'lineV');
       const r = cs * (0.05 + Math.random() * 0.04);
@@ -1512,6 +1555,8 @@
     statue: { idle: 'sidle', hit: 'shit', move: 'sidle', dead: 'sdead', l3: 'slife3', l1: 'slife1', size: 2.05 },
     // jiboia (fase 12): enrolada, golpe, fugindo (também na saída), engolindo; vidas = carapaças do escaravelho (só se faltar a barra)
     // macaco (fase 18): pendurado no cipó, assustado, fugindo, trocando joias
+    // sapo (18/10): enquanto não chega a arte própria, usa os desenhos do macaco; trocar os nomes aqui (fidle, fhit...) e no gerar-arte-data.ps1
+    frog: { idle: 'midle', hit: 'mhit', move: 'mflee', dead: 'mflee', eat: 'mswap', l3: 'blife3', l1: 'blife1', size: 1.4 },
     monkey: { idle: 'midle', hit: 'mhit', move: 'mflee', dead: 'mflee', eat: 'mswap', l3: 'blife3', l1: 'blife1', size: 1.4 },
     boa: { idle: 'aidle', hit: 'ahit', move: 'aflee', dead: 'aflee', eat: 'aeat', l3: 'blife3', l1: 'blife1', size: 1.35 },
     serpent: { idle: 'kidle', hit: 'khit', move: 'kcoil', dead: 'kdead', l3: 'klife3', l1: 'klife1', size: 2.3,
@@ -2353,6 +2398,9 @@
         stepTime(0.05); update(0.05); draw(); if (t1 != null && now >= t1 + 0.25) clearInterval(iv);
       }, 50);
     }
+    // #novademo: Supernova, gosma e Joia de Tempo no tabuleiro; #sapodemo: fase 18 com o sapo (sprites provisórios)
+    else if (location.hash === '#novademo') { startLevel(3); setTimeout(() => { const g = state.grid; g[3][3].special = 'nova'; g[5][2].vine = true; g[5][2].slime = 2; g[2][5].vine = true; g[2][5].slime = 1; g[6][5].clock = true; g[1][1].clock = true; }, 700); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 50) clearInterval(iv); }, 50); }
+    else if (location.hash === '#sapodemo') { LEVELS[17] = Object.assign({}, LEVELS[17], { bossKind: 'frog' }); startLevel(18); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
     // #serpdemo: fase 20 com o laço rodando por timer (o Chrome sem janela não roda requestAnimationFrame) e um rastro em curva
     else if (location.hash === '#serpdemo') {
       startLevel(20);
