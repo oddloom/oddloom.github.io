@@ -701,3 +701,21 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .card.pre .streak { gap: 2px; }
 .card.pre .streak > :first-child { font-size: 11px; }
 .card.pre .tut-list.more { -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent); mask-image: linear-gradient(180deg, #000 78%, transparent); padding-bottom: 14px; }
+
+/* ---- 19/10: botões de fase com a arte do kit (moeda de madeira / placa de areia / emblema); o número é texto por cima ---- */
+.node.simple.coin, .node.simple.tile { overflow: visible; }
+.node.simple .btn-img { position: absolute; left: 50%; top: 50%; width: calc(var(--ns, 52px) * 1.22); max-width: none; height: auto; transform: translate(-50%, -44.6%); filter: drop-shadow(0 4px 5px rgba(0,0,0,.55)); pointer-events: none; }
+.node.simple.tile .btn-img { width: calc(var(--ns, 52px) * 1.12); transform: translate(-50%, -47%); }
+.node.simple.emblem .btn-img { width: calc(var(--ns, 52px) * 1.3); transform: translate(-50%, -50%); }
+.node.simple.coin .num, .node.simple.tile .num { font-family: var(--f-display); font-weight: 900; font-size: calc(var(--ns, 52px) * .52); color: #f3dfb0; text-shadow: 0 1px 0 #3a1c0c, 0 -1px 0 rgba(255,240,200,.35), 0 0 3px rgba(40,18,6,.7); z-index: 1; }
+.node.simple.tile .num { color: #8a5a2c; text-shadow: 0 1px 0 rgba(255,244,214,.75), 0 -1px 0 rgba(90,50,18,.25); }
+.node.simple .num.d2 { font-size: calc(var(--ns, 52px) * .4); letter-spacing: -.02em; }
+.node.simple.done .btn-img { filter: drop-shadow(0 0 6px rgba(255,214,110,.75)) drop-shadow(0 4px 5px rgba(0,0,0,.55)) saturate(1.12) brightness(1.1); }
+.node.simple.boss .btn-img { filter: drop-shadow(0 0 7px rgba(255,80,60,.8)) drop-shadow(0 4px 5px rgba(0,0,0,.55)) hue-rotate(-14deg) saturate(1.9) brightness(.95); }
+.node.simple.current .btn-img { animation: nodeBreath 2.4s ease-in-out infinite; filter: drop-shadow(0 0 12px rgba(255,214,110,.95)) drop-shadow(0 4px 6px rgba(0,0,0,.6)) brightness(1.12); }
+.node.simple.coin .disc, .node.simple.tile .disc { display: none; }
+.node.simple.coin.current, .node.simple.tile.current { width: var(--ns, 52px); height: var(--ns, 52px); }
+.node.simple.coin.current .num { font-size: calc(var(--ns, 52px) * .58); }
+.node.simple.coin.current .num.d2 { font-size: calc(var(--ns, 52px) * .44); }
+.node.simple.coin .st, .node.simple.tile .st { bottom: calc(var(--ns, 52px) * -.5); }
+.node.simple.boss.current .btn-img { filter: drop-shadow(0 0 12px rgba(255,214,110,.95)) drop-shadow(0 4px 6px rgba(0,0,0,.6)) hue-rotate(-14deg) saturate(1.9) brightness(1.05); }

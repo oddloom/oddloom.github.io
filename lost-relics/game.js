@@ -863,15 +863,17 @@
       ctx.drawImage(im, -w / 2, -h * anchor, w, h);
     }
     ctx.restore();
-    // ponto fraco (fases avançadas): a cor que fere o chefe agora, num selo com anel pulsando ao lado dele
+    // ponto fraco (fases avançadas): anel brilhante da cor que fere o chefe agora, em volta da casa dele (não cobre a joia)
     if (boss.weak != null && boss.hp > 0 && key !== K.dead) {
-      const gs = ART.pieceSprite({ id: 0, kind: 'gem', color: boss.weak }, S, 0);
-      const r = cs * 0.46, wx = x, wy = Math.max(r * 1.4, y - h * anchor - r * 0.2), pu = 0.5 + 0.5 * Math.sin(now * 4);
-      ctx.save(); ctx.globalAlpha = 0.95;
-      ctx.shadowColor = 'rgba(255,220,120,0.9)'; ctx.shadowBlur = cs * (0.25 + 0.25 * pu);
-      ctx.fillStyle = 'rgba(8,10,8,0.85)'; ctx.beginPath(); ctx.arc(wx, wy, r * 1.3, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = 'rgba(255,230,140,' + (0.6 + 0.4 * pu) + ')'; ctx.lineWidth = Math.max(2, cs * 0.05 * (1 + pu)); ctx.stroke();
-      if (gs) ctx.drawImage(gs, wx - r, wy - r, r * 2, r * 2);
+      const gm = ART.GEMS[boss.weak], pu = 0.5 + 0.5 * Math.sin(now * 4), r = cs * 0.5;
+      ctx.save(); ctx.translate(x, y + (kind === 'statue' ? 0 : 0));
+      ctx.lineCap = 'round';
+      ctx.shadowColor = ART.hsl(gm.h, Math.max(40, gm.s), 62, 1); ctx.shadowBlur = cs * (0.28 + 0.22 * pu);
+      ctx.strokeStyle = ART.hsl(gm.h, Math.max(30, gm.s), gm.key === 'diamond' ? 85 : 64, 0.55 + 0.4 * pu);
+      ctx.lineWidth = Math.max(3, cs * 0.075);
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.rotate(now * 1.6); ctx.setLineDash([cs * 0.22, cs * 0.5]); ctx.lineWidth = Math.max(2, cs * 0.05); ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.beginPath(); ctx.arc(0, 0, r + cs * 0.06, 0, Math.PI * 2); ctx.stroke();
       ctx.restore();
     }
     // ídolo: escudo de runas girando enquanto protegido, e piscando quando um golpe não pega
@@ -2380,6 +2382,12 @@
   ];
   const worldOf = (id) => Math.max(0, WORLDS.findIndex((w) => id >= w.from && id <= w.to));
   let mapWorld = null; // mundo aberto no mapa (null = o da fase atual)
+  // botão de fase (19/10, kit do Gemini): moeda de madeira (selva) / placa de areia (Egito) / emblema dourado na fase 1; sem a arte ainda, cai no círculo simples
+  const nodeFace = (id, wi) => {
+    const key = id === 1 ? 'btnemblem' : wi === 3 ? 'btnsand' : 'btncoin', src = ART.nodeImg(key);
+    if (!src) return '<span class="disc"></span><span class="num">' + id + '</span>';
+    return '<img class="btn-img" alt="" src="' + src + '">' + (id === 1 ? '' : '<span class="num' + (id >= 10 ? ' d2' : '') + '">' + id + '</span>');
+  };
   function buildMap() {
     const inner = $('mapInner'), scroll = $('mapScroll');
     const D = window.ART_DATA || {};
@@ -2407,7 +2415,7 @@
     const NODES = NEW3 && Wd.nodes && Wd.nodes.length === n ? Wd.nodes : null;
     const curRaw = NODES ? NODES[Math.min(save.unlocked - base, n) - 1] : rAt((rTot * (Math.min(save.unlocked - base, n) - 0.5)) / n);
     const offX = Math.max(w - mapW, Math.min(0, w / 2 - curRaw[0] * s)), offY = 0;
-    inner.style.setProperty('--ns', (23 * s).toFixed(1) + 'px'); inner.style.height = mapH + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
+    inner.style.setProperty('--ns', (30 * s).toFixed(1) + 'px'); inner.style.height = mapH + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
     const bgMap = NEW3 ? D[Wd.map] : D.map;
     $('screen-map').style.backgroundImage = bgMap ? 'url("' + bgMap + '")' : 'none';
     // mapa 3D: o fundo é o canvas WebGL atrás da coluna; sem isso, a pintura fica como fundo da coluna
@@ -2437,7 +2445,7 @@
       const id = base + i + 1, st = save.stars[id] || 0;
       const locked = id > save.unlocked, current = id === save.unlocked && !st;
       const gem = locked ? (L.boss ? 'g-amethyst' : 'g-night') : 'g-emerald';
-      const cls = 'node simple' + (st ? ' done' : '') + (L.boss ? ' boss' : '') + (locked ? ' locked' : '') + (current ? ' current' : '');
+      const cls = 'node simple' + (ART.nodeImg('btncoin') ? (WI === 3 ? ' tile' : ' coin') + (id === 1 ? ' emblem' : '') : '') + (st ? ' done' : '') + (L.boss ? ' boss' : '') + (locked ? ' locked' : '') + (current ? ' current' : '');
       const NI = (k) => ART.nodeImg(k), starSrc = (on) => NI(on ? 'star' : 'star0') || ART.icon(on ? 'star' : 'star0', 40);
       const stars = locked || current ? '' : '<span class="st">' + [0, 1, 2].map((k) => '<img alt="" src="' + starSrc(k < st) + '">').join('') + '</span>';
       const face = locked ? (L.boss ? '<img class="scarab" alt="" src="' + ART.icon('scarab', 80) + '">' : lock) : '<span class="num">' + id + '</span>';
@@ -2449,7 +2457,7 @@
         (current && ART.fx('sunorb') ? '<span class="node-orb"' + (hop ? ' style="--hx:' + hop[0].toFixed(0) + 'px;--hy:' + hop[1].toFixed(0) + 'px" data-hop="1"' : '') + '><img alt="" src="' + fxURL('sunorb') + '"></span>' : '') +
         // número em dígitos Solar pintados (a Uncial tem algarismos "antigos": o 4 e o 9 descem e ficam fora do centro)
         // 18/10 (pedido dele): ícone simples (círculo com número) em vez do medalhão pintado, que não encaixava nos troncos
-        '<span class="disc"></span><span class="num">' + id + '</span>' +
+        nodeFace(id, WI) +
         (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
     });
     const fogHtml = '<div class="map-fog" style="height:' + fogAt(fogPrevIdx).toFixed(0) + 'px"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>';
@@ -2650,7 +2658,7 @@
     else if (location.hash === '#diario') { startLevel('daily'); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 60) clearInterval(iv); }, 50); }
     else if (location.hash === '#diarioresultado') { startLevel('daily').then(() => { state.score = Math.round(level.best * 0.87); setTimeout(() => showDaily(), 300); }); }
     else if (location.hash === '#aranhademo') { startLevel(20); setTimeout(() => { state.grid[3][2] = { id: 9001, kind: 'rock', hp: 1, cocoon: 3 }; state.grid[5][5] = { id: 9002, kind: 'rock', hp: 1, cocoon: 1 }; }, 800); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
-    else if (location.hash === '#fracodemo') { startLevel(21); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
+    else if (location.hash === '#fracodemo') { startLevel(+(location.search.slice(1)) || 21); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
     else if (location.hash === '#oncademo') { startLevel(6); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
     else if (location.hash === '#sapodemo') { startLevel(13); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
     // #serpdemo: fase 20 com o laço rodando por timer (o Chrome sem janela não roda requestAnimationFrame) e um rastro em curva
