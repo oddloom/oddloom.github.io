@@ -7,7 +7,7 @@
   const FULL = ['........', '........', '........', '........', '........', '........', '........', '........'];
   const LEVELS = [
     // ---- Mundo 1 = AMAZÔNIA (18/10, pedido dele): fases 1-21, introdutórias, com todos os tutoriais e os bichos da floresta ----
-    // (onça-pintada, jiboia, sapo). As fases que eram 1-51 andaram +15 (save.v3 no game.js migra o progresso).
+    // (jiboia, sapo e aranha). As fases que eram 1-51 andaram +15 (save.v3 no game.js migra o progresso).
     { /*1*/ moves: 15, colors: 5, goals: [{ type: 'score', target: 1500 }], tut: 'swap', layout: FULL },
     { /*2*/ moves: 18, colors: 5, goals: [{ type: 'collect', color: 0, target: 25 }], tut: 'collect', layout: FULL },
     { /*3*/ moves: 14, colors: 5, goals: [{ type: 'score', target: 5000 }], tut: 'line', layout: FULL },
@@ -15,8 +15,8 @@
       '........', '........', '........', '...ss...', '..ssss..', '...ss...', '........', '........'] },
     { /*5*/ moves: 18, colors: 5, goals: [{ type: 'sand' }], tut: 'barrel', layout: [
       '........', '.ss..ss.', '.ss..ss.', '........', '........', '.ss..ss.', '.ss..ss.', '........'] },
-    // fase 6 = 1º chefe: ONÇA-PINTADA (mansa: 3 golpes)
-    { /*6*/ moves: 14, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'onca', bossHp: 7, boss: true, tut: 'onca', layout: FULL },
+    // fase 6: desafio introdutório de rubis (a onça foi removida)
+    { /*6*/ moves: 16, colors: 5, goals: [{ type: 'collect', color: 0, target: 22 }], layout: FULL },
     { /*7*/ moves: 16, colors: 5, goals: [{ type: 'artifact', target: 1 }], artifacts: 1, artifactMax: 1, tut: 'artifact', layout: [
       '....a...', '........', '........', '........', '........', '........', '........', '........'] },
     { /*8*/ moves: 18, colors: 5, goals: [{ type: 'vine', target: 8 }], tut: 'vine', layout: [
@@ -44,8 +44,8 @@
     { /*19*/ moves: 16, colors: 5, goals: [{ type: 'score', target: 12000 }], layout: FULL },
     // fase 20 = ARANHA-TECELÃ (18/10): casulos com contagem; quebrar o casulo antes de zerar ou perde 2 movimentos
     { /*20*/ weak: true, moves: 29, colors: 6, goals: [{ type: 'boss', target: 1 }], bossKind: 'spider', bossHp: 4, tut: 'spider', layout: FULL },
-    // fase 21 = chefe final da Amazônia: a ONÇA-PINTADA volta mais forte, com pedras na trilha
-    { /*21*/ weak: true, moves: 14, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'onca', bossHp: 5, boss: true, layout: [
+    // fase 21 = chefe final da Amazônia: a aranha volta entre as pedras da trilha
+    { /*21*/ weak: true, moves: 24, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'spider', bossHp: 5, boss: true, tut: 'spider', layout: [
       'r......r', '........', '........', '........', '........', '........', '........', 'r..rr..r'] },
     // ---- Mundo 2 = Selva Esmeralda (eram as fases 1-21) ----
     { /*22*/ moves: 15, colors: 5, goals: [{ type: 'score', target: 2000 }], layout: FULL },
@@ -64,13 +64,11 @@
       '...a....', '........', '........', '........', '........', '........', '........', '........'] },
     // fase 8 (15/10, pedido dele: escaravelhos também em fase comum): ENXAME, 4 escaravelhos de 1 vida + a meta de pontos.
     { /*29*/ weak: true, moves: 15, colors: 5, goals: [{ type: 'boss', target: 4 }, { type: 'score', target: 9000 }], scarab: 4, scarabHp: 3, layout: FULL },
-    // fase 9 (18/10, pedido dele): ONÇA-PINTADA normal, antes da Onça de Jade (que ele não gostou do design). Mesma regra da jade, mais mansa:
-    // a cada 3 jogadas crava a garra e vira 2 joias em pedra. Daqui pra frente tudo andou 1 fase (a jade virou a 11).
-    { /*30*/ weak: true, moves: 15, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'onca', bossHp: 4, boss: true, layout: FULL },
+    // fase 30: desafio de pontuação no lugar da antiga onça
+    { /*30*/ moves: 16, colors: 5, goals: [{ type: 'score', target: 10000 }], layout: FULL },
     { /*31*/ moves: 18, colors: 5, goals: [{ type: 'artifact', target: 2 }], artifacts: 2, artifactMax: 1, layout: ['....a...', '........', '........', '........', '........', '........', '........', '........'] },
-    // fase 10 = 2º chefe (14/10): ONÇA DE JADE. Monta numa joia como o escaravelho (golpe = joia dela ou encostada,
-    // 1 por jogada, ela salta pra longe) e a cada 3 jogadas crava a garra: 2 joias perto dela viram pedra.
-    { /*32*/ weak: true, moves: 26, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'jaguar', bossHp: 6, boss: true, tut: 'jaguar', layout: FULL },
+    // fase 32 = enxame real no lugar da antiga onça de jade
+    { /*32*/ weak: true, moves: 22, colors: 5, goals: [{ type: 'boss', target: 3 }], scarab: 3, scarabHp: 2, boss: true, tut: 'boss', layout: FULL },
     { /*33*/ moves: 12, colors: 5, goals: [{ type: 'rock', target: 10 }], layout: [
       '........', '........', '........', '........', '........', 'rr.rr.rr', '.r.rr.r.', '........'] },
     // fase 12 (15/10, ideia dele): JIBOIA. Monta numa joia (golpe = joia dela ou encostada, ela foge pra longe);
@@ -109,8 +107,8 @@
       '........', '........', '..b..b..', '........', '........', '........', '........', '........'] },
     { /*46*/ moves: 18, colors: 5, goals: [{ type: 'sand' }, { type: 'moss' }], layout: [
       'm......m', '........', '.ssssss.', '.ssssss.', '.ssssss.', '.ssssss.', '........', 'm......m'] },
-    // fase 25 = chefe: a Onça de Jade volta mais forte, com musgo nos cantos
-    { /*47*/ weak: true, moves: 29, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'jaguar', bossHp: 7, boss: true, layout: [
+    // fase 47 = jiboia do musgo no lugar da antiga onça de jade
+    { /*47*/ weak: true, moves: 27, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'boa', bossHp: 6, boss: true, tut: 'boa', layout: [
       'mm....mm', 'm......m', '........', '........', '........', '........', 'm......m', 'mm....mm'] },
     // fase 27 (18/10): pedido do Sacerdote com a SUPERNOVA: criar 1 Sol Ardente (6 em linha). O robô quase não planeja 6 em linha, então a taxa dele é baixa de propósito
     { /*48*/ moves: 34, colors: 5, goals: [{ type: 'make', special: 'nova', target: 1 }], tut: 'nova', layout: FULL },

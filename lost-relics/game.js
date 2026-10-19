@@ -51,6 +51,8 @@
   // skins compradas no Códice (16/10): owned = ids comprados; skins = a que está em uso em cada aba (null = a de fábrica)
   save.owned = save.owned || [];
   save.skins = Object.assign({ gem: null, word: null, trail: null }, save.skins);
+  // O modo normal abre a jornada; vencer uma fase libera a versão difícil competitiva dela.
+  save.hardBest = save.hardBest || {};
   // Trilha do Explorador (16/10, adaptado do "win streak" do Candy): vitórias seguidas (0-3) viram vantagem grátis na fase seguinte
   save.streak = save.streak || 0;
   // link de teste (tools/montar-link.js): todas as fases abertas, pra testar qualquer uma em qualquer aparelho
@@ -70,6 +72,38 @@
   const applySkins = () => ART.setSkins({ gem: save.skins.gem, fx: save.skins.trail });
   const wordImg = (k) => (save.skins.word === 'rare' && ART.nodeImg('wr_' + k)) || ART.nodeImg(k);
   const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
+  const cloneLevel = (L) => Object.assign({}, L, {
+    goals: L.goals.map((g) => Object.assign({}, g)), layout: L.layout.slice(), stars: L.stars.slice(),
+  });
+  function normalLevel(base) {
+    const L = cloneLevel(base);
+    L.normal = true;
+    L.moves = Math.max(base.moves + 4, Math.ceil(base.moves * 1.25));
+    L.weak = false;
+    if (L.bossHp) L.bossHp = Math.max(2, Math.ceil(L.bossHp * 0.75));
+    if (L.scarabHp) L.scarabHp = Math.max(1, Math.ceil(L.scarabHp * 0.75));
+    if (L.bombTimer) L.bombTimer += 3;
+    if (L.bombSpawn) L.bombSpawn *= 0.6;
+    if (L.clockSpawn) L.clockSpawn *= 1.5;
+    L.goals.forEach((g) => {
+      if (g.target && ['score', 'collect', 'rock', 'vine', 'make'].includes(g.type)) g.target = Math.max(1, Math.ceil(g.target * 0.82));
+    });
+    L.stars = L.stars.map((n) => Math.max(1, Math.round(n * 0.82)));
+    return L;
+  }
+  function hardSeed(week, levelId) {
+    let h = 2166136261;
+    const key = 'lost-relics:level:' + week + ':' + levelId;
+    for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function levelMode(id, hard) {
+    const base = LEVELS[id - 1];
+    if (!hard) return normalLevel(base);
+    const L = cloneLevel(base), week = Records.week();
+    L.hard = true; L.week = week; L.seed = hardSeed(week, id);
+    return L;
+  }
 
   // ---------- tempo do jogo: animações e agendamentos ----------
   const tweens = [], timers = [];
@@ -157,13 +191,13 @@
   }
   const cellX = (x) => ox + (x + 0.5) * cs, cellY = (y) => oy + (y + 0.5) * cs;
 
-  async function startLevel(id, boosts) {
-    const Ld = id === 'daily' ? dailyLevel() : id === 'weekly' ? weeklyLevel() : LEVELS[id - 1];
+  async function startLevel(id, boosts, hard) {
+    const Ld = id === 'daily' ? dailyLevel() : id === 'weekly' ? weeklyLevel() : levelMode(id, !!hard);
     if ((Ld.bossKind || Ld.scarab) && !EXTRA.done) await extraReady();
     level = Ld;
-    weeklyReplay = level.weekly ? [] : weeklyReplay;
-    state = level.daily ? dailyState(level) : LR.createState(level, level.weekly ? level.seed : ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
-    if (!level.daily && !level.weekly) { applyBoosts(boosts || {}); applyStreak(); } // desafios competitivos são iguais pra todos: sem loja nem trilha
+    weeklyReplay = level.weekly || level.hard ? [] : weeklyReplay;
+    state = level.daily ? dailyState(level) : LR.createState(level, level.weekly || level.hard ? level.seed : ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
+    if (!level.daily && !level.weekly && !level.hard) { applyBoosts(boosts || {}); applyStreak(); } // modos competitivos são iguais pra todos: sem loja nem trilha
     hammerMode = false;
     RUIN_KEYS.forEach(nodeImgObj);
     vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = []; serpTrail = []; bombTick = {}; threads = []; barShown = null; barHp = null; barHitT = -9;
@@ -209,7 +243,7 @@
     if (n >= 2 && l.length) take().special = 'barrel';
     if (n >= 3 && l.length) { const p = take(); p.special = 'idol'; p.color = null; }
   }
-  const breakStreak = () => { if (!(level && (level.daily || level.weekly)) && save.streak) { save.streak = 0; persist(); } };
+  const breakStreak = () => { if (!(level && (level.daily || level.weekly || level.hard)) && save.streak) { save.streak = 0; persist(); } };
   // fileira da trilha na janela antes da fase: 3 vantagens, acesas até a sequência atual
   const streakHTML = () => {
     const n = Math.min(3, save.streak || 0);
@@ -304,7 +338,7 @@
       await Promise.all([tween(va, { x: a[0], y: a[1] }, 0.17, 'back'), tween(vb, { x: b[0], y: b[1] }, 0.17, 'back')]);
       busy = false; return;
     }
-    if (level.weekly) weeklyReplay.push([a[0], a[1], b[0], b[1]]);
+    if (level.weekly || level.hard) weeklyReplay.push([a[0], a[1], b[0], b[1]]);
     praiseLevel = 0;
     renderHUD();
     if (start.combo) comboFx(start);
@@ -1823,8 +1857,9 @@
     const parts = (L.weak ? [T('weak.hint')] : []).concat(key ? T(key).split('|') : []);
     return parts.map((t, i) => '<li' + (L.weak && i === 0 ? ' class="weak"' : '') + '>' + t + '</li>').join('');
   };
-  function openPre(id) {
-    const L = LEVELS[id - 1];
+  function openPre(id, hard) {
+    const hardOpen = !!save.stars[id], hardMode = !!hard && hardOpen;
+    const L = levelMode(id, hardMode);
     const tutKey = L.tut ? 'tut.' + L.tut : id === 25 ? 'tip.combo' : null;
     const rows = L.goals.map((g) => {
       const gg = Object.assign({}, g);
@@ -1835,42 +1870,58 @@
     const card = openModal(
       '<div class="eyebrow">' + T('map.title' + (worldOf(id) ? worldOf(id) + 1 : '')).toUpperCase() + '</div>' +
       '<h2 class="metal">' + T('level') + ' ' + id + '</h2><div class="orn"><i></i></div>' +
+      '<div class="mode-pick"><button type="button" id="mNormal" class="' + (!hardMode ? 'on' : '') + '">' + T('mode.normal') + '</button>' +
+      '<button type="button" id="mHard" class="' + (hardMode ? 'on' : '') + '"' + (hardOpen ? '' : ' disabled') + '>' + T(hardOpen ? 'mode.hard' : 'mode.hard.locked') + '</button></div>' +
       (L.boss ? '<div class="boss-tag">' + T('boss') + '</div>' : '') +
       '<div class="goal-list">' + rows + '</div>' +
       '<div class="moves-line">' + T('moves') + ': <b>' + L.moves + '</b></div>' +
       // (os parênteses importam: sem eles, com a arte do chefe carregada, o texto do tutorial sumia)
       (tutKey || L.weak ? '<div class="tut"><img alt="" src="' + (((L.boss || L.tut === 'boa' || L.tut === 'monkey' || L.tut === 'frog' || L.tut === 'spider') && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || (TUT_ART[L.tut] && ART.nodeImg(TUT_ART[L.tut])) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><ul class="tut-list">' + tutBullets(tutKey, L) + '</ul></div>' : '') +
-      (ART.nodeImg('ixarrow') ? streakHTML() : '') +
-      boostPicker() +
+      (hardMode ? '<p class="hard-rules">' + T('mode.hard.rules') + '</p><div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' : (ART.nodeImg('ixarrow') ? streakHTML() : '')) +
+      (hardMode ? '' : boostPicker()) +
       '<div class="btns"><button class="btn" id="mPlay" type="button">' + T('play') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
     card.classList.add('pre');
+    if (hardMode) card.classList.add('hard-pre');
     // se a explicação passar da caixa, mostra um degradê embaixo (só ela rola)
     const tl = card.querySelector('.tut-list');
     if (tl) requestAnimationFrame(() => { tl.classList.toggle('more', tl.scrollHeight > tl.clientHeight + 2); tl.onscroll = () => tl.classList.toggle('more', tl.scrollTop + tl.clientHeight < tl.scrollHeight - 4); });
     const picked = {};
     card.querySelectorAll('.boost').forEach((b) => { b.onclick = () => { const k = b.dataset.k; picked[k] = !picked[k]; b.classList.toggle('on', picked[k]); b.setAttribute('aria-pressed', picked[k]); Sound.play('click'); }; });
-    const shopLink = card.querySelector('#mShop'); if (shopLink) shopLink.onclick = () => { Sound.play('click'); openShop(() => openPre(id)); };
+    const shopLink = card.querySelector('#mShop'); if (shopLink) shopLink.onclick = () => { Sound.play('click'); openShop(() => openPre(id, false)); };
+    card.querySelector('#mNormal').onclick = () => { if (hardMode) { Sound.play('click'); openPre(id, false); } };
+    card.querySelector('#mHard').onclick = () => {
+      if (!hardOpen || hardMode) return;
+      Sound.play('click');
+      if (!Records.getName()) return askWeeklyName(() => openPre(id, false), () => openPre(id, true));
+      openPre(id, true);
+    };
     card.querySelector('#mPlay').onclick = () => {
       Sound.init(); Sound.play('click');
+      if (hardMode && !Records.getName()) return askWeeklyName(() => openPre(id, false), () => openPre(id, true));
       for (const k in picked) if (picked[k] && save.items[k] > 0) save.items[k]--; else delete picked[k];
-      persist(); closeModal(); wipe(() => startLevel(id, picked));
+      persist(); closeModal(); wipe(() => startLevel(id, picked, hardMode));
     };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); if (scene !== 'map') openMap(); };
+    if (hardMode) loadWeeklyRows(card, Records.listLevel(id, L.week));
   }
 
   async function showWin() {
     if (level.daily) return showDaily();
     Ads.gameplay(false);
-    const id = level.id, stars = LR.stars(state);
-    const prevBest = save.best[id] || 0, isNew = state.score > prevBest && prevBest > 0;
-    save.stars[id] = Math.max(save.stars[id] || 0, stars);
-    save.best[id] = Math.max(prevBest, state.score);
-    save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, id + 1));
-    save.wins = (save.wins || 0) + 1;
-    save.streak = Math.min(3, (save.streak || 0) + 1);
-    const earned = coinsOf(state.score) + stars * 10;
-    save.coins += earned;
+    const id = level.id, hardMode = !!level.hard, stars = LR.stars(state);
+    const prevBest = hardMode ? (save.hardBest[id] || 0) : (save.best[id] || 0), isNew = state.score > prevBest && prevBest > 0;
+    if (hardMode) {
+      save.hardBest[id] = Math.max(prevBest, state.score);
+    } else {
+      save.stars[id] = Math.max(save.stars[id] || 0, stars);
+      save.best[id] = Math.max(prevBest, state.score);
+      save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, id + 1));
+      save.wins = (save.wins || 0) + 1;
+      save.streak = Math.min(3, (save.streak || 0) + 1);
+    }
+    const earned = hardMode ? 0 : coinsOf(state.score) + stars * 10;
+    if (!hardMode) save.coins += earned;
     persist();
     Sound.play('win'); buzz([30, 60, 30, 60, 90]);
     setTimeout(() => Sound.voice('win', I18N.lang), 350);
@@ -1883,10 +1934,10 @@
       (ART.uiImages().coinbar && ART.nodeImg('s0')
         ? '<div class="final-score painted"><span id="mScore" class="digits"></span></div>'
         : '<div class="final-score"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '">+<span id="mScore">0</span></div>') +
-      '<div class="best' + (isNew ? ' new' : '') + '">' + (isNew ? T('win.new') + ' · ' : '') + walletHTML() + '</div>' +
-      '<div class="moves-line streak-up">' + T('streak.up', { n: save.streak }) + '</div>' +
+      '<div class="best' + (isNew ? ' new' : '') + '">' + (isNew ? T('win.new') + ' · ' : '') + (hardMode ? T('mode.hard.score', { n: state.score.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') }) : walletHTML()) + '</div>' +
+      (hardMode ? '<div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' : '<div class="moves-line streak-up">' + T('streak.up', { n: save.streak }) + '</div>') +
       (last ? '<p>' + T('map.soon') + '</p>' : '') +
-      '<div class="btns">' + (last ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
+      '<div class="btns">' + (last || hardMode ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
     const imgs = card.querySelectorAll('.stars-big img');
     // estrelas pintadas: começa no encaixe de pedra vazio e troca pela estrela Solar ao acender
@@ -1895,7 +1946,7 @@
     if (vOn) card.querySelector('.stars-big').classList.add('painted');
     if (vOn && vOff) card.querySelector('.stars-big').classList.add('slots');
     const lightStar = (im) => { if (vOn) im.src = vOn; im.classList.add('on'); };
-    const sc = { v: 0 }, target = earned;
+    const sc = { v: 0 }, target = hardMode ? state.score : earned;
     tween(sc, { v: target }, 1, 'out').then(() => {});
     const scoreEl = card.querySelector('#mScore');
     const paintedScore = scoreEl.classList.contains('digits');
@@ -1910,6 +1961,7 @@
       if (save.wins % 3 === 0) Ads.interstitial(go); else go();
     };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
+    if (hardMode) loadWeeklyRows(card, Records.submitLevel(id, state.score, { week: level.week, replay: weeklyReplay.slice() }));
     for (let i = 0; i < stars; i++) { await wait(0.35); lightStar(imgs[i]); Sound.play('star', i); }
   }
 
@@ -1925,15 +1977,15 @@
       (state.cursed ? '<p>' + T('lose.cursed') + '</p>' : '') +
       '<div class="moves-line">' + T('lose.left') + '</div>' +
       '<div class="goal-list">' + rows + '</div>' +
-      (save.streak ? '<div class="moves-line streak-lost">' + T('streak.lost') + '</div>' : '') +
+      (!level.hard && save.streak ? '<div class="moves-line streak-lost">' + T('streak.lost') + '</div>' : '') +
       '<div class="btns">' +
       '<button class="btn stack" id="mExtra" type="button" hidden>' + T('lose.extra') + '<span class="sub">' + T('lose.extraAd') + '</span></button>' +
       '<button class="btn' + (usedExtra ? '' : ' stone') + '" id="mRetry" type="button">' + T('retry') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
     // perdeu e desistiu (tentar de novo ou mapa) = trilha zera; se pegar +5 movimentos e vencer, mantém
-    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(() => startLevel(id)); };
+    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(() => startLevel(id, {}, !!level.hard)); };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(openMap); };
-    if (!usedExtra && !state.cursed) { // maldição não se resolve com mais movimentos
+    if (!level.hard && !usedExtra && !state.cursed) { // desafio difícil e maldição não aceitam movimentos extras
       Ads.offerReward({
         onAvailable(show) {
           const b = card.querySelector('#mExtra');
@@ -1966,7 +2018,7 @@
     };
     paint();
     card.querySelector('#mResume').onclick = () => { Sound.play('click'); closeModal(); };
-    card.querySelector('#mRestart').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(() => startLevel(level.id)); };
+    card.querySelector('#mRestart').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(() => startLevel(level.id, {}, !!level.hard)); };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(openMap); };
     card.querySelector('#mSfx').onclick = () => { Sound.setSfx(!Sound.sfx); paint(); };
     card.querySelector('#mMusic').onclick = () => { Sound.setMusic(!Sound.music); paint(); };
@@ -2107,7 +2159,7 @@
   }
   function updateHammerBtn() {
     const b = $('btnHammer'); if (!b) return;
-    b.hidden = scene !== 'play' || (level && (level.daily || level.weekly)) || !(save.items.hammer > 0);
+    b.hidden = scene !== 'play' || (level && (level.daily || level.weekly || level.hard)) || !(save.items.hammer > 0);
     b.classList.toggle('on', hammerMode);
     const n = save.items.hammer || 0, hc = $('hammerCount');
     if (b.classList.contains('painted')) {
@@ -2115,7 +2167,7 @@
       hc.innerHTML = digitsHTML(n); hc.classList.add('digits');
     } else hc.textContent = '×' + n;
   }
-  $('btnHammer').onclick = () => { if (busy || scene !== 'play' || !(save.items.hammer > 0)) return; hammerMode = !hammerMode; Sound.play('click'); updateHammerBtn(); };
+  $('btnHammer').onclick = () => { if (busy || scene !== 'play' || (level && level.hard) || !(save.items.hammer > 0)) return; hammerMode = !hammerMode; Sound.play('click'); updateHammerBtn(); };
   async function useHammer(c) {
     hammerMode = false; save.items.hammer--; persist(); updateHammerBtn();
     busy = true; praiseLevel = 0;
@@ -2233,7 +2285,7 @@
     const box = card.querySelector('.weekly-list');
     promise.then((rows) => { if (box && box.isConnected) box.innerHTML = weeklyRowsHTML(rows); }).catch(() => { if (box && box.isConnected) box.innerHTML = weeklyRowsHTML([]); });
   }
-  function askWeeklyName(back) {
+  function askWeeklyName(back, next) {
     const card = openModal(
       '<div class="eyebrow">' + T('weekly.btn') + '</div><h2 class="metal">' + T('weekly.name') + '</h2><div class="orn"><i></i></div>' +
       '<input id="weeklyName" class="weekly-name" maxlength="18" autocomplete="nickname" placeholder="' + T('weekly.placeholder') + '" value="' + esc(Records.getName()) + '">' +
@@ -2243,7 +2295,8 @@
     const go = () => {
       const name = Records.setName(input.value);
       if (name.length < 2) { input.focus(); return; }
-      Sound.play('click'); closeModal(); wipe(() => startLevel('weekly'));
+      Sound.play('click'); closeModal();
+      if (next) next(); else wipe(() => startLevel('weekly'));
     };
     card.querySelector('#mSaveName').onclick = go;
     input.onkeydown = (e) => { if (e.key === 'Enter') go(); };
@@ -2470,11 +2523,10 @@
   ];
   const worldOf = (id) => Math.max(0, WORLDS.findIndex((w) => id >= w.from && id <= w.to));
   let mapWorld = null; // mundo aberto no mapa (null = o da fase atual)
-  // botão de fase (19/10, kit do Gemini): moeda de madeira (selva) / placa de areia (Egito) / emblema dourado na fase 1; sem a arte ainda, cai no círculo simples
-  const nodeFace = (id, wi) => {
-    const key = id === 1 ? 'btnemblem' : wi === 3 ? 'btnsand' : 'btncoin', src = ART.nodeImg(key);
-    if (!src) return '<span class="disc"></span><span class="num">' + id + '</span>';
-    return '<img class="btn-img" alt="" src="' + src + '">' + (id === 1 ? '' : '<span class="num' + (id >= 10 ? ' d2' : '') + '">' + id + '</span>');
+  // Família pintada no próprio projeto: normal, atual, difícil concluída e bloqueada.
+  const nodeFace = (id, state) => {
+    const src = 'assets/mapa/botoes-v2/' + state + '.png';
+    return '<img class="btn-img" alt="" src="' + src + '"><span class="num' + (id >= 10 ? ' d2' : '') + '">' + id + '</span>';
   };
   function buildMap() {
     const inner = $('mapInner'), scroll = $('mapScroll');
@@ -2517,10 +2569,7 @@
     const at = (d) => { for (let i = 0; i < seg.length; i++) { if (d <= seg[i] || i === seg.length - 1) { const k = Math.min(1, d / seg[i]); return [P[i][0] + (P[i + 1][0] - P[i][0]) * k, P[i][1] + (P[i + 1][1] - P[i][1]) * k]; } d -= seg[i]; } return P[P.length - 1]; };
     const pts = NODES ? NODES.map(([x, y]) => [offX + x * s, offY + y * s]) : WL.map((L, i) => at((tot * (i + 0.5)) / n));
     const curIdx = Math.min(save.unlocked - base, n) - 1;
-    // Orbe Solar (o símbolo dele no lugar do explorador): flutua em cima da fase atual; se a fase andou desde a última vez
-    // que o mapa abriu, ele pula da anterior até a nova (hx, hy = distância entre as duas)
-    const prevIdx = save.orbAt != null ? save.orbAt - base : -1;
-    const hop = prevIdx >= 0 && prevIdx < curIdx ? [pts[prevIdx][0] - pts[curIdx][0], pts[prevIdx][1] - pts[curIdx][1]] : null;
+    // A fase atual fica estática. O antigo orbe flutuante e a aura giratória foram removidos.
     save.orbAt = base + curIdx;
     // borda da névoa: no meio do caminho entre a fase atual e a próxima
     const fogAt = (i) => (i >= n - 1 ? pts[n - 1][1] - 90 * s : (pts[i][1] + pts[i + 1][1]) / 2 + 10);
@@ -2533,20 +2582,12 @@
       const id = base + i + 1, st = save.stars[id] || 0;
       const locked = id > save.unlocked, current = id === save.unlocked && !st;
       const gem = locked ? (L.boss ? 'g-amethyst' : 'g-night') : 'g-emerald';
-      const cls = 'node simple' + (ART.nodeImg('btncoin') ? (WI === 3 ? ' tile' : ' coin') + (id === 1 ? ' emblem' : '') : '') + (st ? ' done' : '') + (L.boss ? ' boss' : '') + (locked ? ' locked' : '') + (current ? ' current' : '');
-      const NI = (k) => ART.nodeImg(k), starSrc = (on) => NI(on ? 'star' : 'star0') || ART.icon(on ? 'star' : 'star0', 40);
-      const stars = locked || current ? '' : '<span class="st">' + [0, 1, 2].map((k) => '<img alt="" src="' + starSrc(k < st) + '">').join('') + '</span>';
-      const face = locked ? (L.boss ? '<img class="scarab" alt="" src="' + ART.icon('scarab', 80) + '">' : lock) : '<span class="num">' + id + '</span>';
+      const stateName = locked ? 'bloqueada' : current ? 'atual' : save.hardBest[id] ? 'dificil' : 'normal';
+      const cls = 'node simple art-v2 state-' + stateName + (st ? ' done' : '') + (L.boss ? ' boss' : '') + (locked ? ' locked' : '') + (current ? ' current' : '');
       html += '<button type="button" class="' + cls + '" data-id="' + id + '" style="left:' + pts[i][0].toFixed(1) + 'px;top:' + pts[i][1].toFixed(1) + 'px;z-index:' + (current ? 30 : 10 + i) + '"' +
         (locked ? ' disabled' : '') + ' aria-label="' + T('level') + ' ' + id + (locked ? ' (bloqueada)' : '') + '">' +
         // 14/10: sem rótulo "FASE" em cima da fase atual (pedido dele: o sol e o número já bastam)
-        // fase atual = medalhão limpo + aura solar pintada atrás (a arte "current" tinha brilho verde que serrilhava no recorte)
-        (current && NI('aura') ? '<img class="node-aura" alt="" src="' + NI('aura') + '"><img class="node-aura b" alt="" src="' + NI('aura') + '">' : '') +
-        (current && ART.fx('sunorb') ? '<span class="node-orb"' + (hop ? ' style="--hx:' + hop[0].toFixed(0) + 'px;--hy:' + hop[1].toFixed(0) + 'px" data-hop="1"' : '') + '><img alt="" src="' + fxURL('sunorb') + '"></span>' : '') +
-        // número em dígitos Solar pintados (a Uncial tem algarismos "antigos": o 4 e o 9 descem e ficam fora do centro)
-        // 18/10 (pedido dele): ícone simples (círculo com número) em vez do medalhão pintado, que não encaixava nos troncos
-        nodeFace(id, WI) +
-        (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
+        nodeFace(id, stateName) + (locked ? lock : '') + '</button>';
     });
     const fogHtml = '<div class="map-fog" style="height:' + fogAt(fogPrevIdx).toFixed(0) + 'px"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>';
     const FX = NEW3 ? {} : D.mapFx || {}, pos = (p) => 'left:' + (offX + p[0] * s).toFixed(1) + 'px;top:' + (offY + p[1] * s).toFixed(1) + 'px';
@@ -2683,6 +2724,7 @@
     },
     swap(a, b) { if (!busy) trySwap(a, b); },
     get state() { return state; }, get busy() { return busy; }, get scene() { return scene; },
+    get save() { return save; }, openPre, startLevel,
     findMove() { return state && LR.findMove(state); },
   };
 

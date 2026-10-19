@@ -4,7 +4,7 @@
   'use strict';
   const KEY = 'lostrelics.records.v1';
   const API = String(root.LR_RECORDS_API || '').replace(/\/$/, '');
-  let data = { name: '', playerId: '', token: '', scores: {} };
+  let data = { name: '', playerId: '', token: '', scores: {}, levelScores: {} };
   try { data = Object.assign(data, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} };
   const cleanName = (v) => String(v || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 18);
@@ -18,6 +18,10 @@
   function setName(v) { data.name = cleanName(v); save(); return data.name; }
   const getName = () => data.name || '';
   const localRows = (w) => Object.values(data.scores[w] || {}).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)).slice(0, 50);
+  const localLevelRows = (w, levelId) => {
+    const row = data.levelScores[w] && data.levelScores[w][levelId];
+    return row ? [Object.assign({ me: true }, row)] : [];
+  };
 
   async function request(path, options) {
     if (!API) throw new Error('offline');
@@ -54,5 +58,31 @@
     }
     return list(w);
   }
-  root.Records = { online: !!API, week, getName, setName, list, submit };
+  async function listLevel(levelId, w) {
+    const key = w || week(), id = Math.max(1, Math.floor(+levelId || 0));
+    if (!API) return localLevelRows(key, id);
+    try {
+      const r = await request('/level-leaderboard?week=' + encodeURIComponent(key) + '&level=' + id);
+      return r.rows || [];
+    } catch (e) { return localLevelRows(key, id); }
+  }
+  async function submitLevel(levelId, score, meta) {
+    const w = (meta && meta.week) || week(), id = Math.max(1, Math.floor(+levelId || 0)), name = cleanName(data.name);
+    if (!name) throw new Error('name');
+    data.levelScores[w] = data.levelScores[w] || {};
+    const old = data.levelScores[w][id];
+    if (!old || score > old.score) data.levelScores[w][id] = { name, score: Math.max(0, Math.floor(score)), me: true };
+    save();
+    if (API) {
+      try {
+        await register();
+        await request('/level-score', { method: 'POST', body: JSON.stringify({
+          playerId: data.playerId, token: data.token, name, week: w, level: id,
+          score: Math.max(0, Math.floor(score)), replay: meta && meta.replay, version: 1,
+        }) });
+      } catch (e) { /* o melhor placar local continua disponível */ }
+    }
+    return listLevel(id, w);
+  }
+  root.Records = { online: !!API, week, getName, setName, list, submit, listLevel, submitLevel };
 })(window);
