@@ -653,6 +653,18 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .daily-stars { font-size: 34px; letter-spacing: .15em; color: #ffd76a; text-shadow: 0 2px 0 #000, 0 0 14px rgba(255,200,80,.7); }
 .daily-stars span { color: rgba(255,255,255,.15); text-shadow: none; }
 
+/* Recorde semanal: competição limpa, sem boosters; a moldura continua usando o kit pintado do jogo. */
+.weekly-rules { margin: 8px 0 12px; color: var(--bone-dim); font-size: 14px; line-height: 1.35; }
+.weekly-name { width: 100%; box-sizing: border-box; border: 1px solid rgba(231,190,92,.55); border-radius: 8px; padding: 12px 14px; background: rgba(8,16,12,.9); color: var(--bone); font: 700 17px var(--f-body); text-align: center; outline: none; }
+.weekly-name:focus { border-color: var(--gold-hi); box-shadow: 0 0 14px rgba(231,190,92,.25); }
+.weekly-board { width: 100%; margin: 10px 0 4px; display: grid; gap: 5px; }
+.weekly-row { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; padding: 7px 10px; border-radius: 7px; background: rgba(5,18,13,.62); color: var(--bone); }
+.weekly-row.me { color: var(--gold-hi); background: rgba(91,64,18,.42); }
+.weekly-row i { font-style: normal; color: var(--gold); text-align: center; }
+.weekly-row b { color: inherit; }
+.weekly-row strong { color: var(--gold-hi); font-family: var(--f-display); }
+.weekly-status { margin: 7px 0; font-size: 12px; color: var(--bone-dim); }
+
 /* Orbe Solar no mapa (18/10): flutua em cima da fase atual; pula da anterior quando a fase avança */
 .node-orb { position: absolute; left: 50%; top: -44px; width: 44px; height: 44px; margin-left: -22px; pointer-events: none; z-index: 3; }
 .node-orb img { width: 100%; height: 100%; display: block; animation: orbFloat 1.9s ease-in-out infinite; filter: drop-shadow(0 0 10px rgba(255,190,80,.9)); }

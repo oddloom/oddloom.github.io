@@ -158,11 +158,12 @@
   const cellX = (x) => ox + (x + 0.5) * cs, cellY = (y) => oy + (y + 0.5) * cs;
 
   async function startLevel(id, boosts) {
-    const Ld = id === 'daily' ? dailyLevel() : LEVELS[id - 1];
+    const Ld = id === 'daily' ? dailyLevel() : id === 'weekly' ? weeklyLevel() : LEVELS[id - 1];
     if ((Ld.bossKind || Ld.scarab) && !EXTRA.done) await extraReady();
     level = Ld;
-    state = level.daily ? dailyState(level) : LR.createState(level, ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
-    if (!level.daily) { applyBoosts(boosts || {}); applyStreak(); } // a Jogada do Dia é igual pra todos: sem vantagem de loja nem trilha
+    weeklyReplay = level.weekly ? [] : weeklyReplay;
+    state = level.daily ? dailyState(level) : LR.createState(level, level.weekly ? level.seed : ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
+    if (!level.daily && !level.weekly) { applyBoosts(boosts || {}); applyStreak(); } // desafios competitivos são iguais pra todos: sem loja nem trilha
     hammerMode = false;
     RUIN_KEYS.forEach(nodeImgObj);
     vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = []; serpTrail = []; bombTick = {}; threads = []; barShown = null; barHp = null; barHitT = -9;
@@ -176,7 +177,7 @@
     scene = 'play';
     $('screen-map').hidden = true; $('screen-menu').hidden = true; $('hud').hidden = false;
     buildGoalChips();
-    if (level.daily) { $('goals').innerHTML = ''; chipEls = []; }
+    if (level.daily || level.weekly) { $('goals').innerHTML = ''; chipEls = []; }
     renderHUD();
     fitBoard();
     Ads.gameplay(true);
@@ -188,7 +189,9 @@
       const v = V(p, x, y - state.H - 1);
       proms.push(tween(v, { y }, 0.42, 'in', x * 0.025 + (state.H - y) * 0.035).then(() => { v.sq = 0.1; tween(v, { sq: 0 }, 0.14); }));
     }
-    if (level.daily) showPraise(T('daily.hint'), 'info'); else announceLevel(level);
+    if (level.daily) showPraise(T('daily.hint'), 'info');
+    else if (level.weekly) showPraise(T('weekly.hint'), 'info');
+    else announceLevel(level);
     intro = null;
     if (level.boss || level.bossKind) startIntro(level);
     await Promise.all(proms);
@@ -206,7 +209,7 @@
     if (n >= 2 && l.length) take().special = 'barrel';
     if (n >= 3 && l.length) { const p = take(); p.special = 'idol'; p.color = null; }
   }
-  const breakStreak = () => { if (!(level && level.daily) && save.streak) { save.streak = 0; persist(); } };
+  const breakStreak = () => { if (!(level && (level.daily || level.weekly)) && save.streak) { save.streak = 0; persist(); } };
   // fileira da trilha na janela antes da fase: 3 vantagens, acesas até a sequência atual
   const streakHTML = () => {
     const n = Math.min(3, save.streak || 0);
@@ -301,6 +304,7 @@
       await Promise.all([tween(va, { x: a[0], y: a[1] }, 0.17, 'back'), tween(vb, { x: b[0], y: b[1] }, 0.17, 'back')]);
       busy = false; return;
     }
+    if (level.weekly) weeklyReplay.push([a[0], a[1], b[0], b[1]]);
     praiseLevel = 0;
     renderHUD();
     if (start.combo) comboFx(start);
@@ -1035,6 +1039,7 @@
   async function afterMove() {
     renderHUD();
     if (state.cursed) { showLose(); return; } // ídolo amaldiçoado zerou
+    if (level.weekly && state.moves <= 0) { showWeekly(); return; }
     if (LR.isWon(state)) { await treasureRush(); showWin(); return; }
     if (state.moves <= 0) { showLose(); return; }
     busy = false;
@@ -2102,7 +2107,7 @@
   }
   function updateHammerBtn() {
     const b = $('btnHammer'); if (!b) return;
-    b.hidden = scene !== 'play' || !(save.items.hammer > 0);
+    b.hidden = scene !== 'play' || (level && (level.daily || level.weekly)) || !(save.items.hammer > 0);
     b.classList.toggle('on', hammerMode);
     const n = save.items.hammer || 0, hc = $('hammerCount');
     if (b.classList.contains('painted')) {
@@ -2195,10 +2200,92 @@
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMenu); };
   }
 
+  // ---------- Recorde semanal ----------
+  // Um tabuleiro e uma semente por semana, sempre 20 jogadas. Itens, martelo, anúncio de +5 e Trilha ficam fora;
+  // skins continuam porque são apenas visuais. O backend usa o mesmo week id e mantém só o melhor placar de cada jogador.
+  const weeklyCache = {};
+  let weeklyReplay = [];
+  const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function weeklySeed(key) {
+    let h = 2166136261;
+    for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function weeklyLevel() {
+    const week = Records.week();
+    if (weeklyCache.week === week) return weeklyCache.L;
+    const L = {
+      id: 'weekly', weekly: true, week, seed: weeklySeed('lost-relics:' + week), moves: 20, colors: 6,
+      goals: [{ type: 'score', target: 999999999 }], layout: Array(8).fill('........'), stars: [8000, 16000, 24000],
+    };
+    weeklyCache.week = week; weeklyCache.L = L;
+    return L;
+  }
+  const weeklyDate = (key) => { const p = key.split('-'); return p[2] + '/' + p[1]; };
+  function weeklyRowsHTML(rows) {
+    if (!rows || !rows.length) return '<div class="weekly-status">' + T('weekly.empty') + '</div>';
+    const me = Records.getName().toLocaleLowerCase();
+    return '<div class="weekly-board">' + rows.slice(0, 20).map((r, i) =>
+      '<div class="weekly-row' + (r.me || String(r.name || '').toLocaleLowerCase() === me ? ' me' : '') + '"><i>' + (i + 1) + '</i><b>' + esc(r.name) + '</b><strong>' + (+r.score || 0).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') + '</strong></div>'
+    ).join('') + '</div>';
+  }
+  function loadWeeklyRows(card, promise) {
+    const box = card.querySelector('.weekly-list');
+    promise.then((rows) => { if (box && box.isConnected) box.innerHTML = weeklyRowsHTML(rows); }).catch(() => { if (box && box.isConnected) box.innerHTML = weeklyRowsHTML([]); });
+  }
+  function askWeeklyName(back) {
+    const card = openModal(
+      '<div class="eyebrow">' + T('weekly.btn') + '</div><h2 class="metal">' + T('weekly.name') + '</h2><div class="orn"><i></i></div>' +
+      '<input id="weeklyName" class="weekly-name" maxlength="18" autocomplete="nickname" placeholder="' + T('weekly.placeholder') + '" value="' + esc(Records.getName()) + '">' +
+      '<p class="weekly-rules">' + T('weekly.rules') + '</p><div class="btns"><button class="btn" id="mSaveName" type="button">' + T('weekly.play') + '</button>' +
+      '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
+    const input = card.querySelector('#weeklyName');
+    const go = () => {
+      const name = Records.setName(input.value);
+      if (name.length < 2) { input.focus(); return; }
+      Sound.play('click'); closeModal(); wipe(() => startLevel('weekly'));
+    };
+    card.querySelector('#mSaveName').onclick = go;
+    input.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); if (back) back(); };
+    setTimeout(() => input.focus(), 50);
+  }
+  function openWeeklyHub() {
+    if (!Records.getName()) return askWeeklyName(openMenu);
+    const L = weeklyLevel(), local = !Records.online;
+    const card = openModal(
+      '<div class="eyebrow">' + T('weekly.week', { d: weeklyDate(L.week) }) + '</div><h2 class="metal">' + T('weekly.title') + '</h2><div class="orn"><i></i></div>' +
+      '<p class="weekly-rules">' + T('weekly.rules') + '</p><div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' +
+      '<div class="weekly-status">' + T(local ? 'weekly.local' : 'weekly.online') + '</div>' +
+      '<div class="btns"><button class="btn" id="mWeeklyPlay" type="button">' + T('weekly.play') + '</button>' +
+      '<button class="btn dark small" id="mWeeklyName" type="button">' + T('weekly.change') + '</button>' +
+      '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
+    loadWeeklyRows(card, Records.list(L.week));
+    card.querySelector('#mWeeklyPlay').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel('weekly')); };
+    card.querySelector('#mWeeklyName').onclick = () => { Sound.play('click'); closeModal(); askWeeklyName(openWeeklyHub); };
+    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); };
+  }
+  function showWeekly() {
+    Ads.gameplay(false);
+    const sc = Math.max(0, Math.floor(state.score)), L = level;
+    Sound.play('win'); buzz([30, 60, 30, 60]);
+    const card = openModal(
+      '<div class="eyebrow">' + T('weekly.week', { d: weeklyDate(L.week) }) + '</div><h2 class="metal">' + T('weekly.title') + '</h2><div class="orn"><i></i></div>' +
+      '<div class="daily-score">' + sc.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') + '</div>' +
+      '<div class="moves-line">' + T('weekly.score', { n: sc.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') }) + '</div>' +
+      '<div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' +
+      '<div class="btns"><button class="btn" id="mRetry" type="button">' + T('weekly.retry') + '</button>' +
+      '<button class="btn dark small" id="mMap" type="button">' + T('menu.back') + '</button></div>');
+    loadWeeklyRows(card, Records.submit(sc, { week: L.week, seed: L.seed, moves: 20, replay: weeklyReplay.slice() }));
+    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel('weekly')); };
+    card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMenu); };
+  }
+
   // ---------- menu ----------
   function paintMenu() {
     document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = T(el.dataset.t); });
     $('btnPlay').textContent = save.unlocked > 1 ? T('menu.continue') : T('menu.play');
+    $('btnWeekly').textContent = T('weekly.btn');
     $('btnDaily').textContent = (save.daily && save.daily.date === todayKey() ? '✓ ' : '') + T('daily.btn');
     for (const [id, on, key] of [['btnSfx', Sound.sfx, 'menu.sound'], ['btnMusic', Sound.music, 'menu.music']]) {
       const b = $(id); b.classList.toggle('off', !on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', T(key) + ': ' + T(on ? 'on' : 'off')); b.title = T(key);
@@ -2216,6 +2303,7 @@
     wipe(() => { openMap(); if (save.unlocked === 1 && !save.stars[1]) openPre(1); });
   };
   $('btnDaily').onclick = () => { Sound.init(); Sound.play('click'); wipe(() => startLevel('daily')); };
+  $('btnWeekly').onclick = () => { Sound.init(); Sound.play('click'); openWeeklyHub(); };
   $('btnSfx').onclick = () => { Sound.init(); Sound.setSfx(!Sound.sfx); paintMenu(); Sound.play('click'); };
   $('btnMusic').onclick = () => { Sound.init(); Sound.setMusic(!Sound.music); paintMenu(); };
   $('btnLang').onclick = () => { I18N.toggle(); paintMenu(); Sound.play('click'); };
