@@ -53,6 +53,7 @@
   save.skins = Object.assign({ gem: null, word: null, trail: null }, save.skins);
   // O modo normal abre a jornada; vencer uma fase libera a versão difícil competitiva dela.
   save.hardBest = save.hardBest || {};
+  save.hardWeekly = save.hardWeekly || { week: '', scores: {} };
   // Trilha do Explorador (16/10, adaptado do "win streak" do Candy): vitórias seguidas (0-3) viram vantagem grátis na fase seguinte
   save.streak = save.streak || 0;
   // link de teste (tools/montar-link.js): todas as fases abertas, pra testar qualquer uma em qualquer aparelho
@@ -72,6 +73,11 @@
   const applySkins = () => ART.setSkins({ gem: save.skins.gem, fx: save.skins.trail });
   const wordImg = (k) => (save.skins.word === 'rare' && ART.nodeImg('wr_' + k)) || ART.nodeImg(k);
   const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
+  const hardWeeklyScores = () => {
+    const week = Records.week();
+    if (save.hardWeekly.week !== week) save.hardWeekly = { week, scores: {} };
+    return save.hardWeekly.scores;
+  };
   const cloneLevel = (L) => Object.assign({}, L, {
     goals: L.goals.map((g) => Object.assign({}, g)), layout: L.layout.slice(), stars: L.stars.slice(),
   });
@@ -192,7 +198,8 @@
   const cellX = (x) => ox + (x + 0.5) * cs, cellY = (y) => oy + (y + 0.5) * cs;
 
   async function startLevel(id, boosts, hard) {
-    const Ld = id === 'daily' ? dailyLevel() : id === 'weekly' ? weeklyLevel() : levelMode(id, !!hard);
+    const hardAllowed = Number.isInteger(id) && !!hard && !!save.stars[id];
+    const Ld = id === 'daily' ? dailyLevel() : id === 'weekly' ? weeklyLevel() : levelMode(id, hardAllowed);
     if ((Ld.bossKind || Ld.scarab) && !EXTRA.done) await extraReady();
     level = Ld;
     weeklyReplay = level.weekly || level.hard ? [] : weeklyReplay;
@@ -1910,9 +1917,11 @@
     if (level.daily) return showDaily();
     Ads.gameplay(false);
     const id = level.id, hardMode = !!level.hard, stars = LR.stars(state);
-    const prevBest = hardMode ? (save.hardBest[id] || 0) : (save.best[id] || 0), isNew = state.score > prevBest && prevBest > 0;
+    const weeklyBest = hardMode ? hardWeeklyScores() : null;
+    const prevBest = hardMode ? (weeklyBest[id] || 0) : (save.best[id] || 0), isNew = state.score > prevBest && prevBest > 0;
     if (hardMode) {
-      save.hardBest[id] = Math.max(prevBest, state.score);
+      save.hardBest[id] = Math.max(save.hardBest[id] || 0, state.score);
+      weeklyBest[id] = Math.max(prevBest, state.score);
     } else {
       save.stars[id] = Math.max(save.stars[id] || 0, stars);
       save.best[id] = Math.max(prevBest, state.score);
@@ -2303,7 +2312,8 @@
     card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); if (back) back(); };
     setTimeout(() => input.focus(), 50);
   }
-  function openWeeklyHub() {
+  // Legacy weekly challenge is preserved for data/API compatibility, but is no longer linked from the menu.
+  function openLegacyWeeklyHub() {
     if (!Records.getName()) return askWeeklyName(openMenu);
     const L = weeklyLevel(), local = !Records.online;
     const card = openModal(
@@ -2315,7 +2325,29 @@
       '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
     loadWeeklyRows(card, Records.list(L.week));
     card.querySelector('#mWeeklyPlay').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel('weekly')); };
-    card.querySelector('#mWeeklyName').onclick = () => { Sound.play('click'); closeModal(); askWeeklyName(openWeeklyHub); };
+    card.querySelector('#mWeeklyName').onclick = () => { Sound.play('click'); closeModal(); askWeeklyName(openLegacyWeeklyHub); };
+    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); };
+  }
+  function openRecordsHub() {
+    const week = Records.week(), scores = hardWeeklyScores();
+    const ids = LEVELS.map((L) => L.id).filter((id) => !!save.stars[id]);
+    const rows = ids.map((id) =>
+      '<button type="button" class="record-level" data-level="' + id + '"><span>' + T('level') + ' ' + id + '</span><strong>' +
+      (scores[id] ? T('records.best', { n: scores[id].toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') }) : T('records.noScore')) + '</strong></button>'
+    ).join('');
+    const card = openModal(
+      '<div class="eyebrow">' + T('weekly.week', { d: weeklyDate(week) }) + '</div><h2 class="metal">' + T('records.title') + '</h2><div class="orn"><i></i></div>' +
+      '<p class="weekly-rules">' + T(ids.length ? 'records.hint' : 'records.empty') + '</p>' +
+      (rows ? '<div class="records-levels">' + rows + '</div>' : '') +
+      '<div class="btns"><button class="btn dark small" id="mWeeklyName" type="button">' + T('weekly.change') + '</button>' +
+      '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
+    card.querySelectorAll('.record-level').forEach((button) => {
+      button.onclick = () => {
+        const id = +button.dataset.level;
+        Sound.play('click'); closeModal(); wipe(() => { openMap(); openPre(id, true); });
+      };
+    });
+    card.querySelector('#mWeeklyName').onclick = () => { Sound.play('click'); closeModal(); askWeeklyName(openRecordsHub, openRecordsHub); };
     card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); };
   }
   function showWeekly() {
@@ -2356,7 +2388,7 @@
     wipe(() => { openMap(); if (save.unlocked === 1 && !save.stars[1]) openPre(1); });
   };
   $('btnDaily').onclick = () => { Sound.init(); Sound.play('click'); wipe(() => startLevel('daily')); };
-  $('btnWeekly').onclick = () => { Sound.init(); Sound.play('click'); openWeeklyHub(); };
+  $('btnWeekly').onclick = () => { Sound.init(); Sound.play('click'); openRecordsHub(); };
   $('btnSfx').onclick = () => { Sound.init(); Sound.setSfx(!Sound.sfx); paintMenu(); Sound.play('click'); };
   $('btnMusic').onclick = () => { Sound.init(); Sound.setMusic(!Sound.music); paintMenu(); };
   $('btnLang').onclick = () => { I18N.toggle(); paintMenu(); Sound.play('click'); };
@@ -2524,9 +2556,12 @@
   const worldOf = (id) => Math.max(0, WORLDS.findIndex((w) => id >= w.from && id <= w.to));
   let mapWorld = null; // mundo aberto no mapa (null = o da fase atual)
   // Família pintada no próprio projeto: normal, atual, difícil concluída e bloqueada.
+  const mapDigits = (id) => String(id).split('').map((digit) =>
+    '<img alt="" src="assets/mapa/numeros-v2/n' + digit + '.png">'
+  ).join('');
   const nodeFace = (id, state) => {
     const src = 'assets/mapa/botoes-v2/' + state + '.png';
-    return '<img class="btn-img" alt="" src="' + src + '"><span class="num' + (id >= 10 ? ' d2' : '') + '">' + id + '</span>';
+    return '<img class="btn-img" alt="" src="' + src + '"><span class="num map-digits' + (id >= 10 ? ' d2' : '') + '" aria-label="' + id + '">' + mapDigits(id) + '</span>';
   };
   function buildMap() {
     const inner = $('mapInner'), scroll = $('mapScroll');
