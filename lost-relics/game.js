@@ -36,6 +36,18 @@
     save.v3 = 1;
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
   }
+  // 18/10: Amazônia ganhou 6 fases (a antiga 15, chefe final, virou a 21) e o Egito 14 (o chefe final antigo, 66, virou a 86):
+  // o progresso anda +6 a partir da 15 e +20 a partir da 66 (uma vez só, e já grava)
+  if (!save.v4) {
+    const mv = (k) => (k >= 66 ? k + 20 : k >= 15 ? k + 6 : k);
+    const sh = (o) => { const n = {}; for (const k in (o || {})) n[mv(+k)] = o[k]; return n; };
+    save.stars = sh(save.stars); save.best = sh(save.best);
+    save.unlocked = mv(save.unlocked);
+    if (save.fogShown != null) save.fogShown = mv(save.fogShown + 1) - 1;
+    if (save.orbAt != null) save.orbAt = mv(save.orbAt + 1) - 1;
+    save.v4 = 1;
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
+  }
   // skins compradas no Códice (16/10): owned = ids comprados; skins = a que está em uso em cada aba (null = a de fábrica)
   save.owned = save.owned || [];
   save.skins = Object.assign({ gem: null, word: null, trail: null }, save.skins);
@@ -153,7 +165,7 @@
     if (!level.daily) { applyBoosts(boosts || {}); applyStreak(); } // a Jogada do Dia é igual pra todos: sem vantagem de loja nem trilha
     hammerMode = false;
     RUIN_KEYS.forEach(nodeImgObj);
-    vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = []; serpTrail = []; bombTick = {}; barShown = null; barHp = null; barHitT = -9;
+    vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = []; serpTrail = []; bombTick = {}; threads = []; barShown = null; barHp = null; barHitT = -9;
     // fase de chefe: já carrega toda a arte dele (vidas, golpe, morte), senão o 1º golpe aparece sem desenho
     if (level.bossKind || level.scarab) { // chefe ou enxame de escaravelhos em fase comum
       for (const k of Object.values(BOSS_SPR[bossKindOf(level)])) if (typeof k === 'string') nodeImgObj(k);
@@ -309,6 +321,8 @@
     if (ev.type === 'bosseat') return onBossEat(ev);
     if (ev.type === 'bossswap') return onBossSwap(ev);
     if (ev.type === 'bossspit') return onBossSpit(ev);
+    if (ev.type === 'bossweb') return onBossWeb(ev);
+    if (ev.type === 'cocoontick') return onCocoonTick(ev);
     if (ev.type === 'bossmove') return onBossMove(ev);
     if (ev.type === 'mossgrow') return onMossGrow(ev);
     if (ev.type === 'bombtick') return onBombTick(ev);
@@ -363,6 +377,7 @@
   //               claw (onça cravando a garra) | slide (serpente rastejando 1 casa)
   // bossFlash[i] = instante em que o escudo de runas do ídolo brilhou (golpe que não pegou)
   let bossAnims = [], bossFlash = [];
+  let threads = []; // fios da aranha (x0,y0 -> x1,y1 em casas, t0 = início)
   let bombTick = {}; // id da joia amaldiçoada -> hora da última contagem (pisca)
   let mossC = null;
   function mossSprite(im) {
@@ -498,7 +513,7 @@
   // centro de um grupo de pontos já em coordenadas de tela
   const midOf = (pts) => [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length];
   // brilho em volta de cada chefe (marca que é o chefe)
-  const BOSS_GLOW = { scarab: '255,196,70', jaguar: '90,255,150', statue: '70,235,220', serpent: '80,240,200', boa: '215,190,90', monkey: '235,180,110', frog: '110,235,90', onca: '255,170,60' };
+  const BOSS_GLOW = { scarab: '255,196,70', jaguar: '90,255,150', statue: '70,235,220', serpent: '80,240,200', boa: '215,190,90', monkey: '235,180,110', frog: '110,235,90', onca: '255,170,60', spider: '120,240,170' };
   function bossHit(b) {
     const boss = state.bosses[b.idx], kind = (boss && boss.kind) || 'scarab';
     const cells = b.cells && b.cells.length ? b.cells : [b.from];
@@ -549,6 +564,35 @@
     later(0.75, () => { if (bossAnims[ev.idx] && bossAnims[ev.idx].type === 'eat') bossAnims[ev.idx] = null; });
     await wait(0.8);
   }
+  // aranha embrulha uma joia: o fio desce dela até a casa e o casulo aparece
+  async function onBossWeb(ev) {
+    bossAnims[ev.idx] = { type: 'eat', t0: now, from: ev.from ? [cellX(ev.from[0]), cellY(ev.from[1])] : null };
+    Sound.play('vine'); buzz([20, 30, 20]); addShake(0.2);
+    ev.cells.forEach(([x, y], k) => {
+      const p = state.grid[y][x];
+      if (!p) return;
+      const v = V(p, x, y); v.s = 0;
+      if (ev.from) threads.push({ x0: ev.from[0], y0: ev.from[1], x1: x, y1: y, t0: now + 0.1 + k * 0.1 });
+      later(0.3 + k * 0.1, () => { tween(v, { s: 1 }, 0.3, 'back'); ring(x, y, 'rgba(235,240,255,0.95)', 1.2); dust(x, y); Sound.play('rock'); });
+    });
+    later(0.75, () => { if (bossAnims[ev.idx] && bossAnims[ev.idx].type === 'eat') bossAnims[ev.idx] = null; });
+    await wait(0.8);
+  }
+  // fim da jogada: casulos contam; o que zera eclode (filhotes!) e custa movimentos
+  async function onCocoonTick(ev) {
+    for (const [x, y] of ev.ticks) { const p = state.grid[y][x]; if (p) bombTick[p.id] = now; }
+    if (ev.ticks.length) Sound.play('click');
+    if (ev.hatched.length) {
+      Sound.play('barrel'); buzz([60, 40, 60]); addShake(0.6);
+      for (const h of ev.hatched) {
+        const v = V(h.piece, h.x, h.y); v.s = 0;
+        tween(v, { s: 1 }, 0.35, 'back'); ring(h.x, h.y, 'rgba(255,90,70,0.95)', 1.6); dust(h.x, h.y);
+        floats.push({ x: cellX(h.x), y: cellY(h.y), text: '-2', num: 2, color: '#ff8a7a', t: 0 });
+      }
+      later(0.1, renderHUD);
+      await wait(0.7);
+    } else await wait(0.15);
+  }
   async function onBossSwap(ev) {
     bossAnims[ev.idx] = { type: 'eat', t0: now };
     Sound.play('swap'); buzz([20, 40, 20]);
@@ -589,7 +633,18 @@
       return v ? [cellX(v.x), cellY(v.y)] : [cellX(x), cellY(y)];
     });
   }
-  function drawBosses() { state.bosses.forEach((b, i) => drawBoss(b, i)); drawBossBar(); }
+  function drawThreads() {
+    threads = threads.filter((t) => now - t.t0 < 0.9);
+    for (const t of threads) {
+      const q = (now - t.t0) / 0.9; if (q < 0) continue;
+      const grow = Math.min(1, q / 0.3), fade = q > 0.6 ? 1 - (q - 0.6) / 0.4 : 1;
+      const x0 = cellX(t.x0), y0 = cellY(t.y0), x1 = x0 + (cellX(t.x1) - x0) * grow, y1 = y0 + (cellY(t.y1) - y0) * grow;
+      ctx.save(); ctx.globalAlpha = 0.9 * fade; ctx.strokeStyle = '#f2f6ff'; ctx.lineWidth = Math.max(2, cs * 0.05); ctx.lineCap = 'round';
+      ctx.shadowColor = 'rgba(200,220,255,0.9)'; ctx.shadowBlur = cs * 0.2;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.quadraticCurveTo((x0 + x1) / 2 + cs * 0.25, (y0 + y1) / 2 + cs * 0.2, x1, y1); ctx.stroke(); ctx.restore();
+    }
+  }
+  function drawBosses() { drawThreads(); state.bosses.forEach((b, i) => drawBoss(b, i)); drawBossBar(); }
 
   // ---------- barra de vida dos chefes (15/10) ----------
   // Uma barra só no topo do tabuleiro, no lugar das vidas em cima de cada bicho: moldura de pedra com o retrato
@@ -641,6 +696,15 @@
       ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = cs * 0.15;
       ctx.drawImage(nm, chX + chW / 2 - nw / 2, by + HPB.cy0 * k * 0.42 - nh / 2, nw, nh);
       ctx.restore();
+    }
+    else {
+      // chefe sem nome pintado (aranha): escreve o nome em dourado, no mesmo lugar
+      const kd = state.bosses[0].kind, gt = T('goal.' + kd), nm0 = gt && gt !== 'goal.' + kd ? gt.replace(/^[^ ]+ (os |as |o |a |the )?/i, '').toUpperCase() : '';
+      if (nm0) {
+        ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '900 ' + Math.round(cs * 0.34) + 'px ' + (getComputedStyle(document.body).getPropertyValue('--f-display') || 'serif');
+        ctx.lineWidth = cs * 0.08; ctx.strokeStyle = '#2a1a02'; ctx.fillStyle = '#ffe6a0'; ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = cs * 0.12;
+        const ty = by + HPB.cy0 * k * 0.42; ctx.strokeText(nm0, chX + chW / 2, ty, chW * 0.9); ctx.fillText(nm0, chX + chW / 2, ty, chW * 0.9); ctx.restore();
+      }
     }
     // racha no ponto onde a vida caiu
     if (hitQ > 0 && crack) {
@@ -712,6 +776,11 @@
     }
     ctx.restore();
     const nm = nodeImgObj('name_' + kind);
+    if (!nm && T('goal.' + kind) !== 'goal.' + kind) {
+      const nq0 = Math.min(1, Math.max(0, (q - 0.1) / 0.2));
+      ctx.save(); ctx.globalAlpha = nq0 * vis1; ctx.textAlign = 'center'; ctx.font = '900 ' + Math.round(cs * 0.85) + 'px ' + (getComputedStyle(document.body).getPropertyValue('--f-display') || 'serif'); ctx.fillStyle = '#ffe6a0'; ctx.strokeStyle = '#3a2504'; ctx.lineWidth = cs * 0.12;
+      const nm0 = T('goal.' + kind).replace(/^[^ ]+ (os |as |o |a )?/i, '').toUpperCase(); ctx.strokeText(nm0, W / 2, H * 0.62); ctx.fillText(nm0, W / 2, H * 0.62); ctx.restore();
+    }
     if (nm) {
       const nq = Math.min(1, Math.max(0, (q - 0.1) / 0.2)), nw = Math.min(W * 0.8, 460) * (1.3 - 0.3 * nq), nh = nw * nm.naturalHeight / nm.naturalWidth;
       ctx.save(); ctx.globalAlpha = nq * vis1; ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = cs * 0.2;
@@ -782,8 +851,29 @@
     const jagPose = kind === 'jaguar' && key !== K.dead && (!an ? ['idle', 0] : an.type === 'hit' ? ['hit', (now - an.t0) / 0.35]
       : an.type === 'fly' ? ['leap', 0] : an.type === 'claw' ? ['claw', (now - an.t0) / 0.5] : ['idle', 0]);
     const fx = cells.length ? midOf(cells)[0] : x;
-    if (!(jagPose && drawJaguar(K, sc, jagPose[0], jagPose[1], i, fx > ox + cs * state.W / 2))) ctx.drawImage(im, -w / 2, -h * anchor, w, h);
+    if (!(jagPose && drawJaguar(K, sc, jagPose[0], jagPose[1], i, fx > ox + cs * state.W / 2))) {
+      // arte de uma peça só: a vida vem do código. Onça sentada respira e vira a cabeça (balanço leve); aranha treme as pernas e pulsa
+      if ((kind === 'onca' || kind === 'spider') && key !== K.dead) {
+        const ph = now + i * 1.7, foot = h * (1 - anchor);
+        ctx.translate(0, foot);
+        if (kind === 'onca') { ctx.rotate(Math.sin(ph * 0.9) * 0.018); ctx.scale(1 + 0.008 * Math.sin(ph * 2.2), 1 + 0.022 * Math.sin(ph * 2.2)); }
+        else { ctx.rotate(Math.sin(ph * 7) * 0.012); ctx.scale(1 + 0.02 * Math.sin(ph * 3.1), 1 - 0.018 * Math.sin(ph * 3.1 + 0.6)); }
+        ctx.translate(0, -foot);
+      }
+      ctx.drawImage(im, -w / 2, -h * anchor, w, h);
+    }
     ctx.restore();
+    // ponto fraco (fases avançadas): a cor que fere o chefe agora, num selo com anel pulsando ao lado dele
+    if (boss.weak != null && boss.hp > 0 && key !== K.dead) {
+      const gs = ART.pieceSprite({ id: 0, kind: 'gem', color: boss.weak }, S, 0);
+      const r = cs * 0.46, wx = x, wy = Math.max(r * 1.4, y - h * anchor - r * 0.2), pu = 0.5 + 0.5 * Math.sin(now * 4);
+      ctx.save(); ctx.globalAlpha = 0.95;
+      ctx.shadowColor = 'rgba(255,220,120,0.9)'; ctx.shadowBlur = cs * (0.25 + 0.25 * pu);
+      ctx.fillStyle = 'rgba(8,10,8,0.85)'; ctx.beginPath(); ctx.arc(wx, wy, r * 1.3, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,230,140,' + (0.6 + 0.4 * pu) + ')'; ctx.lineWidth = Math.max(2, cs * 0.05 * (1 + pu)); ctx.stroke();
+      if (gs) ctx.drawImage(gs, wx - r, wy - r, r * 2, r * 2);
+      ctx.restore();
+    }
     // ídolo: escudo de runas girando enquanto protegido, e piscando quando um golpe não pega
     if (kind === 'statue' && key !== K.dead) {
       const fl = bossFlash[i] != null ? Math.max(0, 1 - (now - bossFlash[i]) / 0.8) : 0;
@@ -1328,6 +1418,24 @@
       if (vine) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.sin(now * 1.3 + p.id) * 0.12); ctx.globalAlpha = v.a * 0.95; ctx.drawImage(vine, -w * 0.52, -h * 0.52, w * 1.04, h * 1.04); ctx.restore(); }
       ctx.globalAlpha = 1; return;
     }
+    if (p.cocoon) {
+      const im = nodeImgObj('cocoon'), urgent = p.cocoon <= 1, pulse = 0.5 + 0.5 * Math.sin(now * (urgent ? 9 : 3) + p.id);
+      const tick = bombTick[p.id] != null ? Math.max(0, 1 - (now - bombTick[p.id]) / 0.4) : 0;
+      if (im) ctx.drawImage(im, cx - w * 0.49, cy - h * 0.49, w * 0.98, h * 0.98);
+      if (urgent) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,60,60,' + (0.18 + 0.22 * pulse) * v.a + ')'; ctx.fillRect(cx - w * 0.49, cy - h * 0.49, w * 0.98, h * 0.98); ctx.restore(); }
+      // disco escuro atrás da contagem: o dourado dos dígitos some em cima da teia branca
+      ctx.save(); ctx.globalAlpha = 0.82 * v.a; ctx.fillStyle = urgent ? '#5a0f12' : '#0f2a1c'; ctx.beginPath(); ctx.arc(cx, cy, cs * s * 0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = urgent ? '#ff8a7a' : '#7fe0a8'; ctx.lineWidth = Math.max(1.5, cs * 0.04); ctx.stroke(); ctx.restore();
+      const ds = String(p.cocoon).split('').map((d) => nodeImgObj('n' + d)).filter(Boolean);
+      if (ds.length) {
+        const dh = cs * s * (0.46 + 0.14 * tick), dw = ds.map((i2) => dh * i2.naturalWidth / i2.naturalHeight * 0.8);
+        let x0 = cx - dw.reduce((a, b) => a + b, 0) / 2;
+        ctx.save(); ctx.globalAlpha = v.a; ctx.shadowColor = urgent ? 'rgba(255,40,40,0.95)' : 'rgba(0,30,10,0.95)'; ctx.shadowBlur = cs * 0.18;
+        ds.forEach((i2, i) => { ctx.drawImage(i2, x0, cy - dh / 2, dw[i], dh); x0 += dw[i]; });
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1; return;
+    }
     const stoneIm = (p.claw && nodeImgObj(p.claw === 'onca' ? 'ostone' : 'jstone')) || (p.lump && nodeImgObj('alump'));
     if (stoneIm) { ctx.drawImage(stoneIm, cx - w * 0.48, cy - h * 0.48, w * 0.96, h * 0.96); ctx.globalAlpha = 1; return; }
     // feitiço: aura da cor da pedra que "respira" devagar, cada joia no seu ritmo
@@ -1585,7 +1693,10 @@
     // sapo (18/10): enquanto não chega a arte própria, usa os desenhos do macaco; trocar os nomes aqui (fidle, fhit...) e no gerar-arte-data.ps1
     frog: { idle: 'fidle', hit: 'fhit', move: 'fflee', dead: 'fflee', eat: 'fspit', l3: 'blife3', l1: 'blife1', size: 1.85 },
     // onça-pintada normal (18/10): poses inteiras (parada, golpe, salto), sem montar em partes como a de jade
-    onca: { idle: 'oidle', hit: 'ohit', move: 'oleap', dead: 'ohit', l3: 'jlife3', l1: 'jlife1', size: 2.3 },
+    // 18/10: onça SENTADA (pedido dele, a de salto era esquisita); a animação é de código (respira, balança, apanha, salta em arco)
+    onca: { idle: 'oidle', hit: 'ohit', move: 'oidle', dead: 'ohit', l3: 'jlife3', l1: 'jlife1', size: 1.75 },
+    // aranha-tecelã (18/10): casulos com contagem; a mesma pose serve pra tudo, o código mexe as pernas (balanço rápido)
+    spider: { idle: 'spidle', hit: 'sphit', move: 'spidle', dead: 'sphit', eat: 'spidle', l3: 'jlife3', l1: 'jlife1', size: 2.2 },
     monkey: { idle: 'midle', hit: 'mhit', move: 'mflee', dead: 'mflee', eat: 'mswap', l3: 'blife3', l1: 'blife1', size: 1.4 },
     boa: { idle: 'aidle', hit: 'ahit', move: 'aflee', dead: 'aflee', eat: 'aeat', l3: 'blife3', l1: 'blife1', size: 1.35 },
     serpent: { idle: 'kidle', hit: 'khit', move: 'kcoil', dead: 'kdead', l3: 'klife3', l1: 'klife1', size: 2.3,
@@ -1699,6 +1810,12 @@
   const TUT_ART = { moss: 'ruin2', make: 'ixseal', bomb: 'ixorb', nova: 'ixorb' }; // tutoriais das fases 21+ com arte pintada
   const TUT_ICON = { swap: 'gem3', collect: 'gem0', line: 'dynamite', sand: 'sand', barrel: 'barrel', artifact: 'chest', idol: 'idol', rock: 'rock', diamond: 'gem5', vine: 'vine' };
 
+  // explicação da fase em tópicos curtos (texto do i18n separado por |); fase com ponto fraco ganha a linha do selo
+  const tutBullets = (key, L) => {
+    // a regra do ponto fraco vem primeiro: é a que muda como se joga e não pode ficar escondida na rolagem
+    const parts = (L.weak ? [T('weak.hint')] : []).concat(key ? T(key).split('|') : []);
+    return parts.map((t, i) => '<li' + (L.weak && i === 0 ? ' class="weak"' : '') + '>' + t + '</li>').join('');
+  };
   function openPre(id) {
     const L = LEVELS[id - 1];
     const tutKey = L.tut ? 'tut.' + L.tut : id === 25 ? 'tip.combo' : null;
@@ -1715,11 +1832,15 @@
       '<div class="goal-list">' + rows + '</div>' +
       '<div class="moves-line">' + T('moves') + ': <b>' + L.moves + '</b></div>' +
       // (os parênteses importam: sem eles, com a arte do chefe carregada, o texto do tutorial sumia)
-      (tutKey ? '<div class="tut"><img alt="" src="' + (((L.boss || L.tut === 'boa' || L.tut === 'monkey' || L.tut === 'frog') && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || (TUT_ART[L.tut] && ART.nodeImg(TUT_ART[L.tut])) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><p>' + T(tutKey) + '</p></div>' : '') +
+      (tutKey || L.weak ? '<div class="tut"><img alt="" src="' + (((L.boss || L.tut === 'boa' || L.tut === 'monkey' || L.tut === 'frog' || L.tut === 'spider') && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || (TUT_ART[L.tut] && ART.nodeImg(TUT_ART[L.tut])) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><ul class="tut-list">' + tutBullets(tutKey, L) + '</ul></div>' : '') +
       (ART.nodeImg('ixarrow') ? streakHTML() : '') +
       boostPicker() +
       '<div class="btns"><button class="btn" id="mPlay" type="button">' + T('play') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
+    card.classList.add('pre');
+    // se a explicação passar da caixa, mostra um degradê embaixo (só ela rola)
+    const tl = card.querySelector('.tut-list');
+    if (tl) requestAnimationFrame(() => { tl.classList.toggle('more', tl.scrollHeight > tl.clientHeight + 2); tl.onscroll = () => tl.classList.toggle('more', tl.scrollTop + tl.clientHeight < tl.scrollHeight - 4); });
     const picked = {};
     card.querySelectorAll('.boost').forEach((b) => { b.onclick = () => { const k = b.dataset.k; picked[k] = !picked[k]; b.classList.toggle('on', picked[k]); b.setAttribute('aria-pressed', picked[k]); Sound.play('click'); }; });
     const shopLink = card.querySelector('#mShop'); if (shopLink) shopLink.onclick = () => { Sound.play('click'); openShop(() => openPre(id)); };
@@ -2247,13 +2368,15 @@
   // Mundo 2 = Cenote Sagrado (maquete do Gemini, 16/10); caminho conferido com tools\previa-caminho.ps1.
   // 18/10: Mundo 1 = Amazônia (maquete do Gemini, trilha de troncos em S); os outros andaram +15.
   const WORLDS = [
-    { from: 1, to: 15, map: 'map3a', depth: 'mapDepthA', path: [[290, 918], [260, 885], [245, 850], [254, 816], [273, 783], [305, 758], [322, 730], [321, 696], [291, 654], [248, 624], [218, 588], [230, 555], [285, 520], [325, 494], [350, 462], [351, 430], [332, 402], [299, 378], [279, 350], [282, 319], [293, 290]],
-      // nodes = posição exata de cada fase (centro do tronco); sem isso as fases ficam espalhadas por igual no caminho
-      nodes: [[290, 918], [260, 885], [254, 816], [273, 783], [322, 730], [321, 696], [248, 624], [218, 588], [230, 555], [325, 494], [350, 462], [332, 402], [299, 378], [282, 319], [293, 290]] },
-    { from: 16, to: 36, map: 'map3', depth: 'mapDepth', pathKey: 'mapPath3', nodes: [[301, 984], [316, 935], [357, 885], [358, 850], [364, 794], [364, 736], [335, 695], [290, 660], [224, 614], [202, 582], [210, 525], [230, 480], [235, 450], [245, 410], [252, 375], [262, 335], [265, 300], [262, 262], [258, 225], [257, 190], [280, 150]] },
-    { from: 37, to: 51, map: 'map3b', depth: 'mapDepthB', path: [[300, 1005], [320, 935], [300, 870], [240, 835], [235, 770], [265, 715], [190, 680], [110, 610], [85, 530], [130, 455], [215, 420], [300, 400], [385, 410], [455, 440], [470, 380], [400, 330], [395, 250]], nodes: [[300, 980], [316, 935], [337, 868], [259, 830], [229, 768], [235, 710], [105, 590], [92, 505], [150, 455], [217, 420], [291, 420], [364, 426], [433, 448], [367, 332], [400, 270]] },
+    { from: 1, to: 21, map: 'map3a', depth: 'mapDepthA', path: [[290, 918], [260, 885], [245, 850], [254, 816], [273, 783], [305, 758], [322, 730], [321, 696], [291, 654], [248, 624], [218, 588], [230, 555], [285, 520], [325, 494], [350, 462], [351, 430], [332, 402], [299, 378], [279, 350], [282, 319], [293, 290]],
+      // nodes = centro de cada tronco: 21 troncos, 21 fases
+      nodes: [[290, 918], [260, 885], [245, 850], [254, 816], [273, 783], [305, 758], [322, 730], [321, 696], [291, 654], [248, 624], [218, 588], [230, 555], [285, 520], [325, 494], [350, 462], [351, 430], [332, 402], [299, 378], [279, 350], [282, 319], [293, 290]] },
+    { from: 22, to: 42, map: 'map3', depth: 'mapDepth', pathKey: 'mapPath3', nodes: [[301, 984], [316, 935], [357, 885], [358, 850], [364, 794], [364, 736], [335, 695], [290, 660], [224, 614], [202, 582], [210, 525], [230, 480], [235, 450], [245, 410], [252, 375], [262, 335], [265, 300], [262, 262], [258, 225], [257, 190], [280, 150]] },
+    { from: 43, to: 57, map: 'map3b', depth: 'mapDepthB', path: [[300, 1005], [320, 935], [300, 870], [240, 835], [235, 770], [265, 715], [190, 680], [110, 610], [85, 530], [130, 455], [215, 420], [300, 400], [385, 410], [455, 440], [470, 380], [400, 330], [395, 250]], nodes: [[300, 980], [316, 935], [337, 868], [259, 830], [229, 768], [235, 710], [105, 590], [92, 505], [150, 455], [217, 420], [291, 420], [364, 426], [433, 448], [367, 332], [400, 270]] },
     // Mundo 3 = Vale das Pirâmides (maquete do Gemini, 18/10); caminho conferido com tools\previa-caminho.ps1
-    { from: 52, to: 66, map: 'map3c', depth: 'mapDepthC', path: [[257, 880], [290, 856], [320, 836], [338, 808], [350, 776], [324, 751], [298, 730], [267, 712], [229, 698], [193, 684], [162, 665], [139, 640], [120, 614], [110, 585], [125, 551], [156, 525], [190, 502], [227, 487], [275, 470], [318, 462], [352, 441], [362, 413], [345, 388], [303, 372], [271, 352], [262, 322], [261, 296], [298, 270], [330, 245]], nodes: [[258, 874], [320, 836], [349, 777], [298, 729], [230, 698], [162, 666], [120, 616], [127, 553], [191, 503], [274, 471], [352, 440], [344, 390], [272, 351], [276, 294], [330, 245]] },
+    { from: 58, to: 86, map: 'map3c', depth: 'mapDepthC', path: [[257, 880], [290, 856], [320, 836], [338, 808], [350, 776], [324, 751], [298, 730], [267, 712], [229, 698], [193, 684], [162, 665], [139, 640], [120, 614], [110, 585], [125, 551], [156, 525], [190, 502], [227, 487], [275, 470], [318, 462], [352, 441], [362, 413], [345, 388], [303, 372], [271, 352], [262, 322], [261, 296], [298, 270], [330, 245]],
+      // 29 discos de areia = 29 fases
+      nodes: [[257, 880], [290, 856], [320, 836], [338, 808], [350, 776], [324, 751], [298, 730], [267, 712], [229, 698], [193, 684], [162, 665], [139, 640], [120, 614], [110, 585], [125, 551], [156, 525], [190, 502], [227, 487], [275, 470], [318, 462], [352, 441], [362, 413], [345, 388], [303, 372], [271, 352], [262, 322], [261, 296], [298, 270], [330, 245]] },
   ];
   const worldOf = (id) => Math.max(0, WORLDS.findIndex((w) => id >= w.from && id <= w.to));
   let mapWorld = null; // mundo aberto no mapa (null = o da fase atual)
@@ -2284,7 +2407,7 @@
     const NODES = NEW3 && Wd.nodes && Wd.nodes.length === n ? Wd.nodes : null;
     const curRaw = NODES ? NODES[Math.min(save.unlocked - base, n) - 1] : rAt((rTot * (Math.min(save.unlocked - base, n) - 0.5)) / n);
     const offX = Math.max(w - mapW, Math.min(0, w / 2 - curRaw[0] * s)), offY = 0;
-    inner.style.height = mapH + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
+    inner.style.setProperty('--ns', (23 * s).toFixed(1) + 'px'); inner.style.height = mapH + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
     const bgMap = NEW3 ? D[Wd.map] : D.map;
     $('screen-map').style.backgroundImage = bgMap ? 'url("' + bgMap + '")' : 'none';
     // mapa 3D: o fundo é o canvas WebGL atrás da coluna; sem isso, a pintura fica como fundo da coluna
@@ -2314,7 +2437,7 @@
       const id = base + i + 1, st = save.stars[id] || 0;
       const locked = id > save.unlocked, current = id === save.unlocked && !st;
       const gem = locked ? (L.boss ? 'g-amethyst' : 'g-night') : 'g-emerald';
-      const cls = 'node' + (st ? ' done' : '') + (L.boss ? ' boss' : '') + (locked ? ' locked' : '') + (current ? ' current' : '');
+      const cls = 'node simple' + (st ? ' done' : '') + (L.boss ? ' boss' : '') + (locked ? ' locked' : '') + (current ? ' current' : '');
       const NI = (k) => ART.nodeImg(k), starSrc = (on) => NI(on ? 'star' : 'star0') || ART.icon(on ? 'star' : 'star0', 40);
       const stars = locked || current ? '' : '<span class="st">' + [0, 1, 2].map((k) => '<img alt="" src="' + starSrc(k < st) + '">').join('') + '</span>';
       const face = locked ? (L.boss ? '<img class="scarab" alt="" src="' + ART.icon('scarab', 80) + '">' : lock) : '<span class="num">' + id + '</span>';
@@ -2325,7 +2448,8 @@
         (current && NI('aura') ? '<img class="node-aura" alt="" src="' + NI('aura') + '"><img class="node-aura b" alt="" src="' + NI('aura') + '">' : '') +
         (current && ART.fx('sunorb') ? '<span class="node-orb"' + (hop ? ' style="--hx:' + hop[0].toFixed(0) + 'px;--hy:' + hop[1].toFixed(0) + 'px" data-hop="1"' : '') + '><img alt="" src="' + fxURL('sunorb') + '"></span>' : '') +
         // número em dígitos Solar pintados (a Uncial tem algarismos "antigos": o 4 e o 9 descem e ficam fora do centro)
-        (NI('done') ? '<img class="node-img" alt="" src="' + NI(locked ? (L.boss ? 'boss' : 'locked') : L.boss ? 'boss' : 'done') + '">' + (locked ? '' : NI('s0') ? '<span class="num digits">' + digitsHTML(id) + '</span>' : '<span class="num">' + id + '</span>') : '<span class="hex-frame"></span><span class="hex-gem ' + gem + '"></span>' + face) +
+        // 18/10 (pedido dele): ícone simples (círculo com número) em vez do medalhão pintado, que não encaixava nos troncos
+        '<span class="disc"></span><span class="num">' + id + '</span>' +
         (current ? '<span class="cur-bar"><i style="width:' + Math.max(4, Math.round((totalStars / (n * 3)) * 100)) + '%"></i></span>' : stars) + '</button>';
     });
     const fogHtml = '<div class="map-fog" style="height:' + fogAt(fogPrevIdx).toFixed(0) + 'px"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>';
@@ -2525,6 +2649,8 @@
     else if (location.hash === '#novademo') { startLevel(3); setTimeout(() => { const g = state.grid; g[3][3].special = 'nova'; g[5][2].vine = true; g[5][2].slime = 2; g[2][5].vine = true; g[2][5].slime = 1; g[6][5].clock = true; g[1][1].clock = true; }, 700); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 50) clearInterval(iv); }, 50); }
     else if (location.hash === '#diario') { startLevel('daily'); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 60) clearInterval(iv); }, 50); }
     else if (location.hash === '#diarioresultado') { startLevel('daily').then(() => { state.score = Math.round(level.best * 0.87); setTimeout(() => showDaily(), 300); }); }
+    else if (location.hash === '#aranhademo') { startLevel(20); setTimeout(() => { state.grid[3][2] = { id: 9001, kind: 'rock', hp: 1, cocoon: 3 }; state.grid[5][5] = { id: 9002, kind: 'rock', hp: 1, cocoon: 1 }; }, 800); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
+    else if (location.hash === '#fracodemo') { startLevel(21); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
     else if (location.hash === '#oncademo') { startLevel(6); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
     else if (location.hash === '#sapodemo') { startLevel(13); let n = 0; const iv = setInterval(() => { stepTime(0.05); update(0.05); draw(); if (++n > 80) clearInterval(iv); }, 50); }
     // #serpdemo: fase 20 com o laço rodando por timer (o Chrome sem janela não roda requestAnimationFrame) e um rastro em curva

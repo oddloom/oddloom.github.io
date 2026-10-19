@@ -664,3 +664,40 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .wallet-row img.coin { width: 26px; height: 26px; margin: 0; }
 .wallet-row .digits { display: inline-flex; align-items: center; }
 .wallet-row .digits img { height: 22px; width: auto; margin: 0 -2px; }
+
+/* ---- 18/10: ícone de fase simples (círculo + número), tamanho acompanha o mapa (--ns) ---- */
+.node.simple, .node.simple.boss, .node.simple.current { width: var(--ns, 52px); height: var(--ns, 52px); margin: calc(var(--ns, 52px) / -2) 0 0 calc(var(--ns, 52px) / -2); }
+.node.simple .disc { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 35% 28%, #5fc07a, #23773f 58%, #134a29); box-shadow: 0 0 0 calc(var(--ns, 52px) * .07) #e8c46a, 0 5px 9px rgba(0,0,0,.65); }
+.node.simple.done .disc { background: radial-gradient(circle at 35% 28%, #ffe9a3, #e0b24a 58%, #a87a24); }
+.node.simple.boss .disc { background: radial-gradient(circle at 35% 28%, #e9665c, #b32a28 58%, #6f1414); box-shadow: 0 0 0 calc(var(--ns, 52px) * .09) #ffd36a, 0 5px 9px rgba(0,0,0,.65); }
+.node.simple.locked .disc { filter: saturate(.4) brightness(.7); }
+.node.simple.current .disc { animation: nodeGlow 2s ease-in-out infinite; box-shadow: 0 0 0 calc(var(--ns, 52px) * .09) #fff3c4, 0 0 18px 4px rgba(255,210,110,.85); }
+.node.simple .num, .node.simple.boss .num, .node.simple.current .num { font-family: var(--f-display); font-weight: 900; font-size: calc(var(--ns, 52px) * .5); line-height: 1; color: #fff7dc; text-shadow: 0 2px 0 rgba(30,15,0,.75), 0 0 6px rgba(0,0,0,.6); z-index: 1; }
+.node.simple.done .num { color: #4a2e05; text-shadow: 0 1px 0 rgba(255,245,200,.7); }
+.node.simple .st { bottom: calc(var(--ns, 52px) * -.3); }
+.node.simple .cur-bar { display: none; }
+.node.simple .st { bottom: calc(var(--ns, 52px) * -.42); z-index: 2; }
+
+/* ---- 18/10: apresentação da fase com caixa estática: o card não rola, só a lista de explicação (se passar do espaço) ---- */
+.card.pre { max-height: calc(100dvh - 24px); overflow: hidden; gap: 10px; padding: 26px 22px 18px; }
+.card.pre h2 { font-size: 26px; }
+.card.pre .goal-row { padding: 6px 12px 6px 8px; font-size: 17px; }
+.card.pre .goal-row img { width: 38px; height: 38px; }
+.card.pre .moves-line b { font-size: 20px; }
+.card.pre .tut { flex: 1 1 auto; min-height: 84px; overflow: hidden; align-items: center; padding: 10px 12px; gap: 12px; }
+.card.pre .tut img { width: 46px; height: 46px; }
+.card.pre .tut-list { margin: 0; padding: 0; list-style: none; text-align: left; flex: 1 1 auto; min-width: 0; max-height: 100%; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(212,168,75,.6) transparent; display: grid; gap: 5px; }
+.card.pre .tut-list li { position: relative; padding-left: 14px; font-family: var(--f-body); font-size: 14.5px; line-height: 1.3; color: var(--bone); }
+.card.pre .tut-list li::before { content: ''; position: absolute; left: 1px; top: .5em; width: 6px; height: 6px; border-radius: 50%; background: var(--gold-hi, #f3d27a); }
+.card.pre .tut-list li.weak { color: #ffe9a8; font-weight: 600; }
+.card.pre .tut-list li.weak::before { background: #ff8a5c; box-shadow: 0 0 6px #ff8a5c; }
+.card.pre .boost { width: 84px; padding: 6px 4px; }
+.card.pre .boost img { width: 32px; height: 32px; }
+.card.pre .streak-row img { width: 32px; height: 32px; }
+/* altura única pra todas as fases: a caixa de explicação absorve a folga */
+.card.pre { height: min(640px, calc(100dvh - 24px)); max-height: none; justify-content: space-between; }
+.card.pre .tut { min-height: 0; }
+.card.pre .streak small { display: none; }
+.card.pre .streak { gap: 2px; }
+.card.pre .streak > :first-child { font-size: 11px; }
+.card.pre .tut-list.more { -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent); mask-image: linear-gradient(180deg, #000 78%, transparent); padding-bottom: 14px; }

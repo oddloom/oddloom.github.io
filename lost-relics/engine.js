@@ -86,7 +86,7 @@
       const spots = [[2, 2], [W - 3, Math.floor(H / 2)], [2, H - 3], [W - 3, 1], [Math.floor(W / 2), H - 2]];
       if (B.count === 1) spots.unshift([Math.floor(W / 2), Math.floor(H / 2) - 1]);
       for (let i = 0; i < B.count; i++) {
-        const b = { kind: B.kind, hp: B.hp, max: B.hp, id: pickHost(s, spots[i % spots.length], 0), idle: 0, hitThisMove: false, claw: 0 };
+        const b = { kind: B.kind, hp: B.hp, max: B.hp, id: pickHost(s, spots[i % spots.length], 0), idle: 0, hitThisMove: false, claw: 0, weak: level.weak ? randInt(s, s.colors) : null };
         s.bosses.push(b);
         if (B.kind === 'serpent') placeSerpent(s, b, spots[i % spots.length], 0);
       }
@@ -112,6 +112,10 @@
   const MONKEY_SWAP = 3;
   // Sapo (17/10, no lugar do macaco): a cada FROG_SPIT jogadas sem apanhar cospe gosma em FROG_SLIME joias perto dele
   const FROG_SPIT = 2, FROG_SLIME = 2;
+  // Aranha (18/10, mecânica própria): a cada SPIDER_WEB jogadas sem apanhar ela embrulha 1 joia perto dela num CASULO (rocha de 1 camada
+  // com contagem). Casulo quebra com combinação encostada, como pedra; se a contagem zerar, eclode: perde COCOON_PENALTY movimentos
+  // e vira joia. No máximo COCOON_MAX casulos de cada vez.
+  const SPIDER_WEB = 2, COCOON_TIMER = 4, COCOON_MAX = 3, COCOON_PENALTY = 2;
   const aliveBosses = (s) => (s.bosses || []).filter((b) => b.hp > 0);
   function idPos(s, id) {
     if (id == null) return null;
@@ -414,12 +418,14 @@
         if (b.hitThisMove) continue;
         // 1 = joia dele ou encostada; 0 = só a joia dele. A serpente já ocupa 2 casas: só acertando o corpo dela.
         const reach = s.level.scarabReach != null ? s.level.scarabReach : b.kind === 'serpent' ? 0 : 1;
-        hit = res.removed.some((r) => near(cells, r, reach));
+        // ponto fraco (fases avançadas, level.weak): só pega se a joia quebrada for da cor que o chefe mostra
+        hit = res.removed.some((r) => near(cells, r, reach) && (b.weak == null || (r.piece && r.piece.color === b.weak)));
         if (!hit) continue;
       }
       b.hp--; b.hitThisMove = true; b.idle = 0;
+      if (b.weak != null && b.hp > 0) b.weak = (b.weak + 1 + randInt(s, s.colors - 1)) % s.colors; // o ponto fraco muda de cor depois de cada golpe
       res.score += SCORE.boss;
-      const ev = { idx, kind: b.kind || 'scarab', from: cells[0], cells, hp: b.hp, dead: b.hp <= 0 };
+      const ev = { idx, kind: b.kind || 'scarab', from: cells[0], cells, hp: b.hp, dead: b.hp <= 0, weak: b.weak };
       if (b.hp <= 0) {
         bump(s, 'boss');
         if (b.kind === 'statue') for (const [x, y] of b.cells) s.grid[y][x] = null; // desmorona: as joias de cima caem no lugar
@@ -683,6 +689,17 @@
         }
         continue;
       }
+      if (b.kind === 'spider') {
+        // aranha: sem apanhar por SPIDER_WEB jogadas = embrulha uma joia em casulo; apanhou = o contador zera
+        if (b.hitThisMove) { b.web = 0; continue; }
+        b.web = (b.web || 0) + 1;
+        if (b.web >= SPIDER_WEB) {
+          b.web = 0;
+          const from = bossPos(s, b), cells = spinCocoon(s, from);
+          if (cells.length) yield { type: 'bossweb', idx, from, cells };
+        }
+        continue;
+      }
       if (b.kind === 'boa') {
         // jiboia: a cada BOA_EAT jogadas sem apanhar engole uma joia encostada (vira bolo de pedra) e cresce;
         // apanhou = o contador zera
@@ -722,6 +739,7 @@
     }
     // fim da jogada (16/10, adaptado do Candy): musgo que ninguém tocou cresce; ídolos amaldiçoados contam 1 a menos
     if (!isWon(s) && !s.rush) {
+      if (countCocoons(s)) { const c = cocoonTick(s); yield Object.assign({ type: 'cocoontick' }, c); }
       if (!s.mossHit) { const g = mossGrow(s); if (g) yield Object.assign({ type: 'mossgrow' }, g); }
       const ticks = [];
       for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
@@ -839,6 +857,44 @@
     return out;
   }
 
+  // aranha: embrulha em casulo a joia comum mais perto dela (1 a 3 casas)
+  function spinCocoon(s, from) {
+    if (!from || countCocoons(s) >= COCOON_MAX) return [];
+    const taken = takenIds(s), cand = [];
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+      const p = s.grid[y][x];
+      if (!plainGem(p) || taken.has(p.id)) continue;
+      const d = Math.abs(x - from[0]) + Math.abs(y - from[1]);
+      if (d >= 1 && d <= 3) cand.push({ x, y, d: d + rand(s) * 1.5 });
+    }
+    cand.sort((a, b) => a.d - b.d);
+    if (!cand.length) return [];
+    const c = cand[0];
+    s.grid[c.y][c.x] = { id: s.nextId++, kind: 'rock', hp: 1, cocoon: COCOON_TIMER };
+    return [[c.x, c.y]];
+  }
+  function countCocoons(s) { let n = 0; for (const row of s.grid) for (const p of row) if (p && p.cocoon) n++; return n; }
+  // fim da jogada: cada casulo conta 1; o que zerar eclode (vira joia e custa movimentos)
+  function cocoonTick(s) {
+    const ticks = [], hatched = [];
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+      const p = s.grid[y][x];
+      if (!p || !p.cocoon) continue;
+      p.cocoon--;
+      if (p.cocoon <= 0) {
+        // a joia que nasce não pode formar trio sozinha (testa as cores até achar uma que não combine)
+        let g = null;
+        for (let c = 0; c < s.colors && !g; c++) { const q = newGem(s, (c + randInt(s, s.colors)) % s.colors); s.grid[y][x] = q; if (!matchThrough(s, x, y)) g = q; }
+        if (!g) { g = newGem(s, randInt(s, s.colors)); s.grid[y][x] = g; }
+        hatched.push({ x, y, piece: g });
+      }
+      else ticks.push([x, y]);
+    }
+    const lost = hatched.length ? Math.min(s.moves, COCOON_PENALTY * hatched.length) : 0;
+    s.moves -= lost;
+    return { ticks, hatched, lost };
+  }
+
   function runAll(gen) { const out = []; for (const e of gen) out.push(e); return out; }
 
   // ---------- jogadas possíveis ----------
@@ -933,7 +989,7 @@
   const api = {
     SCORE, GEM_NAMES, rand, createState, cloneState, findGroups, groupSpecial, applyHits, gravity, gravityStep,
     collectArtifacts, doSwap, swapIsValid, resolve, runAll, allMoves, findMove, shuffle, treasureRush,
-    isWon, goalDone, sandLeft, stars, colorAt, inside, swappable, isExit, bossPos, bossCells, countKind,
+    isWon, goalDone, sandLeft, stars, colorAt, inside, swappable, isExit, bossPos, bossCells, countKind, countCocoons,
   };
   root.LR = api;
   if (typeof module !== 'undefined') module.exports = api;

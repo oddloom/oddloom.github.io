@@ -155,7 +155,8 @@
   const AM = {
     inter: cfg.interstitialId || 'ca-app-pub-3940256099942544/1033173712',
     reward: cfg.rewardId || 'ca-app-pub-3940256099942544/5224354917',
-    testing: !cfg.interstitialId,
+    // testing true = anúncio de teste mesmo com os IDs reais (pra testar no próprio celular sem violar a política do AdMob)
+    testing: cfg.testing != null ? !!cfg.testing : !cfg.interstitialId,
   };
   let am = null, amInter = false, amReward = false, amDone = null, amGranted = false;
   const amLoad = (kind) => {
