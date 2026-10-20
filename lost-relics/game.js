@@ -2557,12 +2557,9 @@
   const worldOf = (id) => Math.max(0, WORLDS.findIndex((w) => id >= w.from && id <= w.to));
   let mapWorld = null; // mundo aberto no mapa (null = o da fase atual)
   // Família pintada no próprio projeto: normal, atual, difícil concluída e bloqueada.
-  const mapDigits = (id) => String(id).split('').map((digit) =>
-    '<img alt="" src="assets/mapa/numeros-v2/n' + digit + '.png">'
-  ).join('');
   const nodeFace = (id, state) => {
     const src = 'assets/mapa/botoes-v2/' + state + '.png';
-    return '<img class="btn-img" alt="" src="' + src + '"><span class="num map-digits' + (id >= 10 ? ' d2' : '') + (id === 33 ? ' phase-33' : '') + '" aria-label="' + id + '">' + mapDigits(id) + '</span>';
+    return '<img class="btn-img" alt="" src="' + src + '"><span class="num map-phase-num" aria-label="' + id + '">' + id + '</span>';
   };
   function buildMap() {
     const inner = $('mapInner'), scroll = $('mapScroll');
@@ -2591,7 +2588,7 @@
     const NODES = NEW3 && Wd.nodes && Wd.nodes.length === n ? Wd.nodes : null;
     const curRaw = NODES ? NODES[Math.min(save.unlocked - base, n) - 1] : rAt((rTot * (Math.min(save.unlocked - base, n) - 0.5)) / n);
     const offX = Math.max(w - mapW, Math.min(0, w / 2 - curRaw[0] * s)), offY = 0;
-    inner.style.setProperty('--ns', (30 * s).toFixed(1) + 'px'); inner.style.height = mapH + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
+    inner.style.setProperty('--ns', Math.max(42, 24 * s).toFixed(1) + 'px'); inner.style.height = mapH + 'px'; inner.style.width = w + 'px'; inner.style.margin = '0 auto';
     const bgMap = NEW3 ? D[Wd.map] : D.map;
     $('screen-map').style.backgroundImage = bgMap ? 'url("' + bgMap + '")' : 'none';
     // mapa 3D: o fundo é o canvas WebGL atrás da coluna; sem isso, a pintura fica como fundo da coluna
