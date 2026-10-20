@@ -2562,7 +2562,7 @@
   ).join('');
   const nodeFace = (id, state) => {
     const src = 'assets/mapa/botoes-v2/' + state + '.png';
-    return '<img class="btn-img" alt="" src="' + src + '"><span class="num map-digits' + (id >= 10 ? ' d2' : '') + '" aria-label="' + id + '">' + mapDigits(id) + '</span>';
+    return '<img class="btn-img" alt="" src="' + src + '"><span class="num map-digits' + (id >= 10 ? ' d2' : '') + (id === 33 ? ' phase-33' : '') + '" aria-label="' + id + '">' + mapDigits(id) + '</span>';
   };
   function buildMap() {
     const inner = $('mapInner'), scroll = $('mapScroll');

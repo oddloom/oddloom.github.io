@@ -753,6 +753,7 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .node.simple.art-v2 .map-digits { position: absolute; left: 12%; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; gap: calc(var(--ns, 52px) * -.035); width: 76%; height: calc(var(--ns, 52px) * .43); line-height: 1; }
 .node.simple.art-v2 .map-digits img { display: block; width: auto; height: 100%; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(20,8,2,.9)); }
 .node.simple.art-v2 .map-digits.d2 { left: 9%; width: 82%; height: calc(var(--ns, 52px) * .35); }
+.node.simple.art-v2 .map-digits.phase-33 { margin-left: calc(var(--ns, 52px) * -.06); }
 .node.simple.art-v2.state-bloqueada .map-digits { opacity: .7; filter: grayscale(.6) brightness(.8); }
 .node.simple.art-v2.state-dificil .map-digits { filter: sepia(.18) saturate(1.15); }
 .node.simple.art-v2 .st, .node.simple.art-v2 .cur-bar, .node.simple.art-v2 .node-aura, .node.simple.art-v2 .node-orb { display: none; }
