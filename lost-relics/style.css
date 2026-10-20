@@ -746,7 +746,7 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .node.simple.art-v2.state-dificil .btn-img { filter: drop-shadow(0 0 6px rgba(255,91,48,.55)) drop-shadow(0 4px 5px rgba(0,0,0,.65)); }
 .node.simple.art-v2 .map-phase-num,
 .node.simple.art-v2.current .map-phase-num,
-.node.simple.art-v2.boss .map-phase-num { position: absolute; left: 0; right: 0; top: 50%; z-index: 2; transform: translateY(-50%); font-family: var(--f-display); font-weight: 900; font-size: calc(var(--ns, 52px) * .42); font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1; color: #f8e8bd; text-align: center; text-shadow: 0 2px 0 #261308, 0 0 4px #000; }
+.node.simple.art-v2.boss .map-phase-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 2; transform: none; padding: 0; font-family: var(--f-display); font-weight: 900; font-size: calc(var(--ns, 52px) * .42); font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1; color: #f8e8bd; text-align: center; text-shadow: 0 2px 0 #261308, 0 0 4px #000; }
 .node.simple.art-v2.state-bloqueada .map-phase-num { color: #aaa08a; opacity: .72; }
 .node.simple.art-v2.state-dificil .map-phase-num { color: #ffd69a; }
 .node.simple.art-v2 .st, .node.simple.art-v2 .cur-bar, .node.simple.art-v2 .node-aura, .node.simple.art-v2 .node-orb { display: none; }
