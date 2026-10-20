@@ -743,6 +743,8 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .node.simple.art-v2.current .btn-img,
 .node.simple.art-v2.boss.current .btn-img { left: 50%; top: 50%; width: 154%; height: 154%; max-width: none; object-fit: contain; transform: translate(-50%, -50%); animation: none; filter: drop-shadow(0 4px 5px rgba(0,0,0,.65)); }
 .node.simple.art-v2.state-atual .btn-img { filter: drop-shadow(0 0 7px rgba(63,216,204,.72)) drop-shadow(0 4px 5px rgba(0,0,0,.65)); }
+.node.simple.art-v2.state-atual .btn-img { width: 138%; height: 138%; }
+.node.simple.art-v2.state-atual .map-digits { left: 14%; top: 51%; width: 72%; height: calc(var(--ns, 52px) * .38); }
 .node.simple.art-v2.state-dificil .btn-img { filter: drop-shadow(0 0 6px rgba(255,91,48,.55)) drop-shadow(0 4px 5px rgba(0,0,0,.65)); }
 .node.simple.art-v2 .num,
 .node.simple.art-v2.current .num,
