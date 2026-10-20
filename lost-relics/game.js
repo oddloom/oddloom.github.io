@@ -2341,6 +2341,7 @@
       (rows ? '<div class="records-levels">' + rows + '</div>' : '') +
       '<div class="btns"><button class="btn dark small" id="mWeeklyName" type="button">' + T('weekly.change') + '</button>' +
       '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
+    card.classList.add('records-hub');
     card.querySelectorAll('.record-level').forEach((button) => {
       button.onclick = () => {
         const id = +button.dataset.level;
