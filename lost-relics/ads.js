@@ -15,6 +15,11 @@
   const provider = cfg.provider || (cfg.client ? 'adsense' : 'mock');
   let hooks = { pause() {}, resume() {} };
   let mockCount = 0;
+  const AD_STATE_KEY = 'lostrelics.ads.v1';
+  let adState = { lastInterstitialAt: 0 };
+  try { adState = Object.assign(adState, JSON.parse(localStorage.getItem(AD_STATE_KEY)) || {}); } catch (e) {}
+  const saveAdState = () => { try { localStorage.setItem(AD_STATE_KEY, JSON.stringify(adState)); } catch (e) {} };
+  const track = (name, params) => { if (root.Telemetry) root.Telemetry.event(name, params || {}); };
 
   // ---------- simulação ----------
   function mock(kind, done) {
@@ -80,7 +85,7 @@
   // O SDK precisa de init() assíncrono; tudo que chega antes espera o "ready".
   let cg = null;
   const cgReady = provider === 'crazygames' && root.CrazyGames
-    ? root.CrazyGames.SDK.init().then(() => { cg = root.CrazyGames.SDK; }).catch(() => {})
+    ? root.CrazyGames.SDK.init().then(() => { cg = root.CrazyGames.SDK; try { cg.game.loadingStart(); } catch (e) {} }).catch(() => {})
     : Promise.resolve();
   const crazygames = {
     init() {
@@ -114,6 +119,7 @@
         try { on ? cg.game.gameplayStart() : cg.game.gameplayStop(); } catch (e) {}
       });
     },
+    loading(on) { cgReady.then(() => { if (cg) { try { on ? cg.game.loadingStart() : cg.game.loadingStop(); } catch (e) {} } }); },
   };
 
   // ---------- GameDistribution ----------
@@ -218,11 +224,31 @@
     // o jogo informa como pausar/voltar o som durante o anúncio
     setHooks(h) { hooks = Object.assign(hooks, h); },
     // Entre partidas. cb() roda depois do anúncio (ou na hora, se não houver).
-    interstitial(cb) { impl.interstitial(cb); },
+    interstitial(cb, meta) {
+      const level = Math.floor(+((meta && meta.level) || 0)), now = Date.now();
+      // Protege a primeira sessão e evita anúncios repetidos em sequência.
+      if (provider === 'none' || (level && level <= 3) || now - adState.lastInterstitialAt < 4 * 60 * 1000) { cb(); return; }
+      track('ad_offer', { mode: 'interstitial', level });
+      impl.interstitial(() => {
+        adState.lastInterstitialAt = Date.now(); saveAdState();
+        track('ad_result', { mode: 'interstitial', level, result: 'completed' }); cb();
+      });
+    },
     // Recompensado. onAvailable(show) só é chamado se existir anúncio;
     // aí o jogo mostra o botão e chama show() quando o jogador tocar.
-    offerReward(o) { impl.offerReward(o); },
+    offerReward(o) {
+      const level = Math.floor(+((o && o.level) || 0));
+      impl.offerReward({
+        onAvailable(show) {
+          track('ad_offer', { mode: 'rewarded', level });
+          o.onAvailable(() => { track('ad_result', { mode: 'rewarded', level, result: 'started' }); show(); });
+        },
+        onReward() { track('ad_result', { mode: 'rewarded', level, result: 'rewarded' }); o.onReward(); },
+        onSkip() { track('ad_result', { mode: 'rewarded', level, result: 'skipped' }); if (o.onSkip) o.onSkip(); },
+      });
+    },
     // partida rodando (true) ou parada (false): a CrazyGames usa nas métricas
     gameplay(on) { if (impl.gameplay) impl.gameplay(on); },
+    loading(on) { if (impl.loading) impl.loading(on); },
   };
 })(this);

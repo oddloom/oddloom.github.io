@@ -4,6 +4,7 @@
   'use strict';
   const T = (k, v) => I18N.t(k, v);
   const $ = (id) => document.getElementById(id);
+  const track = (name, params) => { if (window.Telemetry) Telemetry.event(name, params || {}); };
   const canvas = $('stage'), ctx = canvas.getContext('2d');
   const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -187,9 +188,29 @@
 
   // ---------- estado da partida ----------
   let scene = 'menu', state = null, level = null, busy = false;
+  let runStartedAt = 0, runEnded = false, tutorialMove = null;
   let vis = new Map(), dying = [], parts = [], floats = [], glints = [];
   let shake = 0, hint = null, idle = 0, selected = null, drag = null, usedExtra = false, praiseLevel = 0, glintClock = 0;
   const modalOpen = () => !$('modal').hidden;
+  const runMode = () => level && (level.daily ? 'daily' : level.weekly ? 'weekly' : level.hard ? 'hard' : 'normal');
+  function finishRun(result, extra) {
+    if (runEnded || !level || !state) return;
+    runEnded = true;
+    track('level_end', Object.assign({
+      level: Number.isInteger(level.id) ? level.id : 0,
+      mode: runMode(), result, score: Math.max(0, Math.floor(state.score || 0)),
+      moves_left: Math.floor(state.moves || 0), duration_ms: Math.max(0, Date.now() - runStartedAt),
+    }, extra || {}));
+  }
+  function abandonRun(reason) {
+    if (runEnded || !level || !state) return;
+    runEnded = true;
+    track('level_abandon', {
+      level: Number.isInteger(level.id) ? level.id : 0,
+      mode: runMode(), result: reason || 'leave', score: Math.max(0, Math.floor(state.score || 0)),
+      moves_left: Math.floor(state.moves || 0), duration_ms: Math.max(0, Date.now() - runStartedAt),
+    });
+  }
   function V(p, x, y) {
     let v = vis.get(p.id);
     if (!v) { v = { x, y, s: 1, a: 1, sq: 0 }; vis.set(p.id, v); }
@@ -202,6 +223,7 @@
     const Ld = id === 'daily' ? dailyLevel() : id === 'weekly' ? weeklyLevel() : levelMode(id, hardAllowed);
     if ((Ld.bossKind || Ld.scarab) && !EXTRA.done) await extraReady();
     level = Ld;
+    runStartedAt = Date.now(); runEnded = false; tutorialMove = null;
     weeklyReplay = level.weekly || level.hard ? [] : weeklyReplay;
     state = level.daily ? dailyState(level) : LR.createState(level, level.weekly || level.hard ? level.seed : ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
     if (!level.daily && !level.weekly && !level.hard) { applyBoosts(boosts || {}); applyStreak(); } // modos competitivos são iguais pra todos: sem loja nem trilha
@@ -222,6 +244,7 @@
     renderHUD();
     fitBoard();
     Ads.gameplay(true);
+    track('level_start', { level: Number.isInteger(level.id) ? level.id : 0, mode: runMode(), moves: state.moves });
     busy = true;
     const proms = [];
     for (let y = 0; y < state.H; y++) for (let x = 0; x < state.W; x++) {
@@ -238,6 +261,14 @@
     await Promise.all(proms);
     if (intro) await wait(Math.max(0, intro.t0 + INTRO_DUR - now)); // sem jogar durante a entrada do chefe
     busy = false;
+    if (level.id === 1 && !level.hard && !level.daily && !level.weekly && !save.tutorialDone) {
+      tutorialMove = LR.findMove(state);
+      hint = tutorialMove;
+      if (tutorialMove) {
+        showPraise(T('tutorial.follow'), 'info');
+        track('tutorial_begin', { level: 1, mode: 'normal' });
+      }
+    }
   }
 
   // Trilha do Explorador: 1 vitória seguida = 1 Joia Flecha grátis; 2 = + Joia Selo; 3 = + Orbe Solar
@@ -295,7 +326,7 @@
   canvas.addEventListener('pointerdown', (e) => {
     Sound.init();
     if (scene !== 'play' || busy || modalOpen()) return;
-    idle = 0; hint = null;
+    idle = 0; hint = tutorialMove || null;
     const c = cellAt(e.clientX, e.clientY);
     if (!c) { selected = null; return; }
     if (hammerMode) { const hp = state.grid[c[1]][c[0]]; if (hp && hp.kind !== 'artifact') { selected = null; useHammer(c); } return; }
@@ -328,6 +359,16 @@
   async function trySwap(a, b) {
     const pa = state.grid[a[1]][a[0]], pb = state.grid[b[1]][b[0]];
     if (!LR.swappable(pa)) return;
+    if (tutorialMove) {
+      const [ta, tb] = tutorialMove;
+      const same = (x, y) => x[0] === y[0] && x[1] === y[1];
+      if (!((same(a, ta) && same(b, tb)) || (same(a, tb) && same(b, ta)))) {
+        hint = tutorialMove;
+        nudge(pa, a);
+        showPraise(T('tutorial.follow'), 'info');
+        return;
+      }
+    }
     busy = true;
     const va = V(pa, a[0], a[1]);
     if (!LR.swappable(pb)) {
@@ -346,6 +387,11 @@
       busy = false; return;
     }
     if (level.weekly || level.hard) weeklyReplay.push([a[0], a[1], b[0], b[1]]);
+    if (tutorialMove) {
+      tutorialMove = null; hint = null; save.tutorialDone = 1; persist();
+      showPraise(T('tutorial.done'), 'info');
+      track('tutorial_complete', { level: 1, mode: 'normal' });
+    }
     praiseLevel = 0;
     renderHUD();
     if (start.combo) comboFx(start);
@@ -1916,6 +1962,7 @@
   async function showWin() {
     if (level.daily) return showDaily();
     Ads.gameplay(false);
+    finishRun('win');
     const id = level.id, hardMode = !!level.hard, stars = LR.stars(state);
     const weeklyBest = hardMode ? hardWeeklyScores() : null;
     const prevBest = hardMode ? (weeklyBest[id] || 0) : (save.best[id] || 0), isNew = state.score > prevBest && prevBest > 0;
@@ -1947,6 +1994,7 @@
       (hardMode ? '<div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' : '<div class="moves-line streak-up">' + T('streak.up', { n: save.streak }) + '</div>') +
       (last ? '<p>' + T('map.soon') + '</p>' : '') +
       '<div class="btns">' + (last || hardMode ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
+      (hardMode ? '<button class="btn" id="mShare" type="button">' + T('records.share') + '</button>' : '') +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
     const imgs = card.querySelectorAll('.stars-big img');
     // estrelas pintadas: começa no encaixe de pedra vazio e troca pela estrela Solar ao acender
@@ -1967,7 +2015,21 @@
     if (next) next.onclick = () => {
       Sound.play('click'); closeModal();
       const go = () => openPre(id + 1);
-      if (save.wins % 3 === 0) Ads.interstitial(go); else go();
+      if (save.wins % 3 === 0) Ads.interstitial(go, { level: id }); else go();
+    };
+    const share = card.querySelector('#mShare');
+    if (share) share.onclick = async () => {
+      Sound.play('click');
+      const n = state.score.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
+      try {
+        await ShareCard.share({
+          kind: 'hard', level: id, score: n,
+          title: T('records.shareTitle', { n: id }), subtitle: T('records.shareSubtitle'),
+          scoreLabel: T('records.points'), call: T('records.shareCall'),
+          text: T('records.shareText', { level: id, score: n }),
+        });
+        track('share_result', { mode: 'hard', level: id, result: 'ok', score: state.score });
+      } catch (e) { track('share_result', { mode: 'hard', level: id, result: 'cancel' }); }
     };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
     if (hardMode) loadWeeklyRows(card, Records.submitLevel(id, state.score, { week: level.week, replay: weeklyReplay.slice() }));
@@ -1976,6 +2038,7 @@
 
   function showLose() {
     Ads.gameplay(false);
+    if (level.hard || state.cursed || usedExtra) finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' });
     Sound.play('lose');
     const id = level.id;
     const rows = state.goals.filter((g) => !LR.goalDone(state, g)).map((g) =>
@@ -1992,10 +2055,11 @@
       '<button class="btn' + (usedExtra ? '' : ' stone') + '" id="mRetry" type="button">' + T('retry') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
     // perdeu e desistiu (tentar de novo ou mapa) = trilha zera; se pegar +5 movimentos e vencer, mantém
-    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(() => startLevel(id, {}, !!level.hard)); };
-    card.querySelector('#mMap').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(openMap); };
+    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); breakStreak(); closeModal(); wipe(() => startLevel(id, {}, !!level.hard)); };
+    card.querySelector('#mMap').onclick = () => { Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); breakStreak(); closeModal(); wipe(openMap); };
     if (!level.hard && !usedExtra && !state.cursed) { // desafio difícil e maldição não aceitam movimentos extras
       Ads.offerReward({
+        level: id,
         onAvailable(show) {
           const b = card.querySelector('#mExtra');
           if (!b) return;
@@ -2027,8 +2091,8 @@
     };
     paint();
     card.querySelector('#mResume').onclick = () => { Sound.play('click'); closeModal(); };
-    card.querySelector('#mRestart').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(() => startLevel(level.id, {}, !!level.hard)); };
-    card.querySelector('#mMap').onclick = () => { Sound.play('click'); breakStreak(); closeModal(); wipe(openMap); };
+    card.querySelector('#mRestart').onclick = () => { Sound.play('click'); abandonRun('restart'); breakStreak(); closeModal(); wipe(() => startLevel(level.id, {}, !!level.hard)); };
+    card.querySelector('#mMap').onclick = () => { Sound.play('click'); abandonRun('map'); breakStreak(); closeModal(); wipe(openMap); };
     card.querySelector('#mSfx').onclick = () => { Sound.setSfx(!Sound.sfx); paint(); };
     card.querySelector('#mMusic').onclick = () => { Sound.setMusic(!Sound.music); paint(); };
   }
@@ -2232,6 +2296,7 @@
   }
   function showDaily() {
     Ads.gameplay(false);
+    finishRun('win', { value: state.score });
     const best = level.best, sc = state.score, p = Math.min(100, Math.round((100 * sc) / best));
     const first = !save.daily || save.daily.date !== level.date;
     if (first) { save.coins += 20; save.daily = { date: level.date, best: sc, tries: 1 }; }
@@ -2251,11 +2316,16 @@
       '<div class="btns"><button class="btn" id="mShare" type="button">' + T('daily.shareBtn') + '</button>' +
       '<button class="btn dark small" id="mRetry" type="button">' + T('daily.retry') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('menu.back') + '</button></div>');
-    card.querySelector('#mShare').onclick = () => {
+    card.querySelector('#mShare').onclick = async () => {
       Sound.play('click');
-      const txt = T('daily.share', { d: dd, n: n(sc), p }) + ' ' + location.href.split('#')[0];
-      if (navigator.share) navigator.share({ text: txt }).catch(() => {});
-      else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => showPraise(T('daily.copied'), 'info')).catch(() => {});
+      const txt = T('daily.share', { d: dd, n: n(sc), p });
+      try {
+        await ShareCard.share({
+          kind: 'daily', score: n(sc), title: T('daily.title'), subtitle: dd + ' · ' + T('daily.pct', { p }),
+          scoreLabel: T('records.points'), call: T('records.shareCall'), text: txt,
+        });
+        track('share_result', { mode: 'daily', result: 'ok', score: sc, value: p });
+      } catch (e) { track('share_result', { mode: 'daily', result: 'cancel' }); }
     };
     card.querySelector('#mRetry').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel('daily')); };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMenu); };
@@ -2331,10 +2401,13 @@
   function openRecordsHub() {
     const week = Records.week(), scores = hardWeeklyScores();
     const ids = LEVELS.map((L) => L.id).filter((id) => !!save.stars[id]);
-    const rows = ids.map((id) =>
-      '<button type="button" class="record-level" data-level="' + id + '"><span>' + T('level') + ' ' + id + '</span><strong>' +
+    const featured = Records.featured(ids, week, 3);
+    const ordered = featured.concat(ids.filter((id) => !featured.includes(id)));
+    const rows = ordered.map((id) =>
+      '<button type="button" class="record-level' + (featured.includes(id) ? ' featured' : '') + '" data-featured="' + T('records.featured') + '" data-level="' + id + '"><span>' + T('level') + ' ' + id + '</span><strong>' +
       (scores[id] ? T('records.best', { n: scores[id].toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') }) : T('records.noScore')) + '</strong></button>'
     ).join('');
+    track('leaderboard_open', { mode: 'hard', value: ids.length });
     const card = openModal(
       '<div class="eyebrow">' + T('weekly.week', { d: weeklyDate(week) }) + '</div><h2 class="metal">' + T('records.title') + '</h2><div class="orn"><i></i></div>' +
       '<p class="weekly-rules">' + T(ids.length ? 'records.hint' : 'records.empty') + '</p>' +
@@ -2353,6 +2426,7 @@
   }
   function showWeekly() {
     Ads.gameplay(false);
+    finishRun('win', { value: state.score });
     const sc = Math.max(0, Math.floor(state.score)), L = level;
     Sound.play('win'); buzz([30, 60, 30, 60]);
     const card = openModal(
@@ -2373,6 +2447,7 @@
     $('btnPlay').textContent = save.unlocked > 1 ? T('menu.continue') : T('menu.play');
     $('btnWeekly').textContent = T('weekly.btn');
     $('btnDaily').textContent = (save.daily && save.daily.date === todayKey() ? '✓ ' : '') + T('daily.btn');
+    $('btnProgress').textContent = T('save.btn');
     for (const [id, on, key] of [['btnSfx', Sound.sfx, 'menu.sound'], ['btnMusic', Sound.music, 'menu.music']]) {
       const b = $(id); b.classList.toggle('off', !on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', T(key) + ': ' + T(on ? 'on' : 'off')); b.title = T(key);
     }
@@ -2384,12 +2459,42 @@
     $('hud').hidden = true; $('screen-map').hidden = true; $('screen-menu').hidden = false;
     paintMenu();
   }
+  async function openProgress() {
+    let code = '';
+    try { code = await PortableSave.exportCode(); } catch (e) { showPraise(T('save.invalid'), 'info'); return; }
+    const card = openModal(
+      '<h2 class="metal">' + T('save.title') + '</h2><div class="orn"><i></i></div>' +
+      '<p class="save-summary">' + T('save.info') + '</p>' +
+      '<textarea id="saveCode" class="save-code" spellcheck="false" autocomplete="off" aria-label="' + T('save.title') + '"></textarea>' +
+      '<div class="btns"><button class="btn" id="mCopySave" type="button">' + T('save.copy') + '</button>' +
+      '<button class="btn dark" id="mImportSave" type="button">' + T('save.import') + '</button>' +
+      '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
+    const box = card.querySelector('#saveCode'); box.value = code;
+    card.querySelector('#mCopySave').onclick = async () => {
+      Sound.play('click');
+      try { await navigator.clipboard.writeText(box.value); }
+      catch (e) { box.select(); document.execCommand('copy'); }
+      showPraise(T('daily.copied'), 'info'); track('save_export', { result: 'copied' });
+    };
+    card.querySelector('#mImportSave').onclick = async () => {
+      Sound.play('click');
+      try {
+        const checked = await PortableSave.inspect(box.value), s = checked.summary;
+        if (!window.confirm(T('save.confirm', { n: s.unlocked, s: s.stars, c: s.coins }))) return;
+        await PortableSave.importCode(box.value);
+        track('save_import', { result: 'ok', level: s.unlocked, value: s.stars });
+        window.alert(T('save.ok')); location.reload();
+      } catch (e) { showPraise(T('save.invalid'), 'info'); track('save_import', { result: 'invalid' }); }
+    };
+    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); };
+  }
   $('btnPlay').onclick = () => {
     Sound.init(); Sound.play('click');
     wipe(() => { openMap(); if (save.unlocked === 1 && !save.stars[1]) openPre(1); });
   };
   $('btnDaily').onclick = () => { Sound.init(); Sound.play('click'); wipe(() => startLevel('daily')); };
   $('btnWeekly').onclick = () => { Sound.init(); Sound.play('click'); openRecordsHub(); };
+  $('btnProgress').onclick = () => { Sound.init(); Sound.play('click'); openProgress(); };
   $('btnSfx').onclick = () => { Sound.init(); Sound.setSfx(!Sound.sfx); paintMenu(); Sound.play('click'); };
   $('btnMusic').onclick = () => { Sound.init(); Sound.setMusic(!Sound.music); paintMenu(); };
   $('btnLang').onclick = () => { I18N.toggle(); paintMenu(); Sound.play('click'); };
@@ -2413,6 +2518,17 @@
   const extraReady = () => (EXTRA.done ? Promise.resolve() : new Promise((r) => EXTRA.wait.push(r)));
   function loadExtra() {
     const finish = () => { EXTRA.done = true; EXTRA.wait.splice(0).forEach((r) => r()); };
+    const cacheExtra = (url) => {
+      if (!window.caches || !url) return;
+      const ready = navigator.serviceWorker && navigator.serviceWorker.ready ? navigator.serviceWorker.ready.catch(() => null) : Promise.resolve();
+      ready.then(() => caches.keys()).then((keys) => {
+        const key = keys.find((k) => k.indexOf('lostrelics-') === 0);
+        if (!key) return;
+        return caches.open(key).then((cache) => cache.match(url).then((hit) => hit || fetch(url).then((res) => {
+          if (res.ok) return cache.put(url, res.clone());
+        })));
+      }).catch(() => {});
+    };
     const go = () => {
       const E = window.ART_EXTRA, D = window.ART_DATA;
       if (!E || !D) return finish();
@@ -2421,7 +2537,7 @@
       ART.loadExtra(E, finish);
     };
     if (window.ART_EXTRA) return go();
-    const sc = document.createElement('script'); sc.src = 'art-extra.js' + (window.LR_VER && LR_VER['art-extra.js'] ? '?v=' + LR_VER['art-extra.js'] : ''); sc.onload = go; sc.onerror = finish;
+    const sc = document.createElement('script'); sc.src = 'art-extra.js' + (window.LR_VER && LR_VER['art-extra.js'] ? '?v=' + LR_VER['art-extra.js'] : ''); sc.onload = () => { go(); cacheExtra(sc.src); }; sc.onerror = finish;
     document.head.appendChild(sc);
   }
 
@@ -2743,6 +2859,7 @@
 
   window.addEventListener('resize', () => { layout(); if (scene === 'map') buildMap(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) Sound.pause(); else Sound.resume(); });
+  window.addEventListener('pagehide', () => { if (scene === 'play' && !runEnded) abandonRun('pagehide'); });
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (modalOpen() && $('modalCard').querySelector('#mResume')) closeModal(); else openPause(); } });
   Ads.setHooks({ pause: () => Sound.pause(), resume: () => Sound.resume() });
 
@@ -2757,7 +2874,7 @@
     },
     swap(a, b) { if (!busy) trySwap(a, b); },
     get state() { return state; }, get busy() { return busy; }, get scene() { return scene; },
-    get save() { return save; }, openPre, startLevel,
+    get save() { return save; }, get tutorialMove() { return tutorialMove; }, openPre, startLevel, openProgress, openRecordsHub,
     findMove() { return state && LR.findMove(state); },
   };
 
@@ -2781,9 +2898,12 @@
     if (!window.ART_DATA) GEM3D.init();
     ART.clearCache();
     const ld = $('loading'); ld.classList.add('done'); setTimeout(() => ld.remove(), 700);
+    Ads.loading(false);
     setTimeout(loadExtra, 300);
+    const hardLink = /^#dificil(\d+)$/.exec(location.hash || '');
     const m = /^#fase(\d+)$/.exec(location.hash || '');
-    if (m && LEVELS[+m[1] - 1]) { openMap(); openPre(+m[1]); }
+    if (hardLink && LEVELS[+hardLink[1] - 1]) { openMap(); openPre(+hardLink[1], !!save.stars[+hardLink[1]]); }
+    else if (m && LEVELS[+m[1] - 1]) { openMap(); openPre(+m[1]); }
     else if (/^#jogar\d+$/.test(location.hash)) startLevel(+location.hash.slice(6));
     else if (location.hash === '#fxdemo') { startLevel(5); setTimeout(() => { state.grid[3][2].special = 'lineH'; state.grid[5][5].special = 'barrel'; state.grid[6][1] = { id: 9997, kind: 'gem', color: null, special: 'idol', armed: false, vine: false }; setInterval(() => { if (Math.random() < 0.34) blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); else if (Math.random() < 0.5) blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); else blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 1400); if (0) setInterval(() => { blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 900); }, 1500); }
     else if (/^#evento-/.test(location.hash)) { if (location.hash === '#evento-anton') document.documentElement.classList.add('ev-anton'); startLevel(3); setTimeout(() => { const p3 = I18N.lang === 'pt' && ART.nodeImg('p3'); showPraise(T('praise.3'), p3 ? 'art p3' : '', p3); const b = document.createElement('div'); const ra = I18N.lang === 'pt' && ART.nodeImg('rush'); b.className = 'praise ' + (ra ? 'art rush' : 'banner'); if (ra) b.innerHTML = '<img alt="" src="' + ra + '">'; else b.textContent = T('rush'); b.style.top = '62%'; b.style.animation = 'none'; b.style.transform = 'translate(-50%,-50%)'; document.body.appendChild(b); const a = document.querySelector('.praise:not(.banner)'); if (a) { a.style.animation = 'none'; a.style.transform = 'translate(-50%,-50%)'; a.style.opacity = '1'; a.style.top = '40%'; setTimeout(() => document.body.appendChild(a), 1); } }, 2600); }

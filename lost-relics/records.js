@@ -22,6 +22,14 @@
     const row = data.levelScores[w] && data.levelScores[w][levelId];
     return row ? [Object.assign({ me: true }, row)] : [];
   };
+  // Concentra a competição em poucas fases por semana sem apagar os demais rankings.
+  function featured(levelIds, w, count) {
+    const list = [...new Set((levelIds || []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+    let h = 2166136261; const key = 'featured:' + (w || week());
+    for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); }
+    for (let i = list.length - 1; i > 0; i--) { h = Math.imul(h ^ (h >>> 13), 16777619) >>> 0; const j = h % (i + 1); [list[i], list[j]] = [list[j], list[i]]; }
+    return list.slice(0, Math.max(1, Math.min(3, count || 3)));
+  }
 
   async function request(path, options) {
     if (!API) throw new Error('offline');
@@ -84,5 +92,5 @@
     }
     return listLevel(id, w);
   }
-  root.Records = { online: !!API, week, getName, setName, list, submit, listLevel, submitLevel };
+  root.Records = { online: !!API, week, getName, setName, list, submit, listLevel, submitLevel, featured };
 })(window);
