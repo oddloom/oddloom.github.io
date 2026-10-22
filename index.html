@@ -43,6 +43,18 @@ nav .in{max-width:1080px;margin:0 auto;height:52px;padding:0 clamp(16px,4vw,32px
 .logo b{color:var(--blue);font-weight:600}
 nav .contact{font-size:14px;color:var(--muted);transition:color .2s}
 nav .contact:hover{color:var(--text)}
+nav .links{display:flex;gap:20px}
+
+.about{margin-top:clamp(40px,7vw,80px);display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(24px,4vw,48px)}
+.about h2{font-size:clamp(20px,2.2vw,24px);font-weight:600;letter-spacing:-.025em;line-height:1.2}
+.about p{color:var(--muted);font-size:16px;margin-top:8px}
+.about a.more{display:inline-block;margin-top:10px;color:var(--blue);font-size:15px}
+.about a.more:hover{text-decoration:underline}
+.intro{max-width:720px;margin:clamp(40px,7vw,80px) auto 0;text-align:center}
+.intro h2{font-size:clamp(22px,2.6vw,30px);font-weight:600;letter-spacing:-.025em}
+.intro p{color:var(--muted);margin-top:10px}
+.intro a{color:var(--blue)}
+.intro a:hover{text-decoration:underline}
 
 main{max-width:1080px;margin:0 auto;padding:clamp(40px,8vw,88px) clamp(16px,4vw,32px) clamp(48px,8vw,96px)}
 .head{text-align:center;margin-bottom:clamp(32px,5vw,56px)}
@@ -69,7 +81,7 @@ footer .in{max-width:1080px;margin:0 auto;padding:20px clamp(16px,4vw,32px);disp
 footer a:hover{color:var(--text)}
 
 @media (max-width:760px){
-  .grid{grid-template-columns:1fr}
+  .grid,.about{grid-template-columns:1fr}
   .card{border-radius:24px}
 }
 @media (prefers-reduced-motion:reduce){
@@ -82,7 +94,7 @@ footer a:hover{color:var(--text)}
 <nav aria-label="Principal">
   <div class="in">
     <a class="logo" href="./" aria-label="Oddloom Games, início">Oddloom<b>.</b></a>
-    <a class="contact" href="mailto:officialoddloom@gmail.com">Contato</a>
+    <span class="links"><a class="contact" href="sobre/">Sobre</a><a class="contact" href="mailto:officialoddloom@gmail.com">Contato</a></span>
   </div>
 </nav>
 
@@ -115,12 +127,30 @@ footer a:hover{color:var(--text)}
       </div>
     </a>
   </div>
+
+  <section class="about" aria-label="Sobre os jogos">
+    <div>
+      <h2>Neon Snake</h2>
+      <p>Uma cobrinha arcade em que o mundo começa cinza e ganha cor a cada cogumelo. Cinco fases com perigos diferentes (flechas, morcegos, rochas e o caos de tudo junto), combos, desafio do dia e modo treino. Controle por deslize no celular ou setas no teclado.</p>
+      <a class="more" href="como-jogar/neon-snake/">Como jogar Neon Snake ›</a>
+    </div>
+    <div>
+      <h2>Lost Relics</h2>
+      <p>Combine joias num templo perdido na selva: 86 fases em quatro mundos, metas variadas, joias especiais, chefes como a onça, a aranha e o sapo, loja de itens, Jogada do Dia e recorde semanal. É só arrastar uma joia para trocar de lugar.</p>
+      <a class="more" href="como-jogar/lost-relics/">Como jogar Lost Relics ›</a>
+    </div>
+  </section>
+
+  <section class="intro">
+    <h2>Jogos casuais, sem enrolação</h2>
+    <p>O Oddloom Games faz jogos grátis para o navegador: partidas curtas, nada para instalar e nenhum cadastro. Funcionam no celular e no computador. O site pode exibir anúncios, sempre fora da partida. <a href="sobre/">Saiba mais sobre o Oddloom Games</a>.</p>
+  </section>
 </main>
 
 <footer>
   <div class="in">
     <span>© 2026 Oddloom Games</span>
-    <span><a href="privacidade/">Privacidade</a> · <a href="mailto:officialoddloom@gmail.com">officialoddloom@gmail.com</a></span>
+    <span><a href="sobre/">Sobre</a> · <a href="privacidade/">Privacidade</a> · <a href="mailto:officialoddloom@gmail.com">officialoddloom@gmail.com</a></span>
   </div>
 </footer>
 
