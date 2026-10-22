@@ -2276,6 +2276,8 @@
       const c = LR.cloneState(s0), st = LR.doSwap(c, m[0], m[1]);
       if (!st) continue;
       LR.runAll(LR.resolve(c, st));
+      // 22/10: o jogo roda a corrida do tesouro depois da jogada (especiais que sobraram explodem); sem isso a "melhor" ficava abaixo do real
+      if (LR.isWon(c)) LR.runAll(LR.treasureRush(c));
       best = Math.max(best, c.score);
     }
     return Math.max(best, 1);
