@@ -835,6 +835,13 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .season-card .season-rule { margin: 4px 0 0; font-size: 11.5px; line-height: 1.35; color: var(--bone-dim); text-align: center; }
 .season-card .champs-title { margin-top: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--bone-dim); text-align: center; }
 .season-card .weekly-row { font-size: 13px; padding: 6px 8px; }
+/* nomes longos e a etiqueta da liga nunca alargam a linha além do painel */
+.weekly-row { grid-template-columns: 24px minmax(0, 1fr) auto; }
+.weekly-row b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.season-card .season-row { grid-template-columns: 22px minmax(0, 1fr) auto auto; gap: 6px; }
+.season-card .season-row strong { font-size: 13px; }
+.season-card .season-row .tier { padding: 2px 6px; font-size: 8.5px; letter-spacing: .06em; }
+.season-card .season-body { overflow-x: hidden; }
 .pre-title { margin: 0; font-family: var(--f-display); font-weight: 900; font-size: 24px; letter-spacing: .08em; text-align: center; color: var(--gold-hi); }
 .ui-kit .card.pre > .pre-title { position: absolute; left: calc(var(--cw) * .27); right: calc(var(--cw) * .27); width: auto; margin: 0; top: calc(var(--cw) * .108); white-space: nowrap; transform: translateY(-50%); font-size: calc(var(--cw) * .05); line-height: 1; color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.6); pointer-events: none; z-index: 2; }
 .card.pre .mode-pick { grid-template-columns: 1fr 1fr 34px; gap: 6px; }
