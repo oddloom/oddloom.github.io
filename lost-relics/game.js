@@ -261,6 +261,9 @@
     await Promise.all(proms);
     if (intro) await wait(Math.max(0, intro.t0 + INTRO_DUR - now)); // sem jogar durante a entrada do chefe
     busy = false;
+    // resumo de 3 s quando o tabuleiro fica pronto (depois da entrada do chefe, pra não brigar com ela)
+    const tutorialRun = level.id === 1 && !level.hard && !save.tutorialDone;
+    if (!level.daily && !level.weekly && !tutorialRun && scene === 'play' && level === Ld) briefLevel(level);
     if (level.id === 1 && !level.hard && !level.daily && !level.weekly && !save.tutorialDone) {
       tutorialMove = LR.findMove(state);
       hint = tutorialMove;
@@ -1886,7 +1889,9 @@
   // ---------- janelas ----------
   function openModal(html) {
     const card = $('modalCard');
-    card.classList.remove('codex', 'tshop');
+    // 25/10: zera as classes a cada janela. Antes a classe "pre" (altura fixa + corte) vazava do card da fase
+    // pra loja e pros recordes: o botão Fechar da loja ficava cortado e o conteúdo passava da moldura.
+    card.className = 'card';
     card.innerHTML = html;
     $('modal').hidden = false;
     const first = card.querySelector('.btn');
@@ -1910,35 +1915,59 @@
     const parts = (L.weak ? [T('weak.hint')] : []).concat(key ? T(key).split('|') : []);
     return parts.map((t, i) => '<li' + (L.weak && i === 0 ? ' class="weak"' : '') + '>' + t + '</li>').join('');
   };
+  const goalRowsHTML = (L) => L.goals.map((g) => {
+    const gg = Object.assign({}, g);
+    if (g.type === 'sand') { gg.target = L.layout.join('').split('').reduce((n, c) => n + (c === 's' || c === 'w' ? 1 : c === 'S' || c === 'W' ? 2 : 0), 0); }
+    if (g.type === 'moss') gg.target = L.layout.join('').split('m').length - 1;
+    return '<div class="goal-row"><img alt="" src="' + goalIcon(g, 80, L) + '"><span>' + goalText(gg, L) + '</span></div>';
+  }).join('');
+  const tutKeyOf = (L) => (L.tut ? 'tut.' + L.tut : L.id === 25 ? 'tip.combo' : null);
+  // 25/10 (pedido dele): ao começar, objetivo + 1 dica curta por ~3 s sobre o tabuleiro, sem bloquear o toque
+  function briefLevel(L) {
+    // 25/10: só o objetivo; a única dica que aparece é a do ponto fraco (sem ela o chefe parece imortal). O resto fica no "i".
+    const tip = L.weak ? T('weak.short') : '';
+    const el = document.createElement('div');
+    el.className = 'brief';
+    el.innerHTML = '<div class="goal-list">' + goalRowsHTML(L) + '</div>' + (tip ? '<p' + (L.weak ? ' class="weak"' : '') + '>' + tip + '</p>' : '');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3400);
+  }
   function openPre(id, hard) {
     const hardOpen = !!save.stars[id], hardMode = !!hard && hardOpen;
     const L = levelMode(id, hardMode);
-    const tutKey = L.tut ? 'tut.' + L.tut : id === 25 ? 'tip.combo' : null;
-    const rows = L.goals.map((g) => {
-      const gg = Object.assign({}, g);
-      if (g.type === 'sand') { gg.target = L.layout.join('').split('').reduce((n, c) => n + (c === 's' || c === 'w' ? 1 : c === 'S' || c === 'W' ? 2 : 0), 0); }
-      if (g.type === 'moss') gg.target = L.layout.join('').split('m').length - 1;
-      return '<div class="goal-row"><img alt="" src="' + goalIcon(g, 80, L) + '"><span>' + goalText(gg, L) + '</span></div>';
-    }).join('');
+    const tutKey = tutKeyOf(L);
+    const rows = goalRowsHTML(L);
+    // 25/10 (pedido dele: "tudo clean, info só se clicar"): o card mostra só fase, modo, objetivo, movimentos e
+    // itens/ranking. Explicação, regras do Difícil e Trilha ficam atrás do botão "i".
+    const lockSvg = '<svg class="lk" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 8V6a4 4 0 1 1 8 0v2h1v10H5V8zm2 0h4V6a2 2 0 1 0-4 0z"/></svg>';
+    const tutImg = ((L.boss || L.tut === 'boa' || L.tut === 'monkey' || L.tut === 'frog' || L.tut === 'spider') && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || (TUT_ART[L.tut] && ART.nodeImg(TUT_ART[L.tut])) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108);
+    const infoHTML =
+      (tutKey || L.weak ? '<div class="tut open"><img alt="" src="' + tutImg + '"><ul class="tut-list">' + tutBullets(tutKey, L) + '</ul></div>' : '') +
+      '<p class="info-line">' + T(hardMode ? 'mode.hard.rules' : hardOpen ? 'info.hardOpen' : 'info.locked') + '</p>' +
+      (!hardMode && ART.nodeImg('ixarrow') ? streakHTML() : '');
     const card = openModal(
-      '<div class="eyebrow">' + T('map.title' + (worldOf(id) ? worldOf(id) + 1 : '')).toUpperCase() + '</div>' +
-      '<h2 class="metal">' + T('level') + ' ' + id + '</h2><div class="orn"><i></i></div>' +
+      '<h2 class="pre-title">' + T('level') + ' ' + id + '</h2>' +
       '<div class="mode-pick"><button type="button" id="mNormal" class="' + (!hardMode ? 'on' : '') + '">' + T('mode.normal') + '</button>' +
-      '<button type="button" id="mHard" class="' + (hardMode ? 'on' : '') + '"' + (hardOpen ? '' : ' disabled') + '>' + T(hardOpen ? 'mode.hard' : 'mode.hard.locked') + '</button></div>' +
-      (L.boss ? '<div class="boss-tag">' + T('boss') + '</div>' : '') +
-      '<div class="goal-list">' + rows + '</div>' +
-      '<div class="moves-line">' + T('moves') + ': <b>' + L.moves + '</b></div>' +
-      // (os parênteses importam: sem eles, com a arte do chefe carregada, o texto do tutorial sumia)
-      (tutKey || L.weak ? '<div class="tut"><img alt="" src="' + (((L.boss || L.tut === 'boa' || L.tut === 'monkey' || L.tut === 'frog' || L.tut === 'spider') && L.tut && ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) || (TUT_ART[L.tut] && ART.nodeImg(TUT_ART[L.tut])) || ART.icon(TUT_ICON[L.tut] || 'barrel', 108)) + '"><ul class="tut-list">' + tutBullets(tutKey, L) + '</ul></div>' : '') +
-      (hardMode ? '<p class="hard-rules">' + T('mode.hard.rules') + '</p><div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' : (ART.nodeImg('ixarrow') ? streakHTML() : '')) +
-      (hardMode ? '' : boostPicker()) +
+      '<button type="button" id="mHard" class="' + (hardMode ? 'on' : '') + '"' + (hardOpen ? '' : ' disabled aria-label="' + T('mode.hard.locked') + '"') + '>' + (hardOpen ? '' : lockSvg) + T('mode.hard') + '</button>' +
+      '<button type="button" id="mInfo" class="info-dot" aria-label="' + T('info.btn') + '" aria-expanded="false">i</button></div>' +
+      '<div class="pre-body"><div class="pre-main">' +
+        (L.boss ? '<div class="boss-tag">' + T('boss') + '</div>' : '') +
+        '<div class="goal-list">' + rows + '</div>' +
+        '<div class="pre-moves">' + T('pre.moves', { n: '<b>' + L.moves + '</b>' }) + '</div>' +
+        (hardMode ? '<div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' : boostPicker()) +
+      '</div><div class="pre-info">' + infoHTML + '</div></div>' +
       '<div class="btns"><button class="btn" id="mPlay" type="button">' + T('play') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
     card.classList.add('pre');
     if (hardMode) card.classList.add('hard-pre');
-    // se a explicação passar da caixa, mostra um degradê embaixo (só ela rola)
-    const tl = card.querySelector('.tut-list');
-    if (tl) requestAnimationFrame(() => { tl.classList.toggle('more', tl.scrollHeight > tl.clientHeight + 2); tl.onscroll = () => tl.classList.toggle('more', tl.scrollTop + tl.clientHeight < tl.scrollHeight - 4); });
+    const tl = card.querySelector('.tut-list'), info = card.querySelector('#mInfo');
+    info.onclick = () => {
+      Sound.play('click');
+      const open = card.classList.toggle('info-open');
+      info.setAttribute('aria-expanded', open);
+      // se a explicação passar da caixa, mostra um degradê embaixo (só ela rola)
+      if (open && tl) requestAnimationFrame(() => { tl.classList.toggle('more', tl.scrollHeight > tl.clientHeight + 2); tl.onscroll = () => tl.classList.toggle('more', tl.scrollTop + tl.clientHeight < tl.scrollHeight - 4); });
+    };
     const picked = {};
     card.querySelectorAll('.boost').forEach((b) => { b.onclick = () => { const k = b.dataset.k; picked[k] = !picked[k]; b.classList.toggle('on', picked[k]); b.setAttribute('aria-pressed', picked[k]); Sound.play('click'); }; });
     const shopLink = card.querySelector('#mShop'); if (shopLink) shopLink.onclick = () => { Sound.play('click'); openShop(() => openPre(id, false)); };
@@ -1956,7 +1985,7 @@
       persist(); closeModal(); wipe(() => startLevel(id, picked, hardMode));
     };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); if (scene !== 'map') openMap(); };
-    if (hardMode) loadWeeklyRows(card, Records.listLevel(id, L.week));
+    if (hardMode) loadLevelBoards(card, id, Records.listLevel(id, L.week));
   }
 
   async function showWin() {
@@ -2032,7 +2061,7 @@
       } catch (e) { track('share_result', { mode: 'hard', level: id, result: 'cancel' }); }
     };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
-    if (hardMode) loadWeeklyRows(card, Records.submitLevel(id, state.score, { week: level.week, replay: weeklyReplay.slice() }));
+    if (hardMode) loadLevelBoards(card, id, Records.submitLevel(id, state.score, { week: level.week, replay: weeklyReplay.slice() }));
     for (let i = 0; i < stars; i++) { await wait(0.35); lightStar(imgs[i]); Sound.play('star', i); }
   }
 
@@ -2102,9 +2131,10 @@
   // ---------- loja do templo e vantagens ----------
   function boostPicker() {
     const owned = SHOP.filter((it) => it.id !== 'hammer' && save.items[it.id] > 0);
-    if (!owned.length) return '<button class="link-btn" id="mShop" type="button">' + T('shop.get') + '</button>';
-    return '<div class="boosts"><div class="moves-line">' + T('shop.use') + '</div><div class="boost-row">' +
-      owned.map((it) => '<button class="boost" type="button" aria-pressed="false" data-k="' + it.id + '"><img alt="" src="' + itemImg(it, 80) + '"><span>' + T('item.' + it.id) + '</span><b>×' + save.items[it.id] + '</b></button>').join('') +
+    // 25/10: só os ícones dos itens que ele tem (nome no aria-label); sem item, nada (a loja fica no menu)
+    if (!owned.length) return '';
+    return '<div class="boosts"><div class="boost-row">' +
+      owned.map((it) => '<button class="boost" type="button" aria-pressed="false" aria-label="' + T('item.' + it.id) + '" title="' + T('item.' + it.id) + '" data-k="' + it.id + '"><img alt="" src="' + itemImg(it, 80) + '"><b>×' + save.items[it.id] + '</b></button>').join('') +
       '</div></div>';
   }
   // Códice do Templo (16/10): a loja é a página do livro pintado; as medalhas penduradas são as abas
@@ -2151,12 +2181,15 @@
       page = Math.min(page, pages - 1);
       const shown = offers.slice(page * PER, page * PER + PER);
       const arrow = ART.nodeImg('navarrow');
+      // 25/10: X sempre à mão no canto; abas só com ícone (o nome da aba ativa vai na linha da página); sem nota de rodapé
       const card = openModal(
+        '<button type="button" class="card-x" id="mX" aria-label="' + T('close') + '">✕</button>' +
         '<div class="ts-title" style="background-image:url(' + ART.nodeImg('cxplate') + ')"><span>' + T('shop.title') + '</span></div>' +
         '<div class="wallet"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '"><b>' + save.coins.toLocaleString() + '</b></div>' +
-        '<div class="ts-tabs">' + CODEX_TABS.map((t) => '<button type="button" class="' + (t.id === tab ? 'btn small on' : 'btn dark small') + ' ts-tab" data-tab="' + t.id + '"><img alt="" src="' + ART.nodeImg(t.icon) + '"><span>' + T('shop.tab.' + t.id) + '</span></button>').join('') + '</div>' +
-        (pages > 1 ? '<div class="ts-pager"><button type="button" class="ts-prev"' + (page === 0 ? ' disabled' : '') + ' aria-label="<" style="background-image:url(' + arrow + ')"></button><span>' + T('shop.page', { n: page + 1, t: pages }) + '</span>' +
-          '<button type="button" class="ts-next"' + (page >= pages - 1 ? ' disabled' : '') + ' aria-label=">" style="background-image:url(' + arrow + ')"></button></div>' : '') +
+        '<div class="ts-tabs">' + CODEX_TABS.map((t) => '<button type="button" class="ts-tab' + (t.id === tab ? ' on' : '') + '" data-tab="' + t.id + '" aria-label="' + T('shop.tab.' + t.id) + '" aria-pressed="' + (t.id === tab) + '"><img alt="" src="' + ART.nodeImg(t.icon) + '"></button>').join('') + '</div>' +
+        '<div class="ts-pager">' + (pages > 1 ? '<button type="button" class="ts-prev"' + (page === 0 ? ' disabled' : '') + ' aria-label="<" style="background-image:url(' + arrow + ')"></button>' : '') +
+          '<span><b>' + T('shop.tab.' + tab) + '</b>' + (pages > 1 ? ' · ' + (page + 1) + '/' + pages : '') + '</span>' +
+          (pages > 1 ? '<button type="button" class="ts-next"' + (page >= pages - 1 ? ' disabled' : '') + ' aria-label=">" style="background-image:url(' + arrow + ')"></button>' : '') + '</div>' +
         '<div class="ts-offers">' + shown.map((o) =>
           '<div class="ts-offer' + (o.sk && o.sk.soon ? ' soon' : '') + '">' +
             '<div class="ts-frame" style="background-image:url(' + ART.nodeImg('cxcard') + ')">' + (o.img ? '<img alt="" src="' + o.img + '">' : '<i>?</i>') + (o.it && save.items[o.it.id] ? '<em>×' + save.items[o.it.id] + '</em>' : '') + '</div>' +
@@ -2164,9 +2197,9 @@
               (o.btn === 'buy' ? '<button type="button" class="btn small ts-buy" data-k="' + o.key + '" aria-label="' + T('shop.buy') + ' ' + o.price + '"' + (save.coins < o.price ? ' disabled' : '') + '>' + coin(o.price, 48) + '</button>' // 16/10: só o preço (pedido dele)
                 : o.btn === 'use' ? '<button type="button" class="btn dark small ts-use" data-k="' + o.key + '">' + T('codex.use') + '</button>' : '') +
             '</div></div>').join('') + '</div>' +
-        '<p class="shop-note">' + T('shop.note') + '</p>' +
         '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('close') + '</button></div>');
       card.classList.add('tshop');
+      card.querySelector('#mX').onclick = () => card.querySelector('#mBack').click();
       card.querySelectorAll('.ts-tab').forEach((b) => { b.onclick = () => { Sound.play('click'); tab = b.dataset.tab; page = 0; render(); }; });
       const prev = card.querySelector('.ts-prev'), next = card.querySelector('.ts-next');
       if (prev) prev.onclick = () => { Sound.play('click'); page--; render(); };
@@ -2355,8 +2388,8 @@
     return L;
   }
   const weeklyDate = (key) => { const p = key.split('-'); return p[2] + '/' + p[1]; };
-  function weeklyRowsHTML(rows) {
-    if (!rows || !rows.length) return '<div class="weekly-status">' + T('weekly.empty') + '</div>';
+  function weeklyRowsHTML(rows, emptyKey) {
+    if (!rows || !rows.length) return '<div class="weekly-status">' + T(emptyKey || 'weekly.empty') + '</div>';
     const me = Records.getName().toLocaleLowerCase();
     return '<div class="weekly-board">' + rows.slice(0, 20).map((r, i) =>
       '<div class="weekly-row' + (r.me || String(r.name || '').toLocaleLowerCase() === me ? ' me' : '') + '"><i>' + (i + 1) + '</i><b>' + esc(r.name) + '</b><strong>' + (+r.score || 0).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') + '</strong></div>'
@@ -2365,6 +2398,27 @@
   function loadWeeklyRows(card, promise) {
     const box = card.querySelector('.weekly-list');
     promise.then((rows) => { if (box && box.isConnected) box.innerHTML = weeklyRowsHTML(rows); }).catch(() => { if (box && box.isConnected) box.innerHTML = weeklyRowsHTML([]); });
+  }
+  // fase Difícil: duas abas, Semanal (reseta toda segunda) e Total (recordista de todos os tempos)
+  function loadLevelBoards(card, id, weeklyPromise) {
+    const box = card.querySelector('.weekly-list');
+    if (!box) return;
+    const rows = { week: null, all: null };
+    let tab = 'week';
+    const fmt = (n) => (+n || 0).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
+    const render = () => {
+      if (!box.isConnected) return;
+      const r = rows[tab];
+      const holder = tab === 'all' && r && r.length ? '<div class="rank-holder">' + T('records.holder') + ': <b>' + esc(r[0].name) + '</b> · ' + fmt(r[0].score) + '</div>' : '';
+      box.innerHTML = '<div class="rank-tabs"><button type="button" data-t="week"' + (tab === 'week' ? ' class="on"' : '') + '>' + T('records.tabWeek') + '</button>' +
+        '<button type="button" data-t="all"' + (tab === 'all' ? ' class="on"' : '') + '>' + T('records.tabAll') + '</button></div>' +
+        (r ? holder + weeklyRowsHTML(r, tab === 'all' ? 'records.allEmpty' : 'weekly.empty') : '<div class="weekly-status">' + T('weekly.loading') + '</div>');
+      box.querySelectorAll('.rank-tabs button').forEach((b) => { b.onclick = () => { if (tab === b.dataset.t) return; Sound.play('click'); tab = b.dataset.t; render(); }; });
+    };
+    render();
+    // o total só é buscado depois do semanal, para já incluir o placar que acabou de ser enviado
+    weeklyPromise.catch(() => []).then((r) => { rows.week = r || []; render(); return Records.listLevelAll(id); })
+      .catch(() => []).then((r) => { rows.all = r || []; render(); });
   }
   function askWeeklyName(back, next) {
     const card = openModal(
@@ -2405,15 +2459,16 @@
     const ids = LEVELS.map((L) => L.id).filter((id) => !!save.stars[id]);
     const featured = Records.featured(ids, week, 3);
     const ordered = featured.concat(ids.filter((id) => !featured.includes(id)));
+    // 25/10: placa com o título, faixa da temporada e as fases (destaque = borda verde + ★, sem texto)
     const rows = ordered.map((id) =>
-      '<button type="button" class="record-level' + (featured.includes(id) ? ' featured' : '') + '" data-featured="' + T('records.featured') + '" data-level="' + id + '"><span>' + T('level') + ' ' + id + '</span><strong>' +
-      (scores[id] ? T('records.best', { n: scores[id].toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') }) : T('records.noScore')) + '</strong></button>'
+      '<button type="button" class="record-level' + (featured.includes(id) ? ' featured' : '') + '" data-level="' + id + '" aria-label="' + T('level') + ' ' + id + (featured.includes(id) ? ' · ' + T('records.featured') : '') + '"><span>' + T('level') + ' ' + id + '</span><strong>' +
+      (scores[id] ? nf(scores[id]) : '—') + '</strong></button>'
     ).join('');
     track('leaderboard_open', { mode: 'hard', value: ids.length });
     const card = openModal(
-      '<div class="eyebrow">' + T('weekly.week', { d: weeklyDate(week) }) + '</div><h2 class="metal">' + T('records.title') + '</h2><div class="orn"><i></i></div>' +
-      '<p class="weekly-rules">' + T(ids.length ? 'records.hint' : 'records.empty') + '</p>' +
-      (rows ? '<div class="records-levels">' + rows + '</div>' : '') +
+      '<h2 class="plaque-title">' + T('records.short') + '</h2>' +
+      '<button type="button" class="season-strip" id="mSeason"><span class="weekly-status">' + T('season.loading') + '</span></button>' +
+      (rows ? '<div class="records-levels">' + rows + '</div>' : '<p class="weekly-rules">' + T('records.empty') + '</p>') +
       '<div class="btns"><button class="btn dark small" id="mWeeklyName" type="button">' + T('weekly.change') + '</button>' +
       '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
     card.classList.add('records-hub');
@@ -2425,6 +2480,54 @@
     });
     card.querySelector('#mWeeklyName').onclick = () => { Sound.play('click'); closeModal(); askWeeklyName(openRecordsHub, openRecordsHub); };
     card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); };
+    const strip = card.querySelector('#mSeason');
+    strip.onclick = () => { Sound.play('click'); closeModal(); openSeason(); };
+    Records.season().then((s) => { if (strip.isConnected) strip.innerHTML = seasonStripHTML(s); }).catch(() => {});
+  }
+
+  // ---------- temporada (3 meses) ----------
+  const nf = (n) => (+n || 0).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
+  const tierHTML = (t) => (t ? '<span class="tier tier-' + t + '">' + T('tier.' + t) + '</span>' : '');
+  function seasonName(key, withYear) {
+    const [from, to] = Records.seasonRange(key), loc = I18N.lang === 'pt' ? 'pt-BR' : 'en-US';
+    const end = new Date(to + 'T00:00:00Z'); end.setUTCDate(end.getUTCDate() - 1);
+    const m = (d) => d.toLocaleDateString(loc, { month: 'short', timeZone: 'UTC' }).replace('.', '');
+    return m(new Date(from + 'T00:00:00Z')) + '–' + m(end) + (withYear === false ? '' : ' ' + key.slice(0, 4));
+  }
+  const seasonDaysLeft = (s) => Math.max(0, Math.ceil((Date.parse(s.to + 'T00:00:00Z') - Date.now()) / 86400000));
+  // inside = dentro da própria tela da temporada (o nome já está no cabeçalho, e a faixa não é botão)
+  function seasonStripHTML(s, inside) {
+    const head = inside ? '' : '<span class="season-name">' + T('season.title') + ' · ' + seasonName(s.season, false) + ' ›</span>';
+    if (!s.me) return head + '<small>' + T('season.none') + '</small>';
+    return head + '<span class="season-me">' + tierHTML(s.me.tier) + '<b>' + T('season.pts', { n: nf(s.me.points) }) + '</b>' +
+      (s.me.pos ? '<i>' + T('season.pos', { p: s.me.pos, n: s.players }) + '</i>' : '') + '</span>';
+  }
+  function openSeason() {
+    const card = openModal(
+      '<h2 class="plaque-title">' + T('season.title') + '</h2>' +
+      '<div class="season-head"><b class="season-title">…</b><small class="season-left"></small></div>' +
+      '<div class="season-body"><div class="weekly-status">' + T('season.loading') + '</div></div>' +
+      '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
+    card.classList.add('season-card');
+    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); openRecordsHub(); };
+    track('season_open', { mode: 'hard' });
+    Promise.all([Records.season(), Records.seasons()]).then(([s, past]) => {
+      if (!card.isConnected) return;
+      card.querySelector('.season-title').textContent = seasonName(s.season);
+      card.querySelector('.season-left').textContent = T('season.ends', { n: seasonDaysLeft(s) });
+      const me = Records.getName().toLocaleLowerCase();
+      const list = s.rows.length ? '<div class="weekly-board">' + s.rows.map((r, i) =>
+        '<div class="weekly-row season-row' + (r.me || String(r.name || '').toLocaleLowerCase() === me ? ' me' : '') + '"><i>' + (i + 1) + '</i><b>' + esc(r.name) + '</b>' + tierHTML(r.tier) + '<strong>' + nf(r.points) + '</strong></div>').join('') + '</div>'
+        : '<div class="weekly-status">' + T('season.none') + '</div>';
+      const champs = past.length ? past.map((p) => '<div class="champ"><span>' + seasonName(p.season) + '</span>' +
+        p.top.map((r, i) => '<b class="podium p' + (i + 1) + '">' + (i + 1) + 'º ' + esc(r.name) + ' · ' + nf(r.points) + '</b>').join('') + '</div>').join('')
+        : '<div class="weekly-status">' + T('season.noChamps') + '</div>';
+      // sem servidor só aparece a própria linha (a liga depende dos outros); nada de aviso técnico na tela
+      card.querySelector('.season-body').innerHTML =
+        (s.me ? '<div class="season-strip static">' + seasonStripHTML(s, true) + '</div>' : '') + list +
+        '<p class="season-rule">' + T('season.rules') + '</p>' +
+        '<div class="champs-title">' + T('season.champs') + '</div>' + champs;
+    });
   }
   function showWeekly() {
     Ads.gameplay(false);
@@ -2677,7 +2780,9 @@
   // Família pintada no próprio projeto: normal, atual, difícil concluída e bloqueada.
   const nodeFace = (id, state) => {
     const src = 'assets/mapa/botoes-v2/' + state + '.png';
-    return '<img class="btn-img" alt="" src="' + src + '"><span class="num map-phase-num" aria-label="' + id + '">' + id + '</span>';
+    // d2/d3: número com 2/3 algarismos fica menor pra caber dentro do furo do anel
+    const dg = String(id).length;
+    return '<img class="btn-img" alt="" src="' + src + '"><span class="num map-phase-num' + (dg > 1 ? ' d' + dg : '') + '" aria-label="' + id + '">' + id + '</span>';
   };
   function buildMap() {
     const inner = $('mapInner'), scroll = $('mapScroll');
@@ -2876,7 +2981,7 @@
     },
     swap(a, b) { if (!busy) trySwap(a, b); },
     get state() { return state; }, get busy() { return busy; }, get scene() { return scene; },
-    get save() { return save; }, get tutorialMove() { return tutorialMove; }, openPre, startLevel, openProgress, openRecordsHub,
+    get save() { return save; }, get tutorialMove() { return tutorialMove; }, openPre, startLevel, openProgress, openRecordsHub, openShop,
     findMove() { return state && LR.findMove(state); },
   };
 

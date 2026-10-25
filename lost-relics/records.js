@@ -74,6 +74,42 @@
       return r.rows || [];
     } catch (e) { return localLevelRows(key, id); }
   }
+  // Ranking total da fase: melhor placar de cada jogador somando todas as semanas.
+  const localLevelAll = (levelId) => {
+    let best = null;
+    for (const w in data.levelScores) { const r = data.levelScores[w][levelId]; if (r && (!best || r.score > best.score)) best = r; }
+    return best ? [Object.assign({ me: true }, best)] : [];
+  };
+  async function listLevelAll(levelId) {
+    const id = Math.max(1, Math.floor(+levelId || 0));
+    if (!API) return localLevelAll(id);
+    try { const r = await request('/level-alltime?level=' + id); return r.rows || []; }
+    catch (e) { return localLevelAll(id); }
+  }
+  // Temporada de 3 meses (mesma regra do Worker): a semana conta na temporada da sua segunda-feira.
+  const seasonKey = (w) => { const k = w || week(); return k.slice(0, 4) + '-T' + (Math.floor((+k.slice(5, 7) - 1) / 3) + 1); };
+  function seasonRange(key) {
+    const y = +key.slice(0, 4), q = +key.slice(6), m = (q - 1) * 3 + 1, pad = (n) => String(n).padStart(2, '0');
+    return [y + '-' + pad(m) + '-01', (q === 4 ? y + 1 : y) + '-' + pad(q === 4 ? 1 : m + 3) + '-01'];
+  }
+  // sem servidor: só os pontos deste aparelho, sem liga (liga depende dos outros jogadores)
+  function localSeason(key) {
+    const [from, to] = seasonRange(key), best = {};
+    for (const w in data.levelScores) if (w >= from && w < to) for (const id in data.levelScores[w]) best[id] = Math.max(best[id] || 0, data.levelScores[w][id].score);
+    const ids = Object.keys(best), points = ids.reduce((n, id) => n + best[id], 0);
+    const me = ids.length ? { points, levels: ids.length, pos: null, tier: null } : null;
+    return { season: key, from, to, players: me ? 1 : 0, rows: me ? [{ name: data.name, points, levels: ids.length, tier: null, me: true }] : [], me, local: true };
+  }
+  async function season(key) {
+    const k = key || seasonKey();
+    if (!API) return localSeason(k);
+    try { return await request('/season?season=' + k + (data.playerId ? '&player=' + encodeURIComponent(data.playerId) : '')); }
+    catch (e) { return localSeason(k); }
+  }
+  async function seasons() {
+    if (!API) return [];
+    try { return (await request('/seasons')).seasons || []; } catch (e) { return []; }
+  }
   async function submitLevel(levelId, score, meta) {
     const w = (meta && meta.week) || week(), id = Math.max(1, Math.floor(+levelId || 0)), name = cleanName(data.name);
     if (!name) throw new Error('name');
@@ -92,5 +128,5 @@
     }
     return listLevel(id, w);
   }
-  root.Records = { online: !!API, week, getName, setName, list, submit, listLevel, submitLevel, featured };
+  root.Records = { online: !!API, week, getName, setName, list, submit, listLevel, listLevelAll, submitLevel, featured, seasonKey, seasonRange, season, seasons };
 })(window);

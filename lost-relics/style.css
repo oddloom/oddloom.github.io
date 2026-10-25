@@ -668,6 +668,11 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .weekly-row b { color: inherit; }
 .weekly-row strong { color: var(--gold-hi); font-family: var(--f-display); }
 .weekly-status { margin: 7px 0; font-size: 12px; color: var(--bone-dim); }
+.rank-tabs { display: flex; gap: 6px; justify-content: center; margin: 8px 0 2px; position: sticky; top: 0; z-index: 1; }
+.rank-tabs button { flex: 1; max-width: 130px; padding: 6px 10px; border: 1px solid rgba(201,162,74,.35); border-radius: 7px; background: rgba(5,18,13,.72); color: var(--bone-dim); font: inherit; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+.rank-tabs button.on { color: var(--gold-hi); border-color: var(--gold); background: rgba(91,64,18,.55); }
+.rank-holder { margin: 8px 0 0; font-size: 12px; color: var(--bone-dim); }
+.rank-holder b { color: var(--gold-hi); }
 
 /* Orbe Solar no mapa (18/10): flutua em cima da fase atual; pula da anterior quando a fase avança */
 .node-orb { position: absolute; left: 50%; top: -44px; width: 44px; height: 44px; margin-left: -22px; pointer-events: none; z-index: 3; }
@@ -776,3 +781,110 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .ui-kit .card.records-hub .orn { margin-block: -2px; }
 .ui-kit .card.records-hub .weekly-rules { margin: 0 0 4px; font-size: 13px; line-height: 1.3; }
 .ui-kit .card.records-hub .records-levels { max-height: min(38vh, 260px); }
+
+/* resumo de ~3 s ao começar a fase: translúcido e sem bloquear o toque */
+.brief { position: fixed; left: 50%; top: 60%; z-index: 24; width: min(340px, calc(100vw - 32px)); transform: translate(-50%, -50%); pointer-events: none; padding: 12px 14px; border-radius: 12px; background: rgba(5,18,13,.68); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); box-shadow: inset 0 0 0 1px rgba(212,168,75,.35), 0 8px 24px rgba(0,0,0,.45); text-align: left; animation: briefIn 3.4s ease forwards; }
+.brief .goal-list { display: grid; gap: 6px; }
+.brief .goal-row { display: flex; gap: 10px; align-items: center; font-size: 16px; color: var(--bone); }
+.brief .goal-row img { width: 32px; height: 32px; }
+.brief p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.3; color: var(--bone-dim); }
+.brief p.weak { color: #ffe9a8; font-weight: 600; }
+@keyframes briefIn { 0% { opacity: 0; transform: translate(-50%, -42%); } 10%, 82% { opacity: 1; transform: translate(-50%, -50%); } 100% { opacity: 0; transform: translate(-50%, -50%); } }
+@media (prefers-reduced-motion: reduce) { .brief { animation: briefFade 3.4s linear forwards; } @keyframes briefFade { 0%, 85% { opacity: 1; } 100% { opacity: 0; } } }
+/* temporada (3 meses) e ligas */
+.season-strip { width: 100%; display: grid; gap: 4px; justify-items: center; padding: 10px 12px; border: 1px solid rgba(231,190,92,.5); border-radius: 10px; background: linear-gradient(135deg, rgba(91,64,18,.5), rgba(5,18,13,.8)); color: var(--bone); font: inherit; cursor: pointer; }
+.season-strip.static { cursor: default; }
+.season-strip .season-name { font: 700 13px var(--f-display); letter-spacing: .08em; color: var(--gold-hi); text-transform: uppercase; }
+.season-strip .season-me { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.season-strip .season-me b { font: 700 16px var(--f-display); color: var(--gold-hi); }
+.season-strip .season-me i { font-style: normal; font-size: 12px; color: var(--bone-dim); }
+.season-strip small { font-size: 11.5px; color: var(--bone-dim); }
+.tier { display: inline-block; padding: 2px 8px; border-radius: 999px; font: 800 10.5px var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: #1d1209; }
+.tier-bronze { background: linear-gradient(180deg, #e2a46c, #9a5a2a); }
+.tier-silver { background: linear-gradient(180deg, #f1f4f6, #9aa4ad); }
+.tier-gold { background: linear-gradient(180deg, #ffe7a0, #c99428); }
+.tier-diamond { background: linear-gradient(180deg, #d8fbff, #4fc6dd); box-shadow: 0 0 8px rgba(110,220,240,.6); }
+.season-row { grid-template-columns: 32px 1fr auto auto; }
+.season-card .season-body { width: 100%; max-height: min(58vh, 460px); overflow-y: auto; display: grid; gap: 8px; }
+.season-card .champs-title { margin-top: 8px; }
+.champ { display: grid; gap: 3px; padding: 8px 10px; border-radius: 8px; background: rgba(5,18,13,.62); text-align: left; }
+.champ span { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--bone-dim); }
+.champ .podium { font-size: 13px; font-weight: 600; color: var(--bone); }
+.champ .podium.p1 { color: var(--gold-hi); }
+
+/* ===== 25/10 (3) — encaixe na moldura pintada, card da fase limpo, loja com X, brilho da fase atual =====
+   A abertura da moldura começa em .2 × --cw de cada lado; o conteúdo fica 6px pra dentro dela (antes vazava por cima da pedra). */
+.ui-kit .card { padding-left: calc(var(--cw) * .2 + 6px); padding-right: calc(var(--cw) * .2 + 6px); }
+
+/* card da fase: altura natural, sem corte; título gravado na placa de pedra do topo */
+.ui-kit .card.pre { height: auto; max-height: none; overflow: visible; justify-content: flex-start; gap: 12px;
+  padding-top: calc(var(--cw) * .229 + 12px); padding-bottom: calc(var(--cw) * .19 + 4px); }
+.plaque-title { margin: 0 0 4px; font-family: var(--f-display); font-weight: 900; font-size: 24px; letter-spacing: .08em; text-align: center; color: var(--gold-hi); }
+.ui-kit .card > h2.plaque-title, .ui-kit .card.records-hub > h2.plaque-title { position: absolute; max-width: none; left: calc(var(--cw) * .27); right: calc(var(--cw) * .27); width: auto; margin: 0; top: calc(var(--cw) * .108); transform: translateY(-50%); white-space: nowrap; font-size: calc(var(--cw) * .05); line-height: 1; color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.6); pointer-events: none; z-index: 2; text-transform: uppercase; }
+.ui-kit .card.records-hub, .ui-kit .card.season-card { padding-top: calc(var(--cw) * .229 + 12px); gap: 12px; }
+.card.records-hub .season-strip { gap: 3px; padding: 9px 10px; }
+.season-strip .season-name { white-space: nowrap; font-size: 11px; letter-spacing: .04em; }
+.ui-kit .card.records-hub .records-levels { max-height: min(46vh, 340px); }
+.record-level { position: relative; padding: 9px 10px; }
+.record-level.featured::before { content: '★'; position: absolute; top: 6px; right: 8px; margin: 0; font-size: 12px; letter-spacing: 0; color: #71ead8; }
+.record-level span { font-size: 14px; }
+.record-level strong { font-size: 12px; color: var(--gold-hi); }
+.season-head { display: grid; gap: 2px; justify-items: center; }
+.season-head b { font: 700 18px var(--f-display); letter-spacing: .04em; color: var(--gold-hi); }
+.season-head small { font-size: 11.5px; color: var(--bone-dim); }
+.season-card .season-rule { margin: 4px 0 0; font-size: 11.5px; line-height: 1.35; color: var(--bone-dim); text-align: center; }
+.season-card .champs-title { margin-top: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--bone-dim); text-align: center; }
+.season-card .weekly-row { font-size: 13px; padding: 6px 8px; }
+.pre-title { margin: 0; font-family: var(--f-display); font-weight: 900; font-size: 24px; letter-spacing: .08em; text-align: center; color: var(--gold-hi); }
+.ui-kit .card.pre > .pre-title { position: absolute; left: calc(var(--cw) * .27); right: calc(var(--cw) * .27); width: auto; margin: 0; top: calc(var(--cw) * .108); white-space: nowrap; transform: translateY(-50%); font-size: calc(var(--cw) * .05); line-height: 1; color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.6); pointer-events: none; z-index: 2; }
+.card.pre .mode-pick { grid-template-columns: 1fr 1fr 34px; gap: 6px; }
+.card.pre .mode-pick button { min-height: 34px; padding: 0 6px; font-size: 11.5px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.card.pre .mode-pick .lk { width: 11px; height: 11px; fill: currentColor; flex: none; }
+.card.pre .mode-pick .info-dot { width: 34px; padding: 0; border-radius: 50%; font: italic 700 17px Georgia, serif; color: var(--gold-hi); }
+.card.pre.info-open .mode-pick .info-dot { border-color: #3fd8cc; color: #f7e2a1; background: rgba(24,100,88,.55); }
+.card.pre .pre-body { width: 100%; }
+.card.pre .pre-main, .card.pre .pre-info { display: grid; gap: 10px; justify-items: center; width: 100%; }
+.card.pre .pre-info, .card.pre.info-open .pre-main { display: none; }
+.card.pre.info-open .pre-info { display: grid; }
+.card.pre .goal-list { display: grid; gap: 6px; width: 100%; }
+.card.pre .goal-row, .ui-kit .card.pre .goal-row { justify-content: center; gap: 10px; padding: 0; background: none; box-shadow: none; font-size: 16px; line-height: 1.2; }
+.card.pre .goal-row img { width: 30px; height: 30px; }
+.card.pre .pre-moves { font-size: 13px; letter-spacing: .04em; color: var(--bone-dim); }
+.card.pre .pre-moves b { font: 900 18px var(--f-display); color: var(--gold-hi); margin-right: 2px; }
+.card.pre .boost-row { gap: 8px; }
+.card.pre .boost { width: 54px; padding: 7px 0 5px; }
+.card.pre .boost img { width: 32px; height: 32px; }
+.card.pre .boost b { position: absolute; top: -6px; right: -6px; min-width: 20px; padding: 1px 5px; border-radius: 9px; background: #1d1209; box-shadow: 0 0 0 1px rgba(212,168,75,.7); font-size: 10.5px; color: #f7e2a1; }
+.card.pre.hard-pre .weekly-list { width: 100%; max-height: 168px; overflow-y: auto; }
+.card.pre .rank-tabs button { padding: 5px 6px; font-size: 11px; }
+.card.pre .weekly-row { padding: 6px 8px; font-size: 13px; }
+.card.pre .pre-info .tut, .ui-kit .card.pre .pre-info .tut { width: 100%; max-height: 240px; padding: 0; gap: 8px; flex-direction: column; background: none; box-shadow: none; }
+.card.pre .pre-info .tut img { width: 44px; height: 44px; }
+.card.pre .pre-info .tut-list { width: 100%; }
+.card.pre .pre-info .tut-list li { font-size: 13px; }
+.card.pre .info-line { margin: 0; font-size: 12.5px; line-height: 1.35; color: #f0c88a; text-align: center; }
+
+/* resumo de 3 s: sem caixa dentro de caixa */
+.brief { text-align: center; }
+.brief .goal-row, .ui-kit .brief .goal-row { justify-content: center; padding: 0; background: none; box-shadow: none; }
+
+/* X de fechar no canto do card (loja): sempre visível ao abrir */
+.ui-kit .card > .card-x, .card > .card-x { position: absolute; top: calc(var(--cw, 440px) * .04); right: calc(var(--cw, 440px) * .04); z-index: 6; width: 38px; height: 38px; padding: 0; border: 1.5px solid #d4a84b; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #2c3d33, #0b1410 75%); color: #f3d27a; font-size: 16px; line-height: 1; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,230,160,.25); }
+.ui-kit .tshop .ts-tabs, .tshop .ts-tabs { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.ui-kit .tshop .ts-tab, .tshop .ts-tab { min-height: 42px; width: 100%; padding: 0; border: 1px solid rgba(212,168,75,.4); border-radius: 10px; background: rgba(0,0,0,.38); display: grid; place-items: center; cursor: pointer; }
+.ui-kit .tshop .ts-tab.on, .tshop .ts-tab.on { border-color: #3fd8cc; background: rgba(24,100,88,.5); box-shadow: inset 0 0 0 1px rgba(63,216,204,.4), 0 0 10px rgba(63,216,204,.2); }
+.tshop .ts-tab img { width: 26px; height: 26px; }
+.tshop .ts-pager { letter-spacing: .08em; gap: 10px; }
+.tshop .ts-pager b { color: var(--gold-hi); text-transform: uppercase; }
+.tshop .ts-offer { width: 100%; }
+.tshop .ts-frame { width: 52%; }
+.tshop .ts-info { padding: 14px 10px 10px; }
+
+/* fase atual: brilho suave e animado logo abaixo do botão */
+.node.simple.art-v2.current::after { content: ''; position: absolute; left: 50%; top: 58%; width: 175%; height: 75%; transform: translateX(-50%); border-radius: 50%; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(130,245,230,.6) 0%, rgba(63,216,204,.25) 42%, transparent 70%); animation: curGlow 2.6s ease-in-out infinite; }
+@keyframes curGlow { 0%, 100% { opacity: .5; transform: translateX(-50%) scale(.9); } 50% { opacity: 1; transform: translateX(-50%) scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .node.simple.art-v2.current::after { animation: none; opacity: .8; } }
+/* números de 2-3 algarismos menores, pra caber no furo do anel */
+.node.simple.art-v2 .map-phase-num.d2 { font-size: calc(var(--ns, 52px) * .34); letter-spacing: -.03em; }
+.node.simple.art-v2 .map-phase-num.d3 { font-size: calc(var(--ns, 52px) * .27); letter-spacing: -.04em; }
