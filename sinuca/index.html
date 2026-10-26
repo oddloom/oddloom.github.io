@@ -22,7 +22,7 @@
     <link rel="icon" href="favicon.png" />
     <link rel="apple-touch-icon" href="favicon.png" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="css/v1.css?v=10" />
+    <link rel="stylesheet" href="css/v1.css?v=11" />
   </head>
   <body>
     <main id="app" class="app is-lobby">
@@ -33,6 +33,9 @@
             <img class="lobby__coin" src="assets/moa/moeda-8.png" alt="" />
             <h1 id="titulo-jogo">Sinuca</h1>
             <p class="lobby__subtitle">8-ball</p>
+            <button id="fullscreen-tip" class="fullscreen-tip" type="button">
+              Tela cheia no iPhone
+            </button>
           </div>
 
           <div class="lobby__actions">
@@ -103,6 +106,16 @@
           </p>
           <p>Peça pro seu colega tocar em “Procurar partida” também.</p>
           <button id="search-cancel" type="button">Cancelar</button>
+        </dialog>
+
+        <dialog id="fullscreen-dialog" class="game-menu fullscreen-dialog">
+          <h2>Tela cheia no iPhone</h2>
+          <ol>
+            <li>Toque no botão Compartilhar do navegador (quadrado com seta ↑).</li>
+            <li>Escolha “Adicionar à Tela de Início”.</li>
+            <li>Abra a Sinuca pelo ícone novo: ela abre sem a barra do navegador.</li>
+          </ol>
+          <button id="fullscreen-close" type="button">Entendi</button>
         </dialog>
 
         <dialog id="custom-dialog" class="game-menu room-dialog">
@@ -202,6 +215,7 @@
               <span id="power-level"></span>
             </div>
             <output id="power-value" for="table-canvas">0%</output>
+            <span class="power-meter__hint" aria-hidden="true">PUXE ↓</span>
           </aside>
 
           <div id="table-shell" class="table-shell">
@@ -295,6 +309,6 @@
       </div>
     </main>
 
-    <script defer src="jogo-v1.js?v=8"></script>
+    <script defer src="jogo-v1.js?v=9"></script>
   </body>
 </html>
