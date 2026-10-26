@@ -251,12 +251,12 @@ button:focus-visible {
 }
 
 .player--one {
-  --timer-x: 9.2%;
+  --timer-x: 8.87%;
   --info-x: 16.1%;
 }
 
 .player--two {
-  --timer-x: 90.8%;
+  --timer-x: 91.13%;
   --info-x: 55.6%;
 }
 
