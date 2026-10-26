@@ -2185,7 +2185,8 @@
     { id: 'gems', icon: 'ixpalette', slot: 'gem', skins: [
       { id: 'gem.classic', art: 'skclassic', value: null },
       { id: 'gem.gold', art: 'skgold', value: 'gold', price: 800 },
-      { id: 'gem.obsidian', art: 'skobsidian', value: 'obsidian', price: 800 }] },
+      { id: 'gem.obsidian', art: 'skobsidian', value: 'obsidian', price: 800 },
+      { id: 'gem.temple', art: 'sktemple', value: 'temple', price: 800 }] },
     { id: 'words', icon: 'ixorb', slot: 'word', skins: [
       { id: 'word.solar', art: 'p3', value: null },
       { id: 'word.rare', art: 'wr_p3', value: 'rare', price: 600 },
