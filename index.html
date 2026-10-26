@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Oddloom Games</title>
-<meta name="description" content="Jogos grátis pra jogar no navegador: Neon Snake e Lost Relics. Sem instalar, sem cadastro, funciona no celular.">
+<meta name="description" content="Jogos grátis pra jogar no navegador: Neon Snake, Lost Relics e Sinuca. Sem instalar e sem cadastro.">
 <meta name="theme-color" content="#ffffff">
 <meta property="og:title" content="Oddloom Games">
 <meta property="og:description" content="Jogos grátis pra jogar no navegador. Sem instalar, sem cadastro, funciona no celular.">
@@ -25,7 +25,7 @@
   --text:#1D1D1F;
   --muted:#6E6E73;
   --blue:#0071E3;
-  --blue-hover:#0077ED;
+  --blue-hover:#0068D6;
   --line:#E5E5EA;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
   color-scheme:light;
@@ -70,11 +70,17 @@ h1 span{color:var(--blue)}
 .card:hover .pic img{transform:scale(1.04)}
 .snake .pic img{object-position:50% 50%}
 .relics .pic img{object-position:50% 40%}
+.pool .pic img{object-position:50% 56%}
 .card .body{padding:clamp(20px,3vw,32px);display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
 .card h2{font-size:clamp(22px,2.4vw,28px);font-weight:600;letter-spacing:-.025em;line-height:1.15}
 .card p{color:var(--muted);font-size:15px;margin-top:4px}
 .play{flex:none;background:var(--blue);color:#fff;font-weight:500;font-size:15px;padding:10px 22px;border-radius:980px;transition:background .2s}
 .card:hover .play,.play:hover{background:var(--blue-hover)}
+.is-coming{cursor:default}
+.is-coming:hover{transform:none;box-shadow:none}
+.is-coming:hover .pic img{transform:none}
+.play--soon{background:#E1E1E6;color:#3A3A3C}
+.card:hover .play--soon{background:#E1E1E6}
 
 footer{border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 footer .in{max-width:1080px;margin:0 auto;padding:20px clamp(16px,4vw,32px);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -126,6 +132,17 @@ footer a:hover{color:var(--text)}
         <span class="play">Jogar</span>
       </div>
     </a>
+
+    <article class="card pool is-coming" aria-label="Sinuca, em desenvolvimento">
+      <div class="pic"><img src="img/jogo-sinuca.webp" alt="Mesa de sinuca verde em um bar, com a bola 8 em primeiro plano" width="1600" height="900"></div>
+      <div class="body">
+        <div>
+          <h2>Sinuca</h2>
+          <p>8-ball com física realista.</p>
+        </div>
+        <span class="play play--soon">Em desenvolvimento</span>
+      </div>
+    </article>
   </div>
 
   <section class="about" aria-label="Sobre os jogos">
@@ -139,6 +156,10 @@ footer a:hover{color:var(--text)}
       <p>Combine joias num templo perdido na selva: 86 fases em quatro mundos, metas variadas, joias especiais, aranha, sapo, jiboia, loja de itens, Jogada do Dia e recordes Difíceis semanais. É só arrastar uma joia para trocar de lugar.</p>
       <a class="more" href="como-jogar/lost-relics/">Como jogar Lost Relics ›</a>
       <a class="more" href="en/lost-relics/" lang="en">English guide ›</a>
+    </div>
+    <div>
+      <h2>Sinuca</h2>
+      <p>Uma partida de 8-ball para computador, com treino contra o bot e dois jogadores no mesmo PC. A versão jogável ainda está em desenvolvimento.</p>
     </div>
   </section>
 
