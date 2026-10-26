@@ -731,6 +731,59 @@ dialog::backdrop {
   margin-top: 10px;
 }
 
+.room-dialog {
+  width: 420px;
+}
+
+.room-dialog p {
+  margin: 0 0 14px;
+  color: #cbb58e;
+}
+
+.room-dialog input {
+  width: 100%;
+  border: 1px solid #c98e32;
+  border-radius: 9px;
+  padding: 10px 12px;
+  background: #1c0d05;
+  color: #ffe6ad;
+  font: inherit;
+  font-size: 14px;
+}
+
+.room-code {
+  color: #fff3d4;
+  letter-spacing: 0.12em;
+}
+
+.custom-join {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.custom-join input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.custom-join input {
+  flex: 1;
+  min-width: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.game-menu .custom-join button {
+  width: auto;
+  margin-top: 0;
+}
+
+.room-dialog .room-dialog__status {
+  margin: 14px 0 0;
+  color: #ffd787;
+  font-weight: 800;
+}
+
 @media (height <= 760px) {
   .hud {
     height: 96px;
@@ -752,6 +805,312 @@ dialog::backdrop {
 
   .tray {
     height: min(60vh, 410px);
+  }
+}
+
+/* Notebook (768–900px de altura): lobby com 4 botões precisa caber. */
+@media (541px <= height <= 900px) {
+  .lobby__coin {
+    width: 96px;
+    margin-bottom: -12px;
+  }
+
+  .lobby h1 {
+    font-size: clamp(54px, 9vh, 84px);
+  }
+
+  .lobby__subtitle {
+    margin: 10px 0 18px;
+  }
+
+  .lobby__actions {
+    gap: 6px;
+  }
+
+  .art-button {
+    width: 400px;
+    height: 84px;
+    font-size: 22px;
+  }
+
+  .lobby__credit {
+    margin-top: 14px;
+  }
+}
+
+.game__hint--touch,
+.rotate-hint {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .game__hint--mouse {
+    display: none;
+  }
+
+  .game__hint--touch {
+    display: block;
+  }
+
+  .app {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+}
+
+/* Celular deitado (plataforma principal): faixa fina de HUD em cima e a
+   mesa ocupando o resto da tela, com força à esquerda e canaleta à direita,
+   como no 8 Ball Pool. */
+@media (orientation: landscape) and (height <= 540px) {
+  :root {
+    --hud-h: clamp(44px, 15dvh, 62px);
+    --hud-btn: calc(var(--hud-h) * 0.82);
+    --side: clamp(40px, 7.5dvw, 66px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+  }
+
+  html,
+  body {
+    min-width: 0;
+    height: 100dvh;
+  }
+
+  .app,
+  .lobby,
+  .game {
+    height: 100dvh;
+  }
+
+  .game {
+    background-size: cover;
+  }
+
+  .game::before {
+    background: rgb(4 2 1 / 62%);
+  }
+
+  .hud {
+    grid-template-columns:
+      var(--hud-btn)
+      min(
+        calc(var(--hud-h) * 9.47),
+        calc(100dvw - 2 * var(--hud-btn) - 40px - var(--safe-l) - var(--safe-r))
+      )
+      var(--hud-btn);
+    gap: 8px;
+    height: var(--hud-h);
+    padding: 2px calc(8px + var(--safe-r)) 0 calc(8px + var(--safe-l));
+  }
+
+  .player strong {
+    font-size: clamp(9px, 1.5dvw, 13px);
+  }
+
+  .ball-slots {
+    gap: 2px;
+  }
+
+  .slot-ball {
+    width: clamp(9px, 1.6dvw, 14px);
+    height: clamp(9px, 1.6dvw, 14px);
+    border-width: 1px;
+    font-size: 0;
+    box-shadow: inset -2px -2px 4px rgb(0 0 0 / 38%);
+  }
+
+  .game__stage {
+    grid-template-columns: var(--side) auto var(--side);
+    gap: clamp(6px, 1.4dvw, 14px);
+    height: calc(100dvh - var(--hud-h));
+    padding: 2px calc(4px + var(--safe-r)) 4px calc(4px + var(--safe-l));
+  }
+
+  .table-shell {
+    width: min(
+      calc(
+        100dvw - 2 * var(--side) - 40px - var(--safe-l) - var(--safe-r)
+      ),
+      calc((100dvh - var(--hud-h) - 6px) * 1.817)
+    );
+  }
+
+  .table-art {
+    filter: drop-shadow(0 8px 14px rgb(0 0 0 / 70%));
+  }
+
+  /* Proporção da arte (195×545), para o preenchimento cair dentro do tubo. */
+  .power-meter {
+    height: auto;
+    aspect-ratio: 195 / 545;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .power-meter.is-pulling {
+    cursor: grabbing;
+    filter: drop-shadow(0 0 10px rgb(242 182 50 / 70%));
+  }
+
+  #power-value {
+    min-width: 34px;
+    padding: 2px 4px;
+    font-size: 10px;
+  }
+
+  /* Canaleta esticada na altura da mesa; as bolas descem por dentro dela. */
+  .tray {
+    width: 72%;
+    height: 82%;
+    justify-self: center;
+  }
+
+  .tray > img {
+    object-fit: fill;
+  }
+
+  .tray-ball {
+    width: clamp(10px, 2.4dvh, 16px);
+    height: clamp(10px, 2.4dvh, 16px);
+    flex-basis: clamp(10px, 2.4dvh, 16px);
+    font-size: 0;
+  }
+
+  .message {
+    top: 7%;
+    min-width: 0;
+    padding: 5px 14px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .game__hint {
+    display: none !important;
+  }
+
+  dialog {
+    max-height: 94dvh;
+    overflow: auto;
+  }
+
+  .game-menu,
+  .spin-dialog {
+    padding: 14px 18px;
+  }
+
+  .spin-dialog h2,
+  .game-menu h2 {
+    font-size: 20px;
+  }
+
+  .spin-dialog p,
+  .room-dialog p {
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+
+  .spin-ball {
+    width: min(150px, 46dvh);
+    height: min(150px, 46dvh);
+    margin-bottom: 10px;
+    border-width: 7px;
+  }
+
+  .game-menu button,
+  .spin-reset {
+    margin-top: 6px;
+    padding: 8px 14px;
+  }
+
+  /* Lobby em duas colunas: nome à esquerda, botões à direita. */
+  .lobby__content {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    justify-content: center;
+    gap: 0 clamp(20px, 5dvw, 56px);
+    width: 100%;
+    padding: 0 calc(16px + var(--safe-r)) 0 calc(16px + var(--safe-l));
+  }
+
+  .lobby__coin {
+    width: clamp(56px, 20dvh, 96px);
+    margin-bottom: -8px;
+  }
+
+  .lobby h1 {
+    font-size: clamp(40px, 15dvh, 72px);
+  }
+
+  .lobby__subtitle {
+    margin: 8px 0 0;
+    font-size: 14px;
+  }
+
+  .lobby__actions {
+    gap: 4px;
+  }
+
+  .art-button {
+    width: clamp(220px, 38dvw, 330px);
+    height: clamp(44px, 14.5dvh, 66px);
+    font-size: clamp(14px, 4.4dvh, 19px);
+  }
+
+  .art-button:hover {
+    transform: none;
+  }
+
+  .difficulty {
+    margin: -2px 0 2px;
+  }
+
+  .difficulty button {
+    padding: 4px 13px;
+    font-size: 13px;
+  }
+
+  .lobby__credit {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+    font-size: 11px;
+  }
+}
+
+/* Celular em pé: pede para girar (o jogo é deitado). */
+@media (orientation: portrait) and (pointer: coarse) {
+  .rotate-hint {
+    position: fixed;
+    z-index: 100;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    gap: 14px;
+    background: var(--coal);
+    text-align: center;
+  }
+
+  .rotate-hint img {
+    width: 96px;
+    margin: 0 auto;
+    animation: girar 1.6s ease-in-out infinite alternate;
+  }
+
+  .rotate-hint p {
+    margin: 0;
+    color: #ffe2a0;
+    font-size: 20px;
+    font-weight: 800;
+  }
+}
+
+@keyframes girar {
+  from {
+    transform: rotate(0);
+  }
+
+  to {
+    transform: rotate(90deg);
   }
 }
 
