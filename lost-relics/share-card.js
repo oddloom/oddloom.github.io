@@ -1,11 +1,16 @@
 // Cartão compartilhável para Jogada do Dia e recordes Difíceis.
 (function (root) {
   'use strict';
+  // endereço fixo do site: no app Android a página é local (capacitor://localhost) e o link não abria em lugar nenhum
+  const SITE = 'https://oddloomgames.com/lost-relics/';
+  const isApp = () => !!(root.Capacitor && root.Capacitor.isNativePlatform && root.Capacitor.isNativePlatform());
+  // CrazyGames não permite link para fora do portal: lá o compartilhamento vai só com a imagem e o texto
+  const isCrazy = () => root.LR_PLATFORM === 'crazygames';
   const shareUrl = (kind, id) => {
-    const base = location.origin + location.pathname;
+    if (isCrazy()) return '';
     const campaign = kind === 'daily' ? 'daily_' + new Date().toISOString().slice(0, 10) : 'hard_weekly';
     const hash = kind === 'daily' ? '#diario' : '#dificil' + id;
-    return base + '?utm_source=player_share&utm_medium=organic&utm_campaign=' + encodeURIComponent(campaign) + '&utm_content=' + encodeURIComponent(kind + (id || '')) + hash;
+    return SITE + '?utm_source=' + (isApp() ? 'android' : 'player_share') + '&utm_medium=organic&utm_campaign=' + encodeURIComponent(campaign) + '&utm_content=' + encodeURIComponent(kind + (id || '')) + hash;
   };
   function wrap(ctx, text, x, y, max, lineHeight) {
     const words = String(text).split(/\s+/), lines = []; let line = '';
@@ -24,16 +29,17 @@
     x.fillStyle = '#54d9c7'; x.font = '900 158px Georgia'; x.fillText(String(options.score || 0), 540, 790);
     x.fillStyle = '#f6ecd2'; x.font = '700 42px system-ui'; x.fillText(options.scoreLabel || 'PONTOS', 540, 860);
     x.fillStyle = '#e8c76b'; x.font = '700 45px system-ui'; wrap(x, options.call || 'CONSEGUE SUPERAR?', 540, 1030, 860, 58);
-    x.fillStyle = '#aeb8b1'; x.font = '32px system-ui'; x.fillText('oddloomgames.com/lost-relics', 540, 1220);
+    if (!isCrazy()) { x.fillStyle = '#aeb8b1'; x.font = '32px system-ui'; x.fillText('oddloomgames.com/lost-relics', 540, 1220); }
     return new Promise((resolve) => c.toBlob(resolve, 'image/png', .92));
   }
   async function share(options) {
-    const blob = await make(options), url = shareUrl(options.kind, options.level), text = options.text + ' ' + url;
+    const blob = await make(options), url = shareUrl(options.kind, options.level), text = url ? options.text + ' ' + url : options.text;
     const file = new File([blob], 'lost-relics-' + options.kind + '.png', { type: 'image/png' });
+    const data = url ? { title: 'Lost Relics', text, url } : { title: 'Lost Relics', text };
     if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-      await navigator.share({ title: 'Lost Relics', text, url, files: [file] }); return 'shared';
+      await navigator.share(Object.assign({ files: [file] }, data)); return 'shared';
     }
-    if (navigator.share) { await navigator.share({ title: 'Lost Relics', text, url }); return 'shared'; }
+    if (navigator.share) { await navigator.share(data); return 'shared'; }
     if (navigator.clipboard) await navigator.clipboard.writeText(text);
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     return 'downloaded';

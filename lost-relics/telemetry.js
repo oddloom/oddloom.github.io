@@ -21,7 +21,11 @@
   if (!stored.anonId) stored.anonId = randomId();
   if (!Array.isArray(stored.queue)) stored.queue = [];
   const sessionId = randomId();
-  const platform = root.LR_PLATFORM || (root.Capacitor && root.Capacitor.isNativePlatform && root.Capacitor.isNativePlatform() ? 'android' : (root.matchMedia && root.matchMedia('(display-mode: standalone)').matches ? 'pwa' : 'web'));
+  const native = !!(root.Capacitor && root.Capacitor.isNativePlatform && root.Capacitor.isNativePlatform());
+  const platform = root.LR_PLATFORM || (native ? 'android' : (root.matchMedia && root.matchMedia('(display-mode: standalone)').matches ? 'pwa' : 'web'));
+  // teste local (servidor em 127.0.0.1/localhost ou código-fonte sem build) não envia: a fila funciona, mas nada sai.
+  // O app Android também roda em "localhost", por isso ele fica de fora da regra.
+  const devRun = (!native && (location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname))) || (root.LR_BUILD || 'dev') === 'dev';
 
   const query = new URLSearchParams(location.search);
   let campaign = {};
@@ -51,7 +55,7 @@
     return out;
   };
   async function flush(useBeacon) {
-    if (!API || sending || !stored.queue.length) return false;
+    if (!API || devRun || sending || !stored.queue.length) return false;
     const batch = stored.queue.slice(0, 20), body = JSON.stringify({ events: batch });
     if (useBeacon && navigator.sendBeacon) {
       const ok = navigator.sendBeacon(API + '/events', new Blob([body], { type: 'application/json' }));

@@ -7,7 +7,13 @@
   let data = { name: '', playerId: '', token: '', scores: {}, levelScores: {} };
   try { data = Object.assign(data, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} };
-  const cleanName = (v) => String(v || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 18);
+  // mesma regra do Worker (backend/worker.js): letras, números, espaço e . _ -; mínimo 2; nomes bloqueados
+  const cleanName = (v) => String(v || '').replace(/[^\p{L}\p{N} ._-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 18);
+  const BLOCKED_NAMES = ['nazi', 'hitler', 'racista', 'pedof', 'estupro'];
+  const validName = (v) => {
+    const n = cleanName(v), folded = n.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    return n.length >= 2 && !BLOCKED_NAMES.some((x) => folded.includes(x));
+  };
 
   // Semana começa na segunda, em UTC. O identificador é a data da segunda-feira: não precisa apagar dados antigos.
   function week(date) {
@@ -110,9 +116,11 @@
     if (!API) return [];
     try { return (await request('/seasons')).seasons || []; } catch (e) { return []; }
   }
+  // meta.onStatus recebe o resultado do envio: 'ok' | 'fail' | 'name' (nome inválido/ausente) | 'local' (sem servidor)
   async function submitLevel(levelId, score, meta) {
     const w = (meta && meta.week) || week(), id = Math.max(1, Math.floor(+levelId || 0)), name = cleanName(data.name);
-    if (!name) throw new Error('name');
+    const status = (s) => { if (meta && meta.onStatus) meta.onStatus(s); };
+    if (!validName(name)) { status('name'); throw new Error('name'); }
     data.levelScores[w] = data.levelScores[w] || {};
     const old = data.levelScores[w][id];
     if (!old || score > old.score) data.levelScores[w][id] = { name, score: Math.max(0, Math.floor(score)), me: true };
@@ -124,9 +132,10 @@
           playerId: data.playerId, token: data.token, name, week: w, level: id,
           score: Math.max(0, Math.floor(score)), replay: meta && meta.replay, version: 1,
         }) });
-      } catch (e) { /* o melhor placar local continua disponível */ }
-    }
+        status('ok');
+      } catch (e) { status('fail'); /* o melhor placar local continua disponível */ }
+    } else status('local');
     return listLevel(id, w);
   }
-  root.Records = { online: !!API, week, getName, setName, list, submit, listLevel, listLevelAll, submitLevel, featured, seasonKey, seasonRange, season, seasons };
+  root.Records = { online: !!API, week, getName, setName, validName, list, submit, listLevel, listLevelAll, submitLevel, featured, seasonKey, seasonRange, season, seasons };
 })(window);

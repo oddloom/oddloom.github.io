@@ -268,7 +268,8 @@
       tutorialMove = LR.findMove(state);
       hint = tutorialMove;
       if (tutorialMove) {
-        showPraise(T('tutorial.follow'), 'info');
+        // só depois do "FASE 1" sumir, pra não sobrepor
+        setTimeout(() => { if (tutorialMove) showTutorialTip(); }, Math.max(0, announcedAt + 2400 - performance.now()));
         track('tutorial_begin', { level: 1, mode: 'normal' });
       }
     }
@@ -301,8 +302,26 @@
     if (b.orb) { const l = plain(); if (l.length) { const p = l[Math.floor(Math.random() * l.length)]; p.special = 'idol'; p.color = null; } }
   }
 
+  // dica do tutorial: fixa fora do tabuleiro (embaixo; em cima se não couber) até a primeira jogada
+  let tutTip = null, announcedAt = 0;
+  function placeTutorialTip() {
+    const below = oy + cs * state.H + 12;
+    if (below + 64 < innerHeight) { tutTip.style.top = below + 'px'; tutTip.style.transform = 'translateX(-50%)'; }
+    else { tutTip.style.top = Math.max(8, oy - 12) + 'px'; tutTip.style.transform = 'translate(-50%,-100%)'; }
+  }
+  function showTutorialTip() {
+    if (tutTip) return;
+    tutTip = document.createElement('div');
+    tutTip.className = 'tut-tip';
+    tutTip.textContent = T('tutorial.follow');
+    document.body.appendChild(tutTip);
+    placeTutorialTip();
+  }
+  function hideTutorialTip() { if (tutTip) { tutTip.remove(); tutTip = null; } }
+
   // FASE N na tela + locutor (estrondo, gongo e a voz grave dizendo a fase)
   function announceLevel(L) {
+    announcedAt = performance.now();
     const el = document.createElement('div');
     el.className = 'announce' + (L.boss ? ' boss' : '');
     // em português: "FASE" + número pintados (estilo Solar); senão, texto
@@ -368,7 +387,7 @@
       if (!((same(a, ta) && same(b, tb)) || (same(a, tb) && same(b, ta)))) {
         hint = tutorialMove;
         nudge(pa, a);
-        showPraise(T('tutorial.follow'), 'info');
+        showTutorialTip();
         return;
       }
     }
@@ -392,6 +411,7 @@
     if (level.weekly || level.hard) weeklyReplay.push([a[0], a[1], b[0], b[1]]);
     if (tutorialMove) {
       tutorialMove = null; hint = null; save.tutorialDone = 1; persist();
+      hideTutorialTip();
       showPraise(T('tutorial.done'), 'info');
       track('tutorial_complete', { level: 1, mode: 'normal' });
     }
@@ -1975,12 +1995,12 @@
     card.querySelector('#mHard').onclick = () => {
       if (!hardOpen || hardMode) return;
       Sound.play('click');
-      if (!Records.getName()) return askWeeklyName(() => openPre(id, false), () => openPre(id, true));
+      if (!Records.validName(Records.getName())) return askWeeklyName(() => openPre(id, false), () => openPre(id, true));
       openPre(id, true);
     };
     card.querySelector('#mPlay').onclick = () => {
       Sound.init(); Sound.play('click');
-      if (hardMode && !Records.getName()) return askWeeklyName(() => openPre(id, false), () => openPre(id, true));
+      if (hardMode && !Records.validName(Records.getName())) return askWeeklyName(() => openPre(id, false), () => openPre(id, true));
       for (const k in picked) if (picked[k] && save.items[k] > 0) save.items[k]--; else delete picked[k];
       persist(); closeModal(); wipe(() => startLevel(id, picked, hardMode));
     };
@@ -2061,7 +2081,26 @@
       } catch (e) { track('share_result', { mode: 'hard', level: id, result: 'cancel' }); }
     };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
-    if (hardMode) loadLevelBoards(card, id, Records.submitLevel(id, state.score, { week: level.week, replay: weeklyReplay.slice() }));
+    if (hardMode) {
+      // envio ao ranking com aviso do resultado: ✓ no ranking, ou "não enviado" com botão de tentar de novo
+      const runWeek = level.week, replay = weeklyReplay.slice(), score = state.score;
+      const statusEl = document.createElement('div');
+      statusEl.className = 'rank-status';
+      card.querySelector('.weekly-list').after(statusEl);
+      const send = () => {
+        statusEl.className = 'rank-status'; statusEl.textContent = T('rank.sending');
+        loadLevelBoards(card, id, Records.submitLevel(id, score, { week: runWeek, replay, onStatus: (s) => {
+          track('score_submit', { mode: 'hard', level: id, result: s });
+          if (!statusEl.isConnected) return;
+          statusEl.className = 'rank-status ' + s;
+          if (s === 'fail') {
+            statusEl.innerHTML = T('rank.fail') + ' <button type="button" class="rank-retry">' + T('rank.retry') + '</button>';
+            statusEl.querySelector('.rank-retry').onclick = () => { Sound.play('click'); send(); };
+          } else statusEl.textContent = s === 'ok' ? T('rank.ok') : s === 'name' ? T('rank.name') : '';
+        } }));
+      };
+      send();
+    }
     for (let i = 0; i < stars; i++) { await wait(0.35); lightStar(imgs[i]); Sound.play('star', i); }
   }
 
@@ -2428,8 +2467,13 @@
       '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
     const input = card.querySelector('#weeklyName');
     const go = () => {
-      const name = Records.setName(input.value);
-      if (name.length < 2) { input.focus(); return; }
+      // mesma regra do servidor: senão o jogador acha que está no ranking e o envio é recusado
+      if (!Records.validName(input.value)) {
+        let err = card.querySelector('.name-error');
+        if (!err) { err = document.createElement('p'); err.className = 'name-error'; input.after(err); }
+        err.textContent = T('rank.nameRule'); input.focus(); return;
+      }
+      Records.setName(input.value);
       Sound.play('click'); closeModal();
       if (next) next(); else wipe(() => startLevel('weekly'));
     };
@@ -2457,22 +2501,25 @@
   function openRecordsHub() {
     const week = Records.week(), scores = hardWeeklyScores();
     const ids = LEVELS.map((L) => L.id).filter((id) => !!save.stars[id]);
-    const featured = Records.featured(ids, week, 3);
+    // destaques sorteados sempre entre as fases 1–21: os mesmos 3 para todos os jogadores na semana
+    const featured = Records.featured(LEVELS.map((L) => L.id).filter((id) => id <= 21), week, 3);
     const ordered = featured.concat(ids.filter((id) => !featured.includes(id)));
     // 25/10: placa com o título, faixa da temporada e as fases (destaque = borda verde + ★, sem texto)
-    const rows = ordered.map((id) =>
-      '<button type="button" class="record-level' + (featured.includes(id) ? ' featured' : '') + '" data-level="' + id + '" aria-label="' + T('level') + ' ' + id + (featured.includes(id) ? ' · ' + T('records.featured') : '') + '"><span>' + T('level') + ' ' + id + '</span><strong>' +
-      (scores[id] ? nf(scores[id]) : '—') + '</strong></button>'
-    ).join('');
+    const rows = ordered.map((id) => {
+      const locked = !save.stars[id];
+      return '<button type="button" class="record-level' + (featured.includes(id) ? ' featured' : '') + (locked ? ' locked' : '') + '" data-level="' + id + '"' + (locked ? ' disabled' : '') +
+        ' aria-label="' + T('level') + ' ' + id + (featured.includes(id) ? ' · ' + T('records.featured') : '') + '"><span>' + T('level') + ' ' + id + '</span><strong>' +
+        (locked ? T('records.lockedFeat', { n: id }) : scores[id] ? nf(scores[id]) : '—') + '</strong></button>';
+    }).join('');
     track('leaderboard_open', { mode: 'hard', value: ids.length });
     const card = openModal(
       '<h2 class="plaque-title">' + T('records.short') + '</h2>' +
       '<button type="button" class="season-strip" id="mSeason"><span class="weekly-status">' + T('season.loading') + '</span></button>' +
-      (rows ? '<div class="records-levels">' + rows + '</div>' : '<p class="weekly-rules">' + T('records.empty') + '</p>') +
+      (ids.length ? '' : '<p class="weekly-rules">' + T('records.empty') + '</p>') + '<div class="records-levels">' + rows + '</div>' +
       '<div class="btns"><button class="btn dark small" id="mWeeklyName" type="button">' + T('weekly.change') + '</button>' +
       '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
     card.classList.add('records-hub');
-    card.querySelectorAll('.record-level').forEach((button) => {
+    card.querySelectorAll('.record-level:not(.locked)').forEach((button) => {
       button.onclick = () => {
         const id = +button.dataset.level;
         Sound.play('click'); closeModal(); wipe(() => { openMap(); openPre(id, true); });
@@ -2961,6 +3008,8 @@
     stepTime(dt);
     update(dt);
     draw();
+    // a dica do tutorial some se o jogador sair da fase, e acompanha o tabuleiro se a tela mudar de tamanho
+    if (tutTip) { if (scene !== 'play' || !tutorialMove) hideTutorialTip(); else placeTutorialTip(); }
     requestAnimationFrame(frame);
   }
 

@@ -296,7 +296,12 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
   animation: praise 1.25s cubic-bezier(.2,.9,.3,1) forwards;
 }
 .praise.banner { font-size: clamp(28px, 7.5vw, 46px); }
-.praise.info { font-family: var(--f-body); font-style: italic; font-weight: 600; font-size: 24px; letter-spacing: .02em; background: none; color: var(--bone); filter: drop-shadow(0 2px 6px #000); }
+.praise.info { font-family: var(--f-body); font-style: italic; font-weight: 600; font-size: 24px; letter-spacing: .02em; background: none; color: var(--bone); filter: drop-shadow(0 2px 6px #000); white-space: normal; width: max-content; max-width: 92vw; text-align: center; }
+/* dica do tutorial: fica fora do tabuleiro até a primeira jogada; quebra linha em telas de 320 px */
+.tut-tip { position: fixed; left: 50%; z-index: 20; pointer-events: none; width: max-content; max-width: min(92vw, 420px); text-align: center;
+  font-family: var(--f-body); font-style: italic; font-weight: 600; font-size: clamp(17px, 5vw, 22px); line-height: 1.2; color: var(--bone);
+  filter: drop-shadow(0 2px 6px #000); animation: tutTip .35s ease-out both; }
+@keyframes tutTip { from { opacity: 0; } to { opacity: 1; } }
 @keyframes praise { 0% { transform: translate(-50%,-50%) scale(1.6); opacity: 0; letter-spacing: .4em; } 20% { transform: translate(-50%,-50%) scale(1); opacity: 1; letter-spacing: .08em; } 75% { opacity: 1; } 100% { transform: translate(-50%,-58%) scale(.98); opacity: 0; } }
 
 /* anúncio da fase: entra gigante e desfocado, bate, segura e some subindo */
@@ -829,6 +834,13 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .record-level.featured::before { content: '★'; position: absolute; top: 6px; right: 8px; margin: 0; font-size: 12px; letter-spacing: 0; color: #71ead8; }
 .record-level span { font-size: 14px; }
 .record-level strong { font-size: 12px; color: var(--gold-hi); }
+.record-level.locked { opacity: .62; cursor: default; }
+.rank-status { min-height: 18px; margin: 6px 0 2px; font-size: 13px; font-weight: 700; color: var(--bone-dim); text-align: center; }
+.rank-status.ok { color: #71ead8; }
+.rank-status.fail, .rank-status.name { color: #ffb36b; }
+.rank-retry { margin-left: 6px; padding: 3px 10px; border: 1px solid currentColor; border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.name-error { margin: 6px 0 0; font-size: 13px; font-weight: 700; color: #ffb36b; text-align: center; }
+.record-level.locked strong { font-size: 10px; color: var(--bone-dim); white-space: normal; }
 .season-head { display: grid; gap: 2px; justify-items: center; }
 .season-head b { font: 700 18px var(--f-display); letter-spacing: .04em; color: var(--gold-hi); }
 .season-head small { font-size: 11.5px; color: var(--bone-dim); }
