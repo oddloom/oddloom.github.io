@@ -979,12 +979,21 @@ dialog::backdrop {
    mesa ocupando o resto da tela, com força à esquerda e canaleta à direita,
    como no 8 Ball Pool. */
 @media (orientation: landscape) and (height <= 540px) {
+  /* A mesa usa a altura inteira; o HUD vai para as faixas laterais que
+     sobram (a tela do celular é mais comprida que a mesa). */
   :root {
-    --hud-h: clamp(34px, 11.5dvh, 52px);
-    --hud-btn: calc(var(--hud-h) * 0.9);
-    --side: clamp(40px, 7.5dvw, 66px);
     --safe-l: env(safe-area-inset-left, 0px);
     --safe-r: env(safe-area-inset-right, 0px);
+    --gap: 8px;
+    --table-w: min(
+      calc(100dvw - 2 * 58px - 2 * var(--gap) - var(--safe-l) - var(--safe-r)),
+      calc((100dvh - 4px) * 1.817)
+    );
+    --side: calc(
+      (100dvw - var(--table-w) - 2 * var(--gap) - var(--safe-l) - var(--safe-r)) /
+        2
+    );
+    --hud-btn: min(38px, calc(var(--side) - 12px));
   }
 
   html,
@@ -1007,49 +1016,130 @@ dialog::backdrop {
     background: rgb(4 2 1 / 62%);
   }
 
+  /* HUD por cima de tudo, sem ocupar espaço: cada jogador vira um painel
+     na faixa do seu lado (menu e jogador 1 à esquerda, efeito e jogador 2
+     à direita). A barra de HUD desenhada fica só no PC. */
   .hud {
-    grid-template-columns:
-      var(--hud-btn)
-      min(
-        calc(var(--hud-h) * 9.47),
-        calc(100dvw - 2 * var(--hud-btn) - 40px - var(--safe-l) - var(--safe-r))
-      )
-      var(--hud-btn);
-    gap: 8px;
-    height: var(--hud-h);
-    padding: 1px calc(8px + var(--safe-r)) 0 calc(8px + var(--safe-l));
+    position: absolute;
+    z-index: 5;
+    inset: 0;
+    display: block;
+    height: auto;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  .hud__bar {
+    position: static;
+    aspect-ratio: auto;
+  }
+
+  .hud__bar > img,
+  .hud__versus {
+    display: none;
+  }
+
+  .hud__menu,
+  .hud__spin {
+    position: absolute;
+    top: 4px;
+    width: var(--hud-btn);
+    pointer-events: auto;
+  }
+
+  .hud__menu {
+    left: calc(var(--safe-l) + (var(--side) - var(--hud-btn)) / 2);
+  }
+
+  .hud__spin {
+    right: calc(var(--safe-r) + (var(--side) - var(--hud-btn)) / 2);
+  }
+
+  .player {
+    inset: auto;
+    top: calc(var(--hud-btn) + 10px);
+    display: flex;
+    width: calc(var(--side) - 4px);
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 5px 2px 6px;
+    border: 1px solid rgb(201 142 50 / 70%);
+    border-radius: 12px;
+    background: rgb(16 9 5 / 88%);
+  }
+
+  .player--one {
+    left: calc(var(--safe-l) + 2px);
+  }
+
+  .player--two {
+    right: calc(var(--safe-r) + 2px);
+  }
+
+  .player.is-active {
+    border-color: #f2b632;
+    box-shadow: 0 0 10px rgb(242 182 50 / 45%);
+  }
+
+  .player__timer {
+    position: relative;
+    left: auto;
+    top: auto;
+    order: -1;
+    width: min(42px, calc(var(--side) - 14px));
+    border: 2px solid #c98e32;
+    background: radial-gradient(circle, #2b170b, #0b0604);
+    transform: none;
+  }
+
+  .player__info {
+    position: static;
+    display: flex;
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
   }
 
   .player strong {
-    font-size: clamp(9px, 1.5dvw, 13px);
+    position: static;
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transform: none;
   }
 
   .ball-slots {
+    position: static;
+    flex-wrap: wrap;
     gap: 2px;
+    width: 100%;
+    transform: none;
   }
 
   .slot-ball {
-    width: clamp(9px, 1.6dvw, 14px);
-    height: clamp(9px, 1.6dvw, 14px);
+    width: 9px;
+    height: 9px;
     border-width: 1px;
     font-size: 0;
     box-shadow: inset -2px -2px 4px rgb(0 0 0 / 38%);
   }
 
   .game__stage {
-    grid-template-columns: var(--side) auto var(--side);
-    gap: clamp(6px, 1.4dvw, 14px);
-    height: calc(100dvh - var(--hud-h));
-    padding: 1px calc(4px + var(--safe-r)) 1px calc(4px + var(--safe-l));
+    grid-template-columns: var(--side) var(--table-w) var(--side);
+    gap: var(--gap);
+    height: 100dvh;
+    padding: 2px var(--safe-r) 2px var(--safe-l);
   }
 
   .table-shell {
-    width: min(
-      calc(
-        100dvw - 2 * var(--side) - 30px - var(--safe-l) - var(--safe-r)
-      ),
-      calc((100dvh - var(--hud-h) - 2px) * 1.817)
-    );
+    width: var(--table-w);
   }
 
   .table-art {
@@ -1058,7 +1148,10 @@ dialog::backdrop {
 
   /* Proporção da arte (195×545), para o preenchimento cair dentro do tubo. */
   .power-meter {
+    width: min(54px, 100%);
     height: auto;
+    place-self: end center;
+    margin-bottom: 8px;
     aspect-ratio: 195 / 545;
     touch-action: none;
     cursor: grab;
@@ -1083,10 +1176,15 @@ dialog::backdrop {
   }
 
   /* Trilho na altura da mesa; 15 bolas cabem empilhadas. */
-  .tray {
-    --tray-ball: min(16px, calc((100dvh - var(--hud-h)) * 0.8 / 16.5));
 
-    height: 82%;
+  /* Canaleta embaixo do painel do jogador 2; 15 bolas cabem empilhadas. */
+  .tray {
+    /* Altura do trilho menos moldura/folga, dividida por 15 bolas + vãos. */
+    --tray-ball: min(14px, calc((100dvh - 160px - 20px) / 15 - 2px));
+
+    height: calc(100dvh - 160px);
+    align-self: end;
+    margin-bottom: 8px;
   }
 
   .message {
