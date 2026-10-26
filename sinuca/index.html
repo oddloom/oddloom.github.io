@@ -10,7 +10,7 @@
     />
     <title>Sinuca — 8-ball</title>
     <link rel="icon" href="favicon.png" />
-    <link rel="stylesheet" href="css/v1.css?v=4" />
+    <link rel="stylesheet" href="css/v1.css?v=5" />
   </head>
   <body>
     <main id="app" class="app is-lobby">
@@ -81,10 +81,15 @@
           </button>
 
           <div class="hud__bar">
-            <img src="assets/moa/barra-hud.png" alt="" />
+            <img src="assets/moa/barra-hud-v2.png" alt="" />
             <article id="player-1" class="player player--one is-active">
               <div class="player__timer">
-                <span id="timer-1">30</span>
+                <span
+                  id="timer-1"
+                  class="sprite-number"
+                  role="img"
+                  aria-label="30"
+                ></span>
               </div>
               <div class="player__info">
                 <strong id="name-1">Você</strong>
@@ -95,7 +100,9 @@
                 ></ul>
               </div>
             </article>
-            <div class="hud__versus">8</div>
+            <div class="hud__versus" role="img" aria-label="Bola 8">
+              <img src="assets/moa/numero-8.png" alt="" />
+            </div>
             <article id="player-2" class="player player--two">
               <div class="player__info">
                 <strong id="name-2">Bot</strong>
@@ -106,7 +113,12 @@
                 ></ul>
               </div>
               <div class="player__timer">
-                <span id="timer-2">30</span>
+                <span
+                  id="timer-2"
+                  class="sprite-number"
+                  role="img"
+                  aria-label="30"
+                ></span>
               </div>
             </article>
           </div>
@@ -199,6 +211,6 @@
       </section>
     </main>
 
-    <script defer src="jogo-v1.js?v=4"></script>
+    <script defer src="jogo-v1.js?v=5"></script>
   </body>
 </html>
