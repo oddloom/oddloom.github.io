@@ -390,10 +390,11 @@ button:focus-visible {
 
 .hud__versus {
   position: absolute;
-  left: 50%;
+  left: 49.45%;
   top: 50%;
   display: grid;
-  width: 6.2%;
+  width: auto;
+  height: 62%;
   aspect-ratio: 1;
   place-items: center;
   border: 0;
@@ -406,6 +407,8 @@ button:focus-visible {
   display: block;
   width: auto;
   height: 54%;
+  max-width: 54%;
+  object-fit: contain;
   filter: drop-shadow(0 2px 2px rgb(0 0 0 / 72%));
 }
 
