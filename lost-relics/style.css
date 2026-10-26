@@ -408,7 +408,7 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .ui-kit #score.digits img { height: 58%; }
 /* moedas ganhas na vitória: a mesma placa, maior */
 .final-score.painted { display: flex; align-items: center; justify-content: flex-start; width: min(250px, 72%); margin: 0 auto; aspect-ratio: 381 / 145; padding: 0 8% 0 36%; box-sizing: border-box; background: var(--ui-coinbar) center / 100% 100% no-repeat; filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
-.final-score.painted .digits { height: 56%; }
+.final-score.painted > .digits { height: 56%; min-width: 0; }
 .ui-kit .starbar { height: auto; aspect-ratio: 593 / 135; margin-top: 2px; border-radius: 0; background: none; box-shadow: none; }
 /* canal escuro por trás, ouro líquido no meio, arte da barra (com o canal vazado) por cima */
 .ui-kit .starbar::before { content: ''; position: absolute; left: 12%; right: 12%; top: 32.6%; bottom: 31.1%; background: #0b0f14; z-index: 0; }
