@@ -64,8 +64,9 @@ h1 span{color:var(--blue)}
 
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(16px,2.5vw,28px)}
 .card{display:flex;flex-direction:column;background:var(--soft);border-radius:28px;overflow:hidden;transition:transform .28s cubic-bezier(.16,1,.3,1),box-shadow .28s cubic-bezier(.16,1,.3,1)}
-.card .pic{aspect-ratio:16/10;overflow:hidden;background:#0b1311}
-.card .pic img{width:100%;height:100%;object-fit:cover;transition:transform 1s cubic-bezier(.22,1,.36,1)}
+.card .pic{position:relative;aspect-ratio:16/10;overflow:hidden;background:#0b1311}
+.card .pic .cover-art{width:100%;height:100%;object-fit:cover;transition:transform 1s cubic-bezier(.22,1,.36,1)}
+.card .pic .game-logo{position:absolute;z-index:1;top:4%;left:50%;width:min(53%,420px);height:auto;transform:translateX(-50%);filter:drop-shadow(0 4px 8px rgba(0,0,0,.72));pointer-events:none}
 .snake .pic img{object-position:50% 50%}
 .relics .pic img{object-position:50% 40%}
 .pool .pic img{object-position:50% 56%}
@@ -83,7 +84,7 @@ h1 span{color:var(--blue)}
     transform:translateY(-4px);
     box-shadow:0 18px 38px rgba(0,0,0,.08),0 14px 34px rgba(0,113,227,.14),0 0 0 1px rgba(0,113,227,.10)
   }
-  .card:not(.is-coming):hover .pic img{transform:scale(1.04)}
+  .card:not(.is-coming):hover .pic .cover-art{transform:scale(1.04)}
   .card:not(.is-coming):hover .play{background:var(--blue-hover)}
 }
 
@@ -117,7 +118,7 @@ footer a:hover{color:var(--text)}
 
   <div class="grid">
     <a class="card snake" href="neon-snake/" aria-label="Jogar Neon Snake">
-      <div class="pic"><img src="img/jogo-snake.jpg" alt="Cobra de escamas pretas com brilho verde sobre uma grade de neon" width="1600" height="900"></div>
+      <div class="pic"><img class="cover-art" src="img/jogo-snake.jpg" alt="Cobra de escamas pretas com brilho verde sobre uma grade de neon" width="1600" height="900"></div>
       <div class="body">
         <div>
           <h2>Neon Snake</h2>
@@ -128,7 +129,10 @@ footer a:hover{color:var(--text)}
     </a>
 
     <a class="card relics" href="lost-relics/" aria-label="Jogar Lost Relics">
-      <div class="pic"><img src="img/jogo-relics.jpg" alt="Mapa pintado de um templo maia na selva, com trilha de pedra, estátuas e um baú de moedas" width="900" height="1350"></div>
+      <div class="pic">
+        <img class="cover-art" src="img/jogo-relics-v2.jpg" alt="Tabuleiro de joias diante de um templo perdido e uma serpente guardiã" width="1600" height="900">
+        <img class="game-logo" src="lost-relics/assets/logo.png" alt="" aria-hidden="true" width="886" height="269">
+      </div>
       <div class="body">
         <div>
           <h2>Lost Relics</h2>
@@ -139,7 +143,7 @@ footer a:hover{color:var(--text)}
     </a>
 
     <article class="card pool is-coming" aria-label="Sinuca, em desenvolvimento">
-      <div class="pic"><img src="img/jogo-sinuca.webp" alt="Mesa de sinuca verde em um bar, com a bola 8 em primeiro plano" width="1600" height="900"></div>
+      <div class="pic"><img class="cover-art" src="img/jogo-sinuca.webp" alt="Mesa de sinuca verde em um bar, com a bola 8 em primeiro plano" width="1600" height="900"></div>
       <div class="body">
         <div>
           <h2>Sinuca</h2>
