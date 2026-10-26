@@ -776,9 +776,13 @@ dialog::backdrop {
   font-size: 14px;
 }
 
-.room-code {
+.room-dialog .room-code {
+  margin: 4px 0 10px;
   color: #fff3d4;
-  letter-spacing: 0.12em;
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  user-select: all;
 }
 
 .custom-join {

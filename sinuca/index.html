@@ -26,7 +26,7 @@
       href="assets/moa/apple-touch-icon.png?v=1"
     />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="css/v1.css?v=12" />
+    <link rel="stylesheet" href="css/v1.css?v=13" />
   </head>
   <body>
     <main id="app" class="app is-lobby">
@@ -123,7 +123,7 @@
 
         <dialog id="custom-dialog" class="game-menu room-dialog">
           <h2>Partida personalizada</h2>
-          <p>Sala fechada: só entra quem tiver o código ou o link.</p>
+          <p>Sala fechada: só entra quem tiver o código.</p>
           <button id="custom-create" type="button">Criar sala</button>
           <form id="custom-join" class="custom-join">
             <input
@@ -286,19 +286,19 @@
         <dialog id="game-menu" class="game-menu">
           <h2>Partida</h2>
           <button id="resume" type="button">Continuar</button>
-          <button id="show-room" type="button" hidden>Link da sala</button>
+          <button id="show-room" type="button" hidden>Código da sala</button>
           <button id="restart" type="button">Recomeçar</button>
           <button id="back-lobby" type="button">Voltar ao início</button>
         </dialog>
 
         <dialog id="room-dialog" class="game-menu room-dialog">
-          <h2>Sala <span id="room-code" class="room-code"></span></h2>
+          <h2>Sua sala</h2>
+          <p id="room-code" class="room-code" aria-label="Código da sala"></p>
           <p>
-            Mande o link pro seu amigo, ou o código pra ele digitar em
-            “Partida personalizada”.
+            Mande este código pro seu amigo. Ele toca em “Partida
+            personalizada”, digita o código e toca em Entrar.
           </p>
-          <input id="room-link" type="text" readonly aria-label="Link da sala" />
-          <button id="room-copy" type="button">Copiar link</button>
+          <button id="room-copy" type="button">Copiar código</button>
           <p id="room-status" class="room-dialog__status" role="status">
             Conectando…
           </p>
@@ -312,6 +312,6 @@
       </div>
     </main>
 
-    <script defer src="jogo-v1.js?v=10"></script>
+    <script defer src="jogo-v1.js?v=11"></script>
   </body>
 </html>
