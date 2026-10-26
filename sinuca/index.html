@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Jogo de sinuca 8-ball para navegador, com treino contra bot e dois jogadores no mesmo PC."
+    />
+    <title>Sinuca — 8-ball</title>
+    <link rel="icon" href="favicon.png" />
+    <link rel="stylesheet" href="css/v1.css?v=4" />
+  </head>
+  <body>
+    <main id="app" class="app is-lobby">
+      <section id="lobby" class="lobby" aria-labelledby="titulo-jogo">
+        <div class="lobby__shade"></div>
+        <div class="lobby__content">
+          <img class="lobby__coin" src="assets/moa/moeda-8.png" alt="" />
+          <h1 id="titulo-jogo">Sinuca</h1>
+          <p class="lobby__subtitle">8-ball · PC</p>
+
+          <div class="lobby__actions">
+            <button
+              class="art-button art-button--green"
+              id="play-bot"
+              type="button"
+            >
+              Treino contra o bot
+            </button>
+            <div
+              id="difficulty"
+              class="difficulty"
+              role="group"
+              aria-label="Dificuldade do bot"
+            >
+              <button type="button" data-difficulty="facil" aria-pressed="false">
+                Fácil
+              </button>
+              <button
+                type="button"
+                data-difficulty="normal"
+                class="is-selected"
+                aria-pressed="true"
+              >
+                Normal
+              </button>
+              <button
+                type="button"
+                data-difficulty="dificil"
+                aria-pressed="false"
+              >
+                Difícil
+              </button>
+            </div>
+            <button
+              class="art-button art-button--wood"
+              id="play-local"
+              type="button"
+            >
+              2 jogadores no mesmo PC
+            </button>
+          </div>
+
+          <p class="lobby__credit">
+            Física baseada no projeto open source Tailuge Billiards
+          </p>
+        </div>
+      </section>
+
+      <section id="game" class="game" hidden aria-label="Mesa de sinuca">
+        <header class="hud">
+          <button
+            id="menu-button"
+            class="hud__menu"
+            type="button"
+            aria-label="Abrir menu"
+          >
+            <img src="assets/moa/botao-menu.png" alt="" />
+          </button>
+
+          <div class="hud__bar">
+            <img src="assets/moa/barra-hud.png" alt="" />
+            <article id="player-1" class="player player--one is-active">
+              <div class="player__timer">
+                <span id="timer-1">30</span>
+              </div>
+              <div class="player__info">
+                <strong id="name-1">Você</strong>
+                <ul
+                  id="balls-1"
+                  class="ball-slots"
+                  aria-label="Bolas do jogador 1"
+                ></ul>
+              </div>
+            </article>
+            <div class="hud__versus">8</div>
+            <article id="player-2" class="player player--two">
+              <div class="player__info">
+                <strong id="name-2">Bot</strong>
+                <ul
+                  id="balls-2"
+                  class="ball-slots"
+                  aria-label="Bolas do jogador 2"
+                ></ul>
+              </div>
+              <div class="player__timer">
+                <span id="timer-2">30</span>
+              </div>
+            </article>
+          </div>
+
+          <button
+            id="spin-button"
+            class="hud__spin"
+            type="button"
+            aria-label="Escolher efeito"
+          >
+            <img src="assets/moa/botao-efeito.png" alt="" />
+            <span id="spin-dot"></span>
+          </button>
+        </header>
+
+        <div class="game__stage">
+          <aside class="power-meter" aria-label="Força da tacada">
+            <img src="assets/moa/medidor-forca.png" alt="" />
+            <div class="power-meter__track" aria-hidden="true">
+              <span id="power-level"></span>
+            </div>
+            <output id="power-value" for="table-canvas">0%</output>
+          </aside>
+
+          <div id="table-shell" class="table-shell">
+            <img
+              class="table-art"
+              src="assets/moa/mesa.png"
+              alt="Mesa de sinuca vista de cima"
+            />
+            <div
+              id="message"
+              class="message"
+              role="status"
+              aria-live="polite"
+            >
+              Sua vez
+            </div>
+            <div id="playfield" class="playfield">
+              <canvas
+                id="table-canvas"
+                role="img"
+                aria-label="Área jogável da mesa"
+              ></canvas>
+              <svg id="guide" class="guide" aria-hidden="true">
+                <line id="aim-line" class="guide__aim" />
+                <circle id="ghost-ball" class="guide__ghost" />
+                <line id="target-line" class="guide__target" />
+              </svg>
+              <div id="cue-wrap" class="cue-wrap" aria-hidden="true">
+                <img src="assets/moa/taco-madeira.png" alt="" />
+              </div>
+            </div>
+          </div>
+
+          <aside class="tray" aria-label="Canaleta de bolas encaçapadas">
+            <img src="assets/moa/canaleta.png" alt="" />
+            <ul id="potted-balls" class="tray__balls"></ul>
+          </aside>
+        </div>
+
+        <p class="game__hint">
+          Mova o mouse para mirar. Clique, puxe para trás e solte para bater.
+        </p>
+
+        <dialog id="spin-dialog" class="spin-dialog">
+          <button id="spin-close" type="button" aria-label="Fechar">×</button>
+          <h2>Efeito</h2>
+          <p>Escolha onde o taco acerta a bola branca.</p>
+          <div
+            id="spin-ball"
+            class="spin-ball"
+            role="slider"
+            aria-label="Ponto de efeito"
+            tabindex="0"
+          >
+            <span id="spin-picker"></span>
+          </div>
+          <button id="spin-reset" class="spin-reset" type="button">
+            Centralizar
+          </button>
+        </dialog>
+
+        <dialog id="game-menu" class="game-menu">
+          <h2>Partida</h2>
+          <button id="resume" type="button">Continuar</button>
+          <button id="restart" type="button">Recomeçar</button>
+          <button id="back-lobby" type="button">Voltar ao início</button>
+        </dialog>
+      </section>
+    </main>
+
+    <script defer src="jogo-v1.js?v=4"></script>
+  </body>
+</html>
