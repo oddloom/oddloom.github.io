@@ -24,7 +24,7 @@
     x.fillStyle = '#54d9c7'; x.font = '900 158px Georgia'; x.fillText(String(options.score || 0), 540, 790);
     x.fillStyle = '#f6ecd2'; x.font = '700 42px system-ui'; x.fillText(options.scoreLabel || 'PONTOS', 540, 860);
     x.fillStyle = '#e8c76b'; x.font = '700 45px system-ui'; wrap(x, options.call || 'CONSEGUE SUPERAR?', 540, 1030, 860, 58);
-    x.fillStyle = '#aeb8b1'; x.font = '32px system-ui'; x.fillText('oddloom.github.io/lost-relics', 540, 1220);
+    x.fillStyle = '#aeb8b1'; x.font = '32px system-ui'; x.fillText('oddloomgames.com/lost-relics', 540, 1220);
     return new Promise((resolve) => c.toBlob(resolve, 'image/png', .92));
   }
   async function share(options) {
