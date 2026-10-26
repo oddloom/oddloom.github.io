@@ -390,7 +390,7 @@ button:focus-visible {
 
 .hud__versus {
   position: absolute;
-  left: 49.45%;
+  left: 50%;
   top: 50%;
   display: grid;
   width: auto;
