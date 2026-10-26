@@ -785,6 +785,20 @@ dialog::backdrop {
   user-select: all;
 }
 
+.game-menu #search-choice button small {
+  display: block;
+  margin-top: 2px;
+  color: #cbb58e;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.lobby__stats {
+  margin: 8px 0 0;
+  color: #f2e3c2;
+  font-size: 14px;
+}
+
 .custom-join {
   display: flex;
   gap: 8px;

@@ -26,7 +26,7 @@
       href="assets/moa/apple-touch-icon.png?v=1"
     />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="css/v1.css?v=13" />
+    <link rel="stylesheet" href="css/v1.css?v=14" />
   </head>
   <body>
     <main id="app" class="app is-lobby">
@@ -37,6 +37,7 @@
             <img class="lobby__coin" src="assets/moa/moeda-8.png" alt="" />
             <h1 id="titulo-jogo">Sinuca</h1>
             <p class="lobby__subtitle">8-ball</p>
+            <p id="player-stats" class="lobby__stats" hidden></p>
             <button id="fullscreen-tip" class="fullscreen-tip" type="button">
               Tela cheia no iPhone
             </button>
@@ -104,10 +105,23 @@
         </div>
 
         <dialog id="search-dialog" class="game-menu room-dialog">
-          <h2>Procurando partida</h2>
-          <p id="search-status" class="room-dialog__status" role="status">
-            Esperando outro jogador…
-          </p>
+          <div id="search-choice">
+            <h2>Procurar partida</h2>
+            <button id="search-ranked" type="button">
+              Ranqueada
+              <small>conta para o rank</small>
+            </button>
+            <button id="search-casual" type="button">
+              Casual
+              <small>sem rank, só por diversão</small>
+            </button>
+          </div>
+          <div id="search-wait" hidden>
+            <h2 id="search-title">Procurando partida</h2>
+            <p id="search-status" class="room-dialog__status" role="status">
+              Esperando outro jogador…
+            </p>
+          </div>
           <button id="search-cancel" type="button">Cancelar</button>
         </dialog>
 
@@ -312,6 +326,6 @@
       </div>
     </main>
 
-    <script defer src="jogo-v1.js?v=11"></script>
+    <script defer src="jogo-v1.js?v=12"></script>
   </body>
 </html>
