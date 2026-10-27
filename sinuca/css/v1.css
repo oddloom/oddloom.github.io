@@ -437,6 +437,12 @@ button:focus-visible {
   aspect-ratio: 1472 / 810;
 }
 
+/* Em pé no celular este bloco gira -90° (src/v1.ts converte o toque). */
+.table-rotor {
+  position: absolute;
+  inset: 0;
+}
+
 .table-art {
   display: block;
   width: 100%;
@@ -481,6 +487,15 @@ button:focus-visible {
   stroke: #f6c86f;
   stroke-width: 2.2;
   stroke-dasharray: 7 5;
+}
+
+/* Caminho da branca depois de bater (muda com o efeito). */
+.guide__cue {
+  stroke: rgb(255 255 255 / 70%);
+  stroke-width: 2;
+  stroke-dasharray: 3 5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
 }
 
 .guide__ghost {
@@ -734,6 +749,90 @@ dialog::backdrop {
   box-shadow: 0 2px 5px #000;
 }
 
+/* Bola grande com as zonas escritas em volta, como no quadro da Silvia
+   Taioli: alto segue, baixo puxa, lados abrem. */
+.spin-pad {
+  display: grid;
+  grid-template-areas:
+    ". top ."
+    "left ball right"
+    ". bottom .";
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 8px;
+}
+
+.spin-pad .spin-ball {
+  grid-area: ball;
+  margin: 0;
+  touch-action: none;
+}
+
+.spin-label {
+  color: #ffd787;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.spin-label--top {
+  grid-area: top;
+}
+
+.spin-label--bottom {
+  grid-area: bottom;
+}
+
+.spin-label--left {
+  grid-area: left;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.spin-label--right {
+  grid-area: right;
+  writing-mode: vertical-rl;
+}
+
+/* Cruz e anel guia dentro da bola. */
+.spin-ball::before {
+  position: absolute;
+  inset: 8%;
+  border: 1px dashed rgb(90 60 20 / 45%);
+  border-radius: 50%;
+  background:
+    linear-gradient(rgb(90 60 20 / 35%), rgb(90 60 20 / 35%)) center / 1px
+      100% no-repeat,
+    linear-gradient(rgb(90 60 20 / 35%), rgb(90 60 20 / 35%)) center / 100%
+      1px no-repeat;
+  content: "";
+  pointer-events: none;
+}
+
+.spin-dialog .spin-desc {
+  min-height: 2.6em;
+  margin: 12px 0 10px;
+  color: #ffe6ad;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.spin-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.spin-reset.spin-ok {
+  background: #0b6b41;
+}
+
+.hud__spin.has-spin {
+  filter: drop-shadow(0 0 6px rgb(242 182 50 / 80%));
+}
+
 .spin-reset,
 .game-menu button {
   border: 1px solid #c98e32;
@@ -913,6 +1012,10 @@ dialog::backdrop {
   pointer-events: none;
 }
 
+.hint-horizontal {
+  display: none;
+}
+
 @media (pointer: coarse) {
   .power-meter.is-ready .power-meter__hint {
     display: block;
@@ -929,8 +1032,7 @@ dialog::backdrop {
   }
 }
 
-.game__hint--touch,
-.rotate-hint {
+.game__hint--touch {
   display: none;
 }
 
@@ -1288,40 +1390,338 @@ dialog::backdrop {
   }
 }
 
-/* Celular em pé: pede para girar (o jogo é deitado). */
-@media (orientation: portrait) and (pointer: coarse) {
-  .rotate-hint {
-    position: fixed;
-    z-index: 100;
-    inset: 0;
+/* Celular em pé (plataforma principal): HUD numa faixa em cima, a mesa
+   girada -90° (branca embaixo, tacando para cima) no maior tamanho que
+   cabe, força à esquerda e canaleta embaixo. Todas as medidas saem da tela
+   e das áreas seguras, então nada corta em aparelho nenhum. */
+@media (orientation: portrait) and (width <= 900px) {
+  :root {
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+    --hud-h: 64px;
+    --tray-h: 22px;
+    --power-h: 38px;
+    --gap: 6px;
+
+    /* Largura da mesa na tela (= altura da arte), limitada pela largura e
+       pela altura disponíveis; 1.817 é a proporção de mesa.png. */
+    --table-w: min(
+      calc(100dvw - var(--safe-l) - var(--safe-r) - 12px),
+      calc(
+        (100dvh - var(--safe-t) - var(--safe-b) - var(--hud-h) - var(--tray-h) -
+            var(--power-h) - 3 * var(--gap) - 12px) / 1.817
+      )
+    );
+    --table-h: calc(var(--table-w) * 1.817);
+  }
+
+  html,
+  body {
+    min-width: 0;
+    height: 100dvh;
+  }
+
+  .app,
+  .lobby,
+  .game {
+    height: 100dvh;
+  }
+
+  .game::before {
+    background: rgb(4 2 1 / 62%);
+  }
+
+  .hud {
     display: grid;
-    place-content: center;
-    gap: 14px;
-    background: var(--coal);
-    text-align: center;
+    grid-template-columns: 38px minmax(0, 1fr) 38px;
+    gap: 6px;
+    height: calc(var(--hud-h) + var(--safe-t));
+    padding: calc(var(--safe-t) + 5px) calc(var(--safe-r) + 6px) 3px
+      calc(var(--safe-l) + 6px);
   }
 
-  .rotate-hint img {
-    width: 96px;
-    margin: 0 auto;
-    animation: girar 1.6s ease-in-out infinite alternate;
+  .hud__bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    height: 100%;
+    aspect-ratio: auto;
   }
 
-  .rotate-hint p {
-    margin: 0;
-    color: #ffe2a0;
-    font-size: 20px;
-    font-weight: 800;
-  }
-}
-
-@keyframes girar {
-  from {
-    transform: rotate(0);
+  .hud__bar > img,
+  .hud__versus {
+    display: none;
   }
 
-  to {
-    transform: rotate(90deg);
+  .hud__menu,
+  .hud__spin {
+    width: 38px;
+  }
+
+  .hud__menu:hover,
+  .hud__spin:hover {
+    transform: none;
+  }
+
+  .player {
+    position: static;
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 5px;
+    border: 1px solid rgb(201 142 50 / 70%);
+    border-radius: 12px;
+    background: rgb(16 9 5 / 88%);
+  }
+
+  .player.is-active {
+    border-color: #f2b632;
+    box-shadow: 0 0 10px rgb(242 182 50 / 45%);
+  }
+
+  .player__timer {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 40px;
+    flex: 0 0 40px;
+    border: 2px solid #c98e32;
+    background: radial-gradient(circle, #2b170b, #0b0604);
+    transform: none;
+  }
+
+  .player__info {
+    position: static;
+    display: flex;
+    min-width: 0;
+    height: auto;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .player strong {
+    position: static;
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transform: none;
+  }
+
+  .ball-slots {
+    position: static;
+    gap: 2px;
+    width: 100%;
+    transform: none;
+  }
+
+  .slot-ball {
+    width: 10px;
+    height: 10px;
+    border-width: 1px;
+    font-size: 0;
+    box-shadow: inset -2px -2px 4px rgb(0 0 0 / 38%);
+  }
+
+  /* De cima para baixo: canaleta, mesa, força. */
+  .game__stage {
+    grid-template-columns: var(--table-w);
+    grid-template-rows: var(--tray-h) var(--table-h) var(--power-h);
+    align-content: center;
+    gap: var(--gap);
+    height: calc(100dvh - var(--hud-h) - var(--safe-t));
+    padding: 0 var(--safe-r) var(--safe-b) var(--safe-l);
+  }
+
+  .table-shell {
+    grid-column: 1;
+    grid-row: 2;
+    width: var(--table-w);
+    height: var(--table-h);
+    aspect-ratio: auto;
+  }
+
+  .table-rotor {
+    inset: auto;
+    left: 50%;
+    top: 50%;
+    width: var(--table-h);
+    height: var(--table-w);
+    transform: translate(-50%, -50%) rotate(-90deg);
+  }
+
+  .table-art {
+    filter: drop-shadow(0 8px 14px rgb(0 0 0 / 70%));
+  }
+
+  /* Força deitada embaixo da mesa, no trilho dourado da canaleta: puxa
+     para a esquerda e o preenchimento acompanha o dedo. */
+  .power-meter {
+    grid-column: 1;
+    grid-row: 3;
+    width: min(100%, 330px);
+    height: 100%;
+    justify-self: center;
+    border: 3px solid #c98e32;
+    border-radius: 999px;
+    background: linear-gradient(#0b0604, #2b170b 50%, #0b0604);
+    box-shadow:
+      inset 0 0 10px #000,
+      0 0 0 1px #5a2a0d,
+      0 8px 16px rgb(0 0 0 / 62%);
+    filter: none;
+    z-index: 1;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .power-meter > img {
+    display: none;
+  }
+
+  .power-meter::after {
+    position: absolute;
+    inset: -40% -4%;
+    content: "";
+  }
+
+  .power-meter.is-pulling {
+    cursor: grabbing;
+    box-shadow:
+      inset 0 0 10px #000,
+      0 0 12px rgb(242 182 50 / 70%);
+  }
+
+  .power-meter__track {
+    inset: 5px 8px 5px 52px;
+    width: auto;
+    height: auto;
+  }
+
+  #power-level {
+    background: linear-gradient(to left, #d33b1f, #f2b632 62%, #fff2b0);
+    transform: scaleX(var(--power, 0));
+    transform-origin: right;
+  }
+
+  #power-value {
+    left: 6px;
+    top: 50%;
+    bottom: auto;
+    min-width: 40px;
+    padding: 2px 4px;
+    font-size: 11px;
+    transform: translateY(-50%);
+  }
+
+  .hint-vertical {
+    display: none;
+  }
+
+  .hint-horizontal {
+    display: inline;
+  }
+
+  /* Canaleta deitada entre o placar e a mesa; 15 bolas lado a lado. */
+  .tray {
+    --tray-ball: calc(var(--tray-h) - 8px);
+
+    display: block;
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    height: var(--tray-h);
+  }
+
+  .tray__balls {
+    width: 100%;
+    height: 100%;
+    flex-direction: row;
+    padding: 0 5px;
+    border-width: 2px;
+  }
+
+  .message {
+    top: 3%;
+    min-width: 0;
+    padding: 5px 14px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .game__hint {
+    display: none !important;
+  }
+
+  dialog {
+    max-width: calc(100vw - 24px);
+    max-height: 92dvh;
+    overflow: auto;
+  }
+
+  .game-menu,
+  .spin-dialog {
+    padding: 18px;
+  }
+
+  .spin-ball {
+    width: min(200px, 54vw);
+    height: min(200px, 54vw);
+  }
+
+  .lobby__content {
+    width: 100%;
+    padding: 0 calc(16px + var(--safe-r)) 0 calc(16px + var(--safe-l));
+  }
+
+  .lobby__coin {
+    width: 84px;
+    margin-bottom: -10px;
+  }
+
+  .lobby h1 {
+    font-size: clamp(48px, 16vw, 72px);
+  }
+
+  .lobby__subtitle {
+    margin: 10px 0 20px;
+    font-size: 15px;
+  }
+
+  .lobby__actions {
+    gap: 6px;
+  }
+
+  .art-button {
+    width: min(340px, calc(100vw - 40px));
+    height: clamp(58px, 9dvh, 76px);
+    font-size: 19px;
+  }
+
+  .art-button:hover {
+    transform: none;
+  }
+
+  .difficulty {
+    margin: -2px 0 2px;
+  }
+
+  .difficulty button {
+    padding: 6px 14px;
+    font-size: 14px;
+  }
+
+  .lobby__credit {
+    margin-top: 14px;
+    font-size: 11px;
   }
 }
 

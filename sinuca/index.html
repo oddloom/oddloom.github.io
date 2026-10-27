@@ -26,7 +26,7 @@
       href="assets/moa/apple-touch-icon.png?v=1"
     />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="css/v1.css?v=15" />
+    <link rel="stylesheet" href="css/v1.css?v=17" />
   </head>
   <body>
     <main id="app" class="app is-lobby">
@@ -232,15 +232,13 @@
               <span id="power-level"></span>
             </div>
             <output id="power-value" for="table-canvas">0%</output>
-            <span class="power-meter__hint" aria-hidden="true">PUXE ↓</span>
+            <span class="power-meter__hint" aria-hidden="true"
+              ><span class="hint-vertical">PUXE ↓</span
+              ><span class="hint-horizontal">← PUXE</span></span
+            >
           </aside>
 
           <div id="table-shell" class="table-shell">
-            <img
-              class="table-art"
-              src="assets/moa/mesa.png"
-              alt="Mesa de sinuca vista de cima"
-            />
             <div
               id="message"
               class="message"
@@ -249,19 +247,28 @@
             >
               Sua vez
             </div>
-            <div id="playfield" class="playfield">
-              <canvas
-                id="table-canvas"
-                role="img"
-                aria-label="Área jogável da mesa"
-              ></canvas>
-              <svg id="guide" class="guide" aria-hidden="true">
-                <line id="aim-line" class="guide__aim" />
-                <circle id="ghost-ball" class="guide__ghost" />
-                <line id="target-line" class="guide__target" />
-              </svg>
-              <div id="cue-wrap" class="cue-wrap" aria-hidden="true">
-                <img src="assets/moa/taco-cocobolo-classico.png" alt="" />
+            <!-- Mesa deitada; no celular em pé o CSS gira este bloco. -->
+            <div class="table-rotor">
+              <img
+                class="table-art"
+                src="assets/moa/mesa.png"
+                alt="Mesa de sinuca vista de cima"
+              />
+              <div id="playfield" class="playfield">
+                <canvas
+                  id="table-canvas"
+                  role="img"
+                  aria-label="Área jogável da mesa"
+                ></canvas>
+                <svg id="guide" class="guide" aria-hidden="true">
+                  <line id="aim-line" class="guide__aim" />
+                  <circle id="ghost-ball" class="guide__ghost" />
+                  <line id="target-line" class="guide__target" />
+                  <line id="cue-path" class="guide__cue" />
+                </svg>
+                <div id="cue-wrap" class="cue-wrap" aria-hidden="true">
+                  <img src="assets/moa/taco-cocobolo-classico.png" alt="" />
+                </div>
               </div>
             </div>
           </div>
@@ -282,19 +289,31 @@
         <dialog id="spin-dialog" class="spin-dialog">
           <button id="spin-close" type="button" aria-label="Fechar">×</button>
           <h2>Efeito</h2>
-          <p>Escolha onde o taco acerta a bola branca.</p>
-          <div
-            id="spin-ball"
-            class="spin-ball"
-            role="slider"
-            aria-label="Ponto de efeito"
-            tabindex="0"
-          >
-            <span id="spin-picker"></span>
+          <p>Toque ou arraste onde o taco vai acertar a bola branca.</p>
+          <div class="spin-pad">
+            <span class="spin-label spin-label--top">Segue</span>
+            <span class="spin-label spin-label--left">Esquerda</span>
+            <div
+              id="spin-ball"
+              class="spin-ball"
+              role="slider"
+              aria-label="Ponto de efeito"
+              tabindex="0"
+            >
+              <span id="spin-picker"></span>
+            </div>
+            <span class="spin-label spin-label--right">Direita</span>
+            <span class="spin-label spin-label--bottom">Puxa</span>
           </div>
-          <button id="spin-reset" class="spin-reset" type="button">
-            Centralizar
-          </button>
+          <p id="spin-desc" class="spin-desc" role="status"></p>
+          <div class="spin-actions">
+            <button id="spin-reset" class="spin-reset" type="button">
+              Centro
+            </button>
+            <button id="spin-ok" class="spin-reset spin-ok" type="button">
+              Pronto
+            </button>
+          </div>
         </dialog>
 
         <dialog id="game-menu" class="game-menu">
@@ -319,13 +338,8 @@
           <button id="room-close" type="button">Fechar</button>
         </dialog>
       </section>
-
-      <div class="rotate-hint" aria-hidden="true">
-        <img src="assets/moa/moeda-8.png" alt="" />
-        <p>Gire o celular para jogar</p>
-      </div>
     </main>
 
-    <script defer src="jogo-v1.js?v=12"></script>
+    <script defer src="jogo-v1.js?v=14"></script>
   </body>
 </html>
