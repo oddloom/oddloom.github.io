@@ -1390,31 +1390,35 @@ dialog::backdrop {
   }
 }
 
-/* Celular em pé (plataforma principal): HUD numa faixa em cima, a mesa
-   girada -90° (branca embaixo, tacando para cima) no maior tamanho que
-   cabe, força à esquerda e canaleta embaixo. Todas as medidas saem da tela
-   e das áreas seguras, então nada corta em aparelho nenhum. */
+/* Celular em pé (plataforma principal): placar numa faixa fina em cima e a
+   mesa girada -90° (branca embaixo, tacando para cima) no maior tamanho que
+   cabe. Força e canaleta ficam por cima da madeira das cabeceiras, então a
+   mesa não divide espaço com elas. Todas as medidas saem da tela e das
+   áreas seguras, então nada corta em aparelho nenhum. */
 @media (orientation: portrait) and (width <= 900px) {
   :root {
     --safe-t: env(safe-area-inset-top, 0px);
     --safe-b: env(safe-area-inset-bottom, 0px);
     --safe-l: env(safe-area-inset-left, 0px);
     --safe-r: env(safe-area-inset-right, 0px);
-    --hud-h: 64px;
-    --tray-h: 22px;
-    --power-h: 38px;
-    --gap: 6px;
+    --hud-h: 44px;
 
     /* Largura da mesa na tela (= altura da arte), limitada pela largura e
        pela altura disponíveis; 1.817 é a proporção de mesa.png. */
     --table-w: min(
-      calc(100dvw - var(--safe-l) - var(--safe-r) - 12px),
+      calc(100dvw - var(--safe-l) - var(--safe-r) - 4px),
       calc(
-        (100dvh - var(--safe-t) - var(--safe-b) - var(--hud-h) - var(--tray-h) -
-            var(--power-h) - 3 * var(--gap) - 12px) / 1.817
+        (100dvh - var(--safe-t) - var(--safe-b) - var(--hud-h) - 6px) / 1.817
       )
     );
     --table-h: calc(var(--table-w) * 1.817);
+
+    /* Madeira das cabeceiras na arte girada: entre as caçapas de canto
+       (21% a 79% da largura) e a ~1,3% da ponta da mesa. */
+    --rail-x: 21%;
+    --rail-w: 58%;
+    --rail-gap: calc(var(--table-h) * 0.013);
+    --rail-h: calc(var(--table-h) * 0.034);
   }
 
   html,
@@ -1435,11 +1439,11 @@ dialog::backdrop {
 
   .hud {
     display: grid;
-    grid-template-columns: 38px minmax(0, 1fr) 38px;
-    gap: 6px;
+    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    gap: 5px;
     height: calc(var(--hud-h) + var(--safe-t));
-    padding: calc(var(--safe-t) + 5px) calc(var(--safe-r) + 6px) 3px
-      calc(var(--safe-l) + 6px);
+    padding: calc(var(--safe-t) + 3px) calc(var(--safe-r) + 5px) 2px
+      calc(var(--safe-l) + 5px);
   }
 
   .hud__bar {
@@ -1457,7 +1461,7 @@ dialog::backdrop {
 
   .hud__menu,
   .hud__spin {
-    width: 38px;
+    width: 32px;
   }
 
   .hud__menu:hover,
@@ -1470,10 +1474,10 @@ dialog::backdrop {
     display: flex;
     min-width: 0;
     align-items: center;
-    gap: 5px;
-    padding: 3px 5px;
+    gap: 4px;
+    padding: 2px 5px;
     border: 1px solid rgb(201 142 50 / 70%);
-    border-radius: 12px;
+    border-radius: 10px;
     background: rgb(16 9 5 / 88%);
   }
 
@@ -1486,8 +1490,8 @@ dialog::backdrop {
     position: relative;
     left: auto;
     top: auto;
-    width: 40px;
-    flex: 0 0 40px;
+    width: 32px;
+    flex: 0 0 32px;
     border: 2px solid #c98e32;
     background: radial-gradient(circle, #2b170b, #0b0604);
     transform: none;
@@ -1501,7 +1505,7 @@ dialog::backdrop {
     flex: 1;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
   }
 
   .player strong {
@@ -1510,7 +1514,7 @@ dialog::backdrop {
     width: 100%;
     height: auto;
     overflow: hidden;
-    font-size: 12px;
+    font-size: 11px;
     text-overflow: ellipsis;
     white-space: nowrap;
     transform: none;
@@ -1524,26 +1528,26 @@ dialog::backdrop {
   }
 
   .slot-ball {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     border-width: 1px;
     font-size: 0;
     box-shadow: inset -2px -2px 4px rgb(0 0 0 / 38%);
   }
 
-  /* De cima para baixo: canaleta, mesa, força. */
+  /* Uma célula só: mesa, com canaleta e força por cima das cabeceiras. */
   .game__stage {
     grid-template-columns: var(--table-w);
-    grid-template-rows: var(--tray-h) var(--table-h) var(--power-h);
+    grid-template-rows: var(--table-h);
     align-content: center;
-    gap: var(--gap);
+    gap: 0;
     height: calc(100dvh - var(--hud-h) - var(--safe-t));
     padding: 0 var(--safe-r) var(--safe-b) var(--safe-l);
   }
 
   .table-shell {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 1;
     width: var(--table-w);
     height: var(--table-h);
     aspect-ratio: auto;
@@ -1562,15 +1566,17 @@ dialog::backdrop {
     filter: drop-shadow(0 8px 14px rgb(0 0 0 / 70%));
   }
 
-  /* Força deitada embaixo da mesa, no trilho dourado da canaleta: puxa
-     para a esquerda e o preenchimento acompanha o dedo. */
+  /* Força bem fina no meio da madeira de baixo: só mostra a força de quem
+     puxa o taco (e ainda aceita puxar para a esquerda, como reserva). */
   .power-meter {
     grid-column: 1;
-    grid-row: 3;
-    width: min(100%, 330px);
-    height: 100%;
-    justify-self: center;
-    border: 3px solid #c98e32;
+    grid-row: 1;
+    width: calc(var(--rail-w) * 0.7);
+    height: calc(var(--rail-h) * 0.45);
+    place-self: end start;
+    margin: 0 0 calc(var(--rail-gap) + var(--rail-h) * 0.275)
+      calc(var(--rail-x) + var(--rail-w) * 0.15);
+    border: 1px solid rgb(201 142 50 / 75%);
     border-radius: 999px;
     background: linear-gradient(#0b0604, #2b170b 50%, #0b0604);
     box-shadow:
@@ -1587,9 +1593,11 @@ dialog::backdrop {
     display: none;
   }
 
+  /* Área de toque maior que o desenho fino, mais para baixo (fora do
+     pano) do que para cima. */
   .power-meter::after {
     position: absolute;
-    inset: -40% -4%;
+    inset: -110% -4% -200%;
     content: "";
   }
 
@@ -1601,9 +1609,10 @@ dialog::backdrop {
   }
 
   .power-meter__track {
-    inset: 5px 8px 5px 52px;
+    inset: 1px;
     width: auto;
     height: auto;
+    background: none;
   }
 
   #power-level {
@@ -1612,45 +1621,42 @@ dialog::backdrop {
     transform-origin: right;
   }
 
-  #power-value {
-    left: 6px;
-    top: 50%;
-    bottom: auto;
-    min-width: 40px;
-    padding: 2px 4px;
-    font-size: 11px;
-    transform: translateY(-50%);
-  }
-
-  .hint-vertical {
+  /* Discreta: sem número e sem aviso piscando (a dica de puxar o taco
+     aparece na primeira partida). */
+  #power-value,
+  .power-meter.is-ready .power-meter__hint {
     display: none;
   }
 
-  .hint-horizontal {
-    display: inline;
-  }
-
-  /* Canaleta deitada entre o placar e a mesa; 15 bolas lado a lado. */
+  /* Canaleta fininha sobre a madeira de cima; 15 bolas lado a lado. */
   .tray {
-    --tray-ball: calc(var(--tray-h) - 8px);
+    --tray-ball: min(
+      calc(var(--rail-h) - 6px),
+      calc((var(--table-w) * 0.58 - 12px) / 15 - 1px)
+    );
 
     display: block;
     grid-column: 1;
     grid-row: 1;
-    width: 100%;
-    height: var(--tray-h);
+    width: var(--rail-w);
+    height: var(--rail-h);
+    place-self: start start;
+    margin: var(--rail-gap) 0 0 var(--rail-x);
+    z-index: 1;
+    pointer-events: none;
   }
 
   .tray__balls {
     width: 100%;
     height: 100%;
     flex-direction: row;
-    padding: 0 5px;
+    gap: 1px;
+    padding: 0 4px;
     border-width: 2px;
   }
 
   .message {
-    top: 3%;
+    top: 7%;
     min-width: 0;
     padding: 5px 14px;
     font-size: 13px;
