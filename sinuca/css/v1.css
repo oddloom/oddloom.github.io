@@ -1631,17 +1631,18 @@ dialog::backdrop {
   /* Canaleta fininha sobre a madeira de cima; 15 bolas lado a lado. */
   .tray {
     --tray-ball: min(
-      calc(var(--rail-h) - 6px),
-      calc((var(--table-w) * 0.58 - 12px) / 15 - 1px)
+      calc(var(--rail-h) * 0.62 - 4px),
+      calc((var(--table-w) * 0.58 * 0.8 - 10px) / 15 - 1px)
     );
 
     display: block;
     grid-column: 1;
     grid-row: 1;
-    width: var(--rail-w);
-    height: var(--rail-h);
+    width: calc(var(--rail-w) * 0.8);
+    height: calc(var(--rail-h) * 0.62);
     place-self: start start;
-    margin: var(--rail-gap) 0 0 var(--rail-x);
+    margin: calc(var(--rail-gap) + var(--rail-h) * 0.19) 0 0
+      calc(var(--rail-x) + var(--rail-w) * 0.1);
     z-index: 1;
     pointer-events: none;
   }
@@ -1651,8 +1652,8 @@ dialog::backdrop {
     height: 100%;
     flex-direction: row;
     gap: 1px;
-    padding: 0 4px;
-    border-width: 2px;
+    padding: 0 3px;
+    border-width: 1px;
   }
 
   .message {
