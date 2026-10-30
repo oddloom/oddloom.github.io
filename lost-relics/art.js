@@ -724,5 +724,5 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     return c;
   }
-  root.ART = { loadAI, loadExtra, setSkins, fx: (k) => (SKIN.fx && AI.fx[k + '@' + SKIN.fx]) || AI.fx[k] || null, uiImages: () => AI.ui, nodeImg: (k) => AI.nodes[k] || null, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { return Object.keys(AI.gems).length > 0; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
+  root.ART = { loadAI, loadExtra, setSkins, fx: (k) => (SKIN.fx && AI.fx[k + '@' + SKIN.fx]) || AI.fx[k] || null, uiImages: () => AI.ui, nodeImg: (k) => AI.nodes[k] || null, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { for (const k in AI.gems) return true; return false; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
 })(window);

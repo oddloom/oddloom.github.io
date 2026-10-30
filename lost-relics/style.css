@@ -407,8 +407,13 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .ui-kit #score.digits { display: flex; justify-content: flex-start; width: 100%; aspect-ratio: 381 / 145; height: auto; padding: 0 8% 0 36%; box-sizing: border-box; background: var(--ui-coinbar) center / 100% 100% no-repeat; filter: drop-shadow(0 3px 5px rgba(0,0,0,.6)); }
 .ui-kit #score.digits img { height: 58%; }
 /* moedas ganhas na vitória: a mesma placa, maior */
-.final-score.painted { display: flex; align-items: center; justify-content: flex-start; width: min(250px, 72%); margin: 0 auto; aspect-ratio: 381 / 145; padding: 0 8% 0 36%; box-sizing: border-box; background: var(--ui-coinbar) center / 100% 100% no-repeat; filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
-.final-score.painted > .digits { height: 56%; min-width: 0; }
+/* 29/10: altura fixa na proporção da placa (381x145); com aspect-ratio + altura em % o WebView do Android esticava a placa e o número vazava */
+.final-score.painted { display: flex; align-items: center; justify-content: flex-start; width: 230px; height: 88px; max-width: 100%; margin: 0 auto; padding: 0 18px 0 83px; box-sizing: border-box; background: var(--ui-coinbar) center / 100% 100% no-repeat; filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
+.final-score.painted > .digits { height: 48px; min-width: 0; max-width: 100%; }
+.final-score.painted > .digits img { height: 48px; }
+/* app Android: desfoque de fundo pesa no Redmi; troca por véu escuro */
+.app-android #screen-map::before { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(0,0,0,.55); }
+.app-android .brief { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(5,18,13,.88); }
 .ui-kit .starbar { height: auto; aspect-ratio: 593 / 135; margin-top: 2px; border-radius: 0; background: none; box-shadow: none; }
 /* canal escuro por trás, ouro líquido no meio, arte da barra (com o canal vazado) por cima */
 .ui-kit .starbar::before { content: ''; position: absolute; left: 12%; right: 12%; top: 32.6%; bottom: 31.1%; background: #0b0f14; z-index: 0; }
@@ -907,3 +912,9 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 /* números de 2-3 algarismos menores, pra caber no furo do anel */
 .node.simple.art-v2 .map-phase-num.d2 { font-size: calc(var(--ns, 52px) * .34); letter-spacing: -.03em; }
 .node.simple.art-v2 .map-phase-num.d3 { font-size: calc(var(--ns, 52px) * .27); letter-spacing: -.04em; }
+
+/* 29/10: gráficos Leve — tira animações de filtro (repintam a cada quadro) e sombras da interface da fase */
+.gfx-lite .tool-btn.painted, .gfx-lite .tool-btn.painted * { animation: none !important; }
+.gfx-lite #hud, .gfx-lite #hud *, .gfx-lite .tool-btn.painted, .gfx-lite .praise, .gfx-lite .announce span { filter: none !important; }
+.gfx-lite #screen-map::before, .gfx-lite .brief { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.gfx-lite #screen-map::before { background: rgba(0,0,0,.55); }

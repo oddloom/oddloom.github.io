@@ -151,9 +151,29 @@
 
   // ---------- tela e tamanho ----------
   let W = 0, H = 0, dpr = 1, cs = 48, ox = 0, oy = 0, S = 96, backdrop = null;
+  // 29/10: no app Android (Redmi) ficou lento; lá a tela desenha no máx. 2x, sem desfoque de fundo e com menos partículas
+  const APP = /^android/.test(window.LR_BUILD || '');
+  if (APP) document.documentElement.classList.add('app-android');
+  // 29/10: gráficos Completo/Leve. 'auto' começa Completo e mede os primeiros 8 s jogando: abaixo de 56 FPS passa pro
+  // Leve e guarda (mede uma vez só). Aparelho com até 2 GB já começa Leve. O jogador pode fixar no menu de pausa.
+  const GFX_KEY = 'lr.gfx', GFX_AUTO_KEY = 'lr.gfxAuto';
+  const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  let gfxPref = lsGet(GFX_KEY) || 'auto', gfxAuto = lsGet(GFX_AUTO_KEY) || (navigator.deviceMemory && navigator.deviceMemory <= 2 ? 'lite' : '');
+  let LITE = false;
+  function applyGfx() { LITE = gfxPref === 'lite' || (gfxPref === 'auto' && gfxAuto === 'lite'); document.documentElement.classList.toggle('gfx-lite', LITE); }
+  applyGfx();
+  const gfxProbe = { t: 0, n: 0 };
+  function probeGfx(dt) {
+    if (gfxAuto || scene !== 'play' || modalOpen() || document.hidden) return;
+    gfxProbe.t += dt; gfxProbe.n++;
+    if (gfxProbe.t < 8) return;
+    gfxAuto = gfxProbe.n / gfxProbe.t < 56 ? 'lite' : 'full';
+    lsSet(GFX_AUTO_KEY, gfxAuto); applyGfx();
+  }
   function layout() {
     W = window.innerWidth; H = window.innerHeight;
-    dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    dpr = Math.min(window.devicePixelRatio || 1, APP ? 2 : 2.5);
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     backdrop = ART.drawBackdrop(canvas.width, canvas.height);
     if (state) fitBoard();
@@ -262,17 +282,8 @@
     if (intro) await wait(Math.max(0, intro.t0 + INTRO_DUR - now)); // sem jogar durante a entrada do chefe
     busy = false;
     // resumo de 3 s quando o tabuleiro fica pronto (depois da entrada do chefe, pra não brigar com ela)
-    const tutorialRun = level.id === 1 && !level.hard && !save.tutorialDone;
-    if (!level.daily && !level.weekly && !tutorialRun && scene === 'play' && level === Ld) briefLevel(level);
-    if (level.id === 1 && !level.hard && !level.daily && !level.weekly && !save.tutorialDone) {
-      tutorialMove = LR.findMove(state);
-      hint = tutorialMove;
-      if (tutorialMove) {
-        // só depois do "FASE 1" sumir, pra não sobrepor
-        setTimeout(() => { if (tutorialMove) showTutorialTip(); }, Math.max(0, announcedAt + 2400 - performance.now()));
-        track('tutorial_begin', { level: 1, mode: 'normal' });
-      }
-    }
+    // 29/10 (pedido dele): fase 1 sem tutorial; o jogo é intuitivo e a trava "mexa só a que pisca" atrapalhava
+    if (!level.daily && !level.weekly && scene === 'play' && level === Ld) briefLevel(level);
   }
 
   // Trilha do Explorador: 1 vitória seguida = 1 Joia Flecha grátis; 2 = + Joia Selo; 3 = + Orbe Solar
@@ -1210,12 +1221,12 @@
   function burst(x, y, p) {
     const g = p.color != null ? ART.GEMS[p.color] : null;
     const px = cellX(x), py = cellY(y);
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0, n = APP || LITE ? 6 : 9; i < n; i++) {
       const a = Math.random() * Math.PI * 2, sp = cs * (2 + Math.random() * 4);
       parts.push({ type: 'shard', x: px, y: py, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - cs * 2, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 14,
         size: cs * (0.07 + Math.random() * 0.07), color: g ? ART.hsl(g.h, g.s, g.l + Math.random() * 30) : '#f5c94f', life: 0, max: 0.55 + Math.random() * 0.3 });
     }
-    sparks(x, y, 5, g ? ART.hsl(g.h, 60, 85) : '#fff3b0');
+    sparks(x, y, APP || LITE ? 3 : 5, g ? ART.hsl(g.h, 60, 85) : '#fff3b0');
   }
   function sparks(x, y, n, color) {
     const px = cellX(x), py = cellY(y);
@@ -1226,6 +1237,7 @@
   }
   function fire(x, y, n) {
     const px = cellX(x), py = cellY(y);
+    if (APP || LITE) n = Math.ceil(n * (LITE ? 0.5 : 0.6));
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, sp = cs * (2 + Math.random() * 5);
       parts.push({ type: 'spark', x: px, y: py, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, size: cs * (0.08 + Math.random() * 0.1), color: Math.random() < 0.5 ? '#ff9a3c' : '#ffd36a', life: 0, max: 0.5 + Math.random() * 0.3 });
@@ -1426,7 +1438,7 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (backdrop) ctx.drawImage(backdrop, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawEmbers(lastDt);
+    if (!LITE) drawEmbers(lastDt);
     if (scene === 'play' && state) { drawBoard(); drawIntro(); }
   }
 
@@ -1556,7 +1568,7 @@
     const stoneIm = (p.claw && nodeImgObj(p.claw === 'onca' ? 'ostone' : 'jstone')) || (p.lump && nodeImgObj('alump'));
     if (stoneIm) { ctx.drawImage(stoneIm, cx - w * 0.48, cy - h * 0.48, w * 0.96, h * 0.96); ctx.globalAlpha = 1; return; }
     // feitiço: aura da cor da pedra que "respira" devagar, cada joia no seu ritmo
-    if (p.kind === 'gem' && !p.special && p.color != null && ART.hasAI) {
+    if (p.kind === 'gem' && !p.special && p.color != null && ART.hasAI && !LITE) {
       const gg = ART.GEMS[p.color], pulse = 0.5 + 0.5 * Math.sin(now * 2.1 + p.id * 1.7);
       const r = cs * s * (0.6 + 0.1 * pulse);
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -1589,20 +1601,12 @@
     const isSel = selected && v === vis.get(p.id) && state && state.grid[selected[1]] && state.grid[selected[1]][selected[0]] === p;
     // joia parada e nítida; a cada ~7 s uma faixa de luz atravessa as facetas (cada joia no seu momento)
     const sweepU = ((now + p.id * 1.37) % 7) / 0.9;
-    if (p.kind === 'gem' && !p.special && ART.hasAI && !REDUCED && (sweepU < 1 || isSel)) {
-      if (gemFx.width !== S) { gemFx.width = gemFx.height = S; }
-      gx2.globalCompositeOperation = 'copy'; gx2.drawImage(spr, 0, 0);
-      gx2.globalCompositeOperation = 'source-atop';
-      if (sweepU < 1) {
-        const e = sweepU * sweepU * (3 - 2 * sweepU);
-        gx2.globalAlpha = Math.sin(Math.PI * sweepU);
-        gx2.drawImage(bandSprite(S), -S * 1.4 + e * S * 1.8, 0, S * 2, S);
-        gx2.globalAlpha = 1;
-      }
+    if (p.kind === 'gem' && !p.special && ART.hasAI && !REDUCED && !LITE && (sweepU < 1 || isSel)) {
+      const im = sweepU < 1 ? sweepFrame(spr, Math.min(SWEEP_N - 1, Math.floor(sweepU * SWEEP_N))) : spr;
       ctx.save();
       ctx.translate(cx, cy + (cs * v.sq) / 2);
       if (isSel) { const k = Math.sin(now * 4); ctx.transform(Math.cos(k * 0.35), 0.03 * k, 0, 1, 0, 0); }   // selecionada: inclina e respira
-      ctx.drawImage(gemFx, -w / 2, -h / 2, w, h);
+      ctx.drawImage(im, -w / 2, -h / 2, w, h);
       ctx.restore()
     } else {
       ctx.drawImage(spr, cx - w / 2, cy - h / 2 + (cs * v.sq) / 2, w, h);
@@ -1682,8 +1686,21 @@
     x.fillStyle = g; x.fillRect(0, 0, S * 2, S);
     return bandC;
   }
-  // tela de apoio pro reflexo que corre pela joia (reaproveitada por todas)
-  const gemFx = document.createElement('canvas'), gx2 = gemFx.getContext('2d');
+  // reflexo que corre pela joia: 29/10 virou quadros prontos por joia (antes remontava numa tela de apoio a cada
+  // quadro, e no Redmi isso sozinho derrubava a fase de 57 pra 43 FPS). Cada quadro é desenhado uma vez e guardado.
+  const SWEEP_N = 24, sweepCache = new WeakMap();
+  function sweepFrame(spr, k) {
+    let arr = sweepCache.get(spr);
+    if (!arr) sweepCache.set(spr, (arr = []));
+    if (arr[k]) return arr[k];
+    const u = (k + 0.5) / SWEEP_N, e = u * u * (3 - 2 * u);
+    const c = document.createElement('canvas'); c.width = spr.width; c.height = spr.height;
+    const x = c.getContext('2d');
+    x.drawImage(spr, 0, 0);
+    x.globalCompositeOperation = 'source-atop'; x.globalAlpha = Math.sin(Math.PI * u);
+    x.drawImage(bandSprite(S), -S * 1.4 + e * S * 1.8, 0, S * 2, S);
+    return (arr[k] = c);
+  }
 
   // faísca de joia: brilho central + raios longos em cruz (estrela de luz)
   function flare(x, y, r, a) {
@@ -2152,12 +2169,15 @@
       '<h2 class="metal">' + T('pause') + '</h2><div class="orn"><i></i></div>' +
       '<div class="btns"><button class="btn" id="mResume" type="button">' + T('resume') + '</button>' +
       '<button class="btn dark" id="mRestart" type="button">' + T('restart') + '</button>' +
-      '<button class="btn dark" id="mMap" type="button">' + T('map') + '</button></div>' +
+      '<button class="btn dark" id="mMap" type="button">' + T('map') + '</button>' +
+      '<button class="btn dark small" id="mGfx" type="button"></button></div>' +
       '<div class="toggle-row icons"><button class="icon-btn toggle" id="mSfx" type="button">' + $('btnSfx').innerHTML + '</button><button class="icon-btn toggle" id="mMusic" type="button">' + $('btnMusic').innerHTML + '</button></div>');
     const paint = () => {
       for (const [id, on, key] of [['#mSfx', Sound.sfx, 'menu.sound'], ['#mMusic', Sound.music, 'menu.music']]) { const b = card.querySelector(id); b.classList.toggle('off', !on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', T(key) + ': ' + T(on ? 'on' : 'off')); }
     };
-    paint();
+    const paintGfx = () => { card.querySelector('#mGfx').textContent = T('gfx') + ': ' + T('gfx.' + gfxPref); };
+    paint(); paintGfx();
+    card.querySelector('#mGfx').onclick = () => { Sound.play('click'); gfxPref = { auto: 'full', full: 'lite', lite: 'auto' }[gfxPref] || 'auto'; lsSet(GFX_KEY, gfxPref); applyGfx(); paintGfx(); };
     card.querySelector('#mResume').onclick = () => { Sound.play('click'); closeModal(); };
     card.querySelector('#mRestart').onclick = () => { Sound.play('click'); abandonRun('restart'); breakStreak(); closeModal(); wipe(() => startLevel(level.id, {}, !!level.hard)); };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); abandonRun('map'); breakStreak(); closeModal(); wipe(openMap); };
@@ -3018,6 +3038,7 @@
     stepTime(dt);
     update(dt);
     draw();
+    probeGfx(dt);
     // a dica do tutorial some se o jogador sair da fase, e acompanha o tabuleiro se a tela mudar de tamanho
     if (tutTip) { if (scene !== 'play' || !tutorialMove) hideTutorialTip(); else placeTutorialTip(); }
     requestAnimationFrame(frame);
