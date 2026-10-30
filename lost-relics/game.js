@@ -73,7 +73,7 @@
   // aplica as skins em uso (joia e rastro trocam a arte no art.js; palavra troca as imagens do anúncio e dos elogios)
   const applySkins = () => ART.setSkins({ gem: save.skins.gem, fx: save.skins.trail });
   const wordImg = (k) => (save.skins.word === 'rare' && ART.nodeImg('wr_' + k)) || ART.nodeImg(k);
-  const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
+  const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof cloudPush === 'function') cloudPush(); };
   const hardWeeklyScores = () => {
     const week = Records.week();
     if (save.hardWeekly.week !== week) save.hardWeekly = { week, scores: {} };
@@ -171,6 +171,269 @@
     gfxAuto = gfxProbe.n / gfxProbe.t < 56 ? 'lite' : 'full';
     lsSet(GFX_AUTO_KEY, gfxAuto); applyGfx();
   }
+
+  // ---------- energia + baú do explorador (30/10, só no app) ----------
+  // 5 energias; a fase normal da 11 em diante cobra 1 ao começar e devolve se vencer (perder ou desistir gasta).
+  // Volta 1 a cada 30 min. Sem energia: anúncio premiado (+1), 60 moedas (+1) ou esperar. Fases 1-10, Jogada do Dia,
+  // Difícil e Desafio semanal não gastam. Baú a cada 12 h: moedas que crescem com dias seguidos + energia extra
+  // (pode passar de 5). Notificações locais avisam baú pronto e energia cheia (plugin LocalNotifications, se existir).
+  // No site fica desligado; pra testar no navegador: ?energia=1
+  const ENERGY_ON = APP || /[?&]energia=1\b/.test(location.search);
+  const E_MAX = 5, E_REGEN = 30 * 60e3, E_FREE_UNTIL = 10, E_COINS = 60, CHEST_EVERY = 12 * 3600e3;
+  save.energy = save.energy || { n: E_MAX, t: Date.now() };
+  save.chest = save.chest || { next: 0, streak: 0, day: '' };
+  let runCharged = false, runChargedFrom = E_MAX;
+  function energyNow() {
+    const e = save.energy, now = Date.now();
+    if (e.t > now) e.t = now; // relógio voltou: não dá energia de graça nem trava
+    if (e.n >= E_MAX) { e.t = now; return e.n; }
+    const k = Math.floor((now - e.t) / E_REGEN);
+    if (k > 0) { e.n = Math.min(E_MAX, e.n + k); e.t = e.n >= E_MAX ? now : e.t + k * E_REGEN; }
+    return e.n;
+  }
+  const energyNextIn = () => (energyNow() >= E_MAX ? 0 : Math.max(0, E_REGEN - (Date.now() - save.energy.t)));
+  const energyFullAt = () => (energyNow() >= E_MAX ? 0 : save.energy.t + (E_MAX - save.energy.n) * E_REGEN);
+  const energyCost = (id, hard) => ENERGY_ON && Number.isInteger(id) && id > E_FREE_UNTIL && !hard && !window.LR_TESTE;
+  const clock = (ms) => { const s = Math.ceil(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+  function addEnergy(k) { energyNow(); save.energy.n += k; persist(); paintEnergy(); scheduleNotes(); }
+  // cobra 1 energia (se a fase cobra) e segue com go(cobrou?); sem energia abre a janela de energia
+  function payEnergy(id, hard, go, back) {
+    if (!energyCost(id, hard)) return go(false);
+    if (energyNow() < 1) return openEnergy(() => payEnergy(id, hard, go, back), back);
+    runChargedFrom = save.energy.n; save.energy.n--; persist(); paintEnergy(); scheduleNotes();
+    go(true);
+  }
+  function refundEnergy() {
+    if (!runCharged) return;
+    runCharged = false; energyNow();
+    if (save.energy.n < Math.max(E_MAX, runChargedFrom)) save.energy.n++;
+    persist(); scheduleNotes();
+  }
+  function openEnergy(onReady, back) {
+    const card = openModal(
+      '<h2 class="metal">' + T('energy.title') + '</h2><div class="orn"><i></i></div>' +
+      '<div class="en-big"><img alt="" src="' + ART.icon('sun', 160) + '"><b id="enCount"></b></div>' +
+      '<div class="moves-line" id="enNext"></div>' +
+      '<div class="btns">' +
+      '<button class="btn stack" id="mEnAd" type="button" hidden>' + T('energy.ad') + '<span class="sub">' + T('energy.adSub') + '</span></button>' +
+      '<button class="btn stone stack" id="mEnCoins" type="button"' + (save.coins < E_COINS ? ' disabled' : '') + '>' + T('energy.coins') + '<span class="sub">' + T('energy.coinsSub', { n: E_COINS }) + '</span></button>' +
+      '<button class="btn dark small" id="mEnBack" type="button">' + T('map') + '</button></div>');
+    card.classList.add('energy-card');
+    const paint = () => {
+      if (!card.isConnected || $('modal').hidden) return clearInterval(iv);
+      const n = energyNow(); card.querySelector('#enCount').textContent = n + '/' + E_MAX;
+      card.querySelector('#enNext').textContent = n >= E_MAX ? T('energy.full') : T('energy.next', { t: clock(energyNextIn()) });
+      if (n > 0) { clearInterval(iv); closeModal(); onReady(); }
+    };
+    const iv = setInterval(paint, 1000); paint();
+    const grant = () => { save.energy.n = Math.max(save.energy.n, 0); addEnergy(1); paint(); };
+    card.querySelector('#mEnCoins').onclick = () => { if (save.coins < E_COINS) return; Sound.play('click'); save.coins -= E_COINS; paintWallet(); track('energy_buy', { via: 'coins' }); grant(); };
+    card.querySelector('#mEnBack').onclick = () => { Sound.play('click'); clearInterval(iv); closeModal(); if (back) back(); else if (scene !== 'map') wipe(openMap); };
+    Ads.offerReward({
+      level: 0,
+      onAvailable(show) { const b = card.querySelector('#mEnAd'); if (!b) return; b.hidden = false; b.onclick = () => { Sound.play('click'); show(); }; },
+      onReward() { track('energy_buy', { via: 'ad' }); grant(); },
+    });
+  }
+  // ---------- baú de 12 h ----------
+  const chestReady = () => Date.now() >= (save.chest.next || 0);
+  function chestReward(streak) { return { coins: 40 + 20 * (Math.min(streak, 5) - 1), energy: streak >= 5 ? 2 : 1 }; }
+  function openChest() {
+    Sound.init(); Sound.play('click');
+    if (!chestReady()) {
+      const card = openModal('<h2 class="metal">' + T('chest.title') + '</h2><div class="orn"><i></i></div>' +
+        '<div class="en-big"><img alt="" src="' + ART.icon('chest', 160) + '"></div><div class="moves-line" id="chNext"></div>' +
+        '<div class="btns"><button class="btn dark small" id="mChBack" type="button">' + T('map') + '</button></div>');
+      card.classList.add('energy-card');
+      const paint = () => { if ($('modal').hidden || !card.isConnected) return clearInterval(iv); const left = save.chest.next - Date.now(); if (left <= 0) { clearInterval(iv); return openChest(); } card.querySelector('#chNext').textContent = T('chest.next', { t: clock(left) }); };
+      const iv = setInterval(paint, 1000); paint();
+      card.querySelector('#mChBack').onclick = () => { Sound.play('click'); clearInterval(iv); closeModal(); };
+      return;
+    }
+    const dk = (d) => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    const today = dk(new Date()), yest = dk(new Date(Date.now() - 864e5));
+    const c = save.chest;
+    c.streak = c.day === today ? c.streak : c.day === yest ? c.streak + 1 : 1;
+    c.day = today; c.next = Date.now() + CHEST_EVERY;
+    const r = chestReward(c.streak);
+    save.coins += r.coins; energyNow(); save.energy.n += r.energy; persist();
+    track('chest_open', { streak: c.streak });
+    Sound.play('win'); buzz([20, 40, 60]);
+    const card = openModal((c.streak > 1 ? '<div class="eyebrow">' + T('chest.day', { n: c.streak }) + '</div>' : '') + '<h2 class="metal">' + T('chest.title') + '</h2><div class="orn"><i></i></div>' +
+      '<div class="en-big"><img alt="" src="' + ART.icon('chest', 160) + '"></div>' +
+      '<div class="chest-loot"><span><img alt="" src="' + ART.icon('coin', 64) + '"><b>+' + r.coins + '</b></span><span><img alt="" src="' + ART.icon('sun', 64) + '"><b>+' + r.energy + '</b></span></div>' +
+      '<div class="moves-line">' + T('chest.back') + '</div>' +
+      '<div class="btns"><button class="btn" id="mChOk" type="button">' + T('chest.ok') + '</button></div>');
+    card.classList.add('energy-card');
+    card.querySelector('#mChOk').onclick = () => { Sound.play('click'); closeModal(); askNotes(); };
+    paintWallet(); paintEnergy(); scheduleNotes();
+  }
+  // ---------- mapa: energia (esquerda) e baú (abaixo das moedas) ----------
+  let mapTick = null;
+  function paintEnergy() {
+    const b = $('btnEnergy'), ch = $('btnChest');
+    if (!b || !ch) return;
+    b.hidden = ch.hidden = !ENERGY_ON;
+    if (!ENERGY_ON) return;
+    const n = energyNow(), left = energyNextIn();
+    $('mapEnergy').textContent = n + '/' + E_MAX;
+    $('mapEnergyT').textContent = left ? clock(left) : '';
+    const ready = chestReady();
+    ch.classList.toggle('ready', ready);
+    $('mapChestT').textContent = ready ? T('chest.open') : clock(save.chest.next - Date.now());
+  }
+  function startMapTick() { clearInterval(mapTick); paintEnergy(); if (ENERGY_ON) mapTick = setInterval(() => { if (scene === 'map') paintEnergy(); else clearInterval(mapTick); }, 1000); }
+
+  // ---------- conta Google opcional + progresso na nuvem (30/10, só no app) ----------
+  // Na 1ª abertura pergunta: Entrar com Google ou Jogar sem login. Logado, o progresso sobe pro servidor
+  // (Worker) alguns segundos depois de cada gravação; ao entrar, fica o save com mais progresso (nuvem ou aparelho).
+  // Precisa do plugin SocialLogin (@capgo/capacitor-social-login) e do Web client ID em window.LR_GOOGLE_ID.
+  const CLOUD_KEY = 'lr.cloud', CLOUD_API = window.LR_RECORDS_API || '';
+  const SocialLogin = () => (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.SocialLogin) || null;
+  const CLOUD_ON = APP && !!window.LR_GOOGLE_ID && !!CLOUD_API;
+  let cloud = null;
+  try { cloud = JSON.parse(lsGet(CLOUD_KEY) || 'null'); } catch (e) {}
+  let cloudTimer = null, socialReady = null;
+  const progressOf = (s) => (s.unlocked || 0) * 1000 + Object.values(s.stars || {}).reduce((a, b) => a + (+b || 0), 0);
+  async function cloudCall(route, body) {
+    const r = await fetch(CLOUD_API + route, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw Object.assign(new Error(j.error || 'http_' + r.status), { status: r.status });
+    return j;
+  }
+  function cloudPush(now) {
+    try { if (!CLOUD_ON || !cloud) return; } catch (e) { return; } // persist() pode rodar antes deste bloco existir
+    clearTimeout(cloudTimer);
+    const go = () => cloudCall('/cloud/save', { session: cloud.session, data: save }).catch((e) => { if (e.status === 401) { cloud = null; lsSet(CLOUD_KEY, 'null'); } });
+    if (now) go(); else cloudTimer = setTimeout(go, 4000);
+  }
+  async function googleLogin() {
+    const sl = SocialLogin();
+    if (!sl) throw new Error('no_plugin');
+    if (!socialReady) socialReady = sl.initialize({ google: { webClientId: window.LR_GOOGLE_ID } });
+    await socialReady;
+    const res = await sl.login({ provider: 'google', options: { scopes: ['email', 'profile'] } });
+    const idToken = res && res.result && res.result.idToken;
+    if (!idToken) throw new Error('no_token');
+    const r = await cloudCall('/cloud/login', { idToken });
+    cloud = { session: r.session, name: r.name || '' };
+    lsSet(CLOUD_KEY, JSON.stringify(cloud));
+    track('login', { result: 'ok' });
+    // fica o progresso maior: se a nuvem tem mais, ela vira o save deste aparelho
+    if (r.data && progressOf(r.data) > progressOf(save)) {
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(r.data)); } catch (e) {}
+      location.reload();
+      return;
+    }
+    cloudPush(true);
+  }
+  async function googleLogout() {
+    const c = cloud; cloud = null; lsSet(CLOUD_KEY, 'null');
+    try { const sl = SocialLogin(); if (sl) await sl.logout({ provider: 'google' }); } catch (e) {}
+    if (c) cloudCall('/cloud/logout', { session: c.session }).catch(() => {});
+  }
+  // janela "Salve seu progresso" (1ª abertura e botão do menu)
+  function openAccount(after) {
+    const done = () => { closeModal(); paintAccount(); if (after) after(); };
+    if (cloud) {
+      const card = openModal('<h2 class="metal">' + T('acct.title') + '</h2><div class="orn"><i></i></div>' +
+        '<p class="save-summary">' + T('acct.on', { n: cloud.name || 'Google' }) + '</p>' +
+        '<div class="btns"><button class="btn" id="mAcOk" type="button">' + T('resume') + '</button>' +
+        '<button class="btn dark small" id="mAcOut" type="button">' + T('acct.logout') + '</button></div>');
+      card.querySelector('#mAcOk').onclick = () => { Sound.play('click'); done(); };
+      card.querySelector('#mAcOut').onclick = async () => { Sound.play('click'); await googleLogout(); done(); };
+      return;
+    }
+    const card = openModal('<h2 class="metal">' + T('acct.title') + '</h2><div class="orn"><i></i></div>' +
+      '<p class="save-summary">' + T('acct.why') + '</p>' +
+      '<div class="btns"><button class="btn stack" id="mAcIn" type="button">' + T('acct.login') + '<span class="sub">' + T('acct.loginSub') + '</span></button>' +
+      '<button class="btn dark small" id="mAcSkip" type="button">' + T('acct.skip') + '</button></div>' +
+      '<p class="info-line" id="mAcMsg" hidden></p>');
+    card.querySelector('#mAcSkip').onclick = () => { Sound.play('click'); track('login', { result: 'skip' }); done(); };
+    card.querySelector('#mAcIn').onclick = async (ev) => {
+      Sound.init(); Sound.play('click');
+      const b = ev.currentTarget, msg = card.querySelector('#mAcMsg');
+      b.disabled = true; msg.hidden = true;
+      try { await googleLogin(); done(); showPraise(T('acct.ok'), 'info'); }
+      catch (e) {
+        b.disabled = false;
+        const cancelled = /cancel/i.test(String(e && (e.message || e.code)));
+        track('login', { result: cancelled ? 'cancel' : 'error' });
+        if (!cancelled) { msg.textContent = T('acct.fail'); msg.hidden = false; }
+      }
+    };
+  }
+  function paintAccount() {
+    const b = $('btnAccount');
+    if (!b) return;
+    b.hidden = !CLOUD_ON;
+    b.textContent = cloud ? T('acct.btnOn') : T('acct.btn');
+  }
+
+  // ---------- avaliação na Play + "Sua opinião" (30/10) ----------
+  // A janela de estrelas da Play aparece sozinha depois de vencer um chefe (app, 5+ vitórias, no máx. 1x a cada
+  // 30 dias). Política da Play: sem recompensa e sem pergunta antes ("está gostando?"). A recompensa (50 moedas,
+  // uma vez) é por mandar a opinião dentro do jogo, que vai pro servidor de forma anônima.
+  const REVIEW_EVERY = 30 * 864e5, FEEDBACK_COINS = 50;
+  function maybeReview() {
+    const ir = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.InAppReview;
+    if (!APP || !ir || (save.wins || 0) < 5 || Date.now() - (save.reviewAt || 0) < REVIEW_EVERY) return;
+    save.reviewAt = Date.now(); persist();
+    track('review_prompt', {});
+    setTimeout(() => { ir.requestReview().catch(() => {}); }, 1800);
+  }
+  function openFeedback() {
+    const on = ART.nodeImg('vstar') || ART.icon('star', 64), off = ART.nodeImg('vstar0') || ART.icon('star0', 64);
+    let stars = 0;
+    const card = openModal('<h2 class="metal">' + T('fb.title') + '</h2><div class="orn"><i></i></div>' +
+      '<p class="save-summary">' + T('fb.ask') + '</p>' +
+      '<div class="fb-stars">' + [1, 2, 3, 4, 5].map((n) => '<button type="button" data-n="' + n + '" aria-label="' + n + '"><img alt="" src="' + off + '"></button>').join('') + '</div>' +
+      '<textarea id="fbText" class="save-code fb-text" maxlength="500" placeholder="' + T('fb.placeholder') + '"></textarea>' +
+      '<div class="btns"><button class="btn stack" id="mFbSend" type="button" disabled>' + T('fb.send') + (save.feedbackRewarded ? '' : '<span class="sub">' + T('fb.reward', { n: FEEDBACK_COINS }) + '</span>') + '</button>' +
+      '<button class="btn dark small" id="mFbBack" type="button">' + T('menu.back') + '</button></div>');
+    card.classList.add('energy-card');
+    card.querySelectorAll('.fb-stars button').forEach((b) => {
+      b.onclick = () => {
+        Sound.play('click'); stars = +b.dataset.n;
+        card.querySelectorAll('.fb-stars img').forEach((im, i) => { im.src = i < stars ? on : off; });
+        card.querySelector('#mFbSend').disabled = false;
+      };
+    });
+    card.querySelector('#mFbBack').onclick = () => { Sound.play('click'); closeModal(); };
+    card.querySelector('#mFbSend').onclick = async (ev) => {
+      const b = ev.currentTarget; if (!stars) return;
+      Sound.play('click'); b.disabled = true;
+      try {
+        const r = await fetch((window.LR_RECORDS_API || '') + '/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stars, text: card.querySelector('#fbText').value.slice(0, 500), platform: APP ? 'android' : 'web', build: window.LR_BUILD || 'web', lang: I18N.lang, level: save.unlocked }) });
+        if (!r.ok) throw new Error('http_' + r.status);
+        track('feedback_send', { value: stars });
+        let msg = T('fb.thanks');
+        if (!save.feedbackRewarded) { save.feedbackRewarded = 1; save.coins += FEEDBACK_COINS; persist(); paintWallet(); msg = T('fb.thanksCoins', { n: FEEDBACK_COINS }); }
+        closeModal(); paintMenu(); showPraise(msg, 'info');
+      } catch (e) { b.disabled = false; showPraise(T('fb.fail'), 'info'); }
+    };
+  }
+  // ---------- notificações locais (app) ----------
+  const LN = () => (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.LocalNotifications) || null;
+  async function askNotes() {
+    const ln = LN();
+    if (!ln || save.notesAsked) return;
+    save.notesAsked = 1; persist();
+    try { await ln.requestPermissions(); } catch (e) {}
+    scheduleNotes();
+  }
+  async function scheduleNotes() {
+    const ln = LN();
+    if (!ln || !ENERGY_ON || !save.notesAsked) return;
+    try {
+      await ln.cancel({ notifications: [{ id: 101 }, { id: 102 }] });
+      const list = [], now = Date.now() + 60e3, full = energyFullAt();
+      if (save.chest.next > now) list.push({ id: 102, title: 'Lost Relics', body: T('note.chest'), schedule: { at: new Date(save.chest.next), allowWhileIdle: true } });
+      if (full > now) list.push({ id: 101, title: 'Lost Relics', body: T('note.energy'), schedule: { at: new Date(full), allowWhileIdle: true } });
+      if (list.length) await ln.schedule({ notifications: list });
+    } catch (e) {}
+  }
   function layout() {
     W = window.innerWidth; H = window.innerHeight;
     dpr = Math.min(window.devicePixelRatio || 1, APP ? 2 : 2.5);
@@ -238,7 +501,8 @@
   }
   const cellX = (x) => ox + (x + 0.5) * cs, cellY = (y) => oy + (y + 0.5) * cs;
 
-  async function startLevel(id, boosts, hard) {
+  async function startLevel(id, boosts, hard, charged) {
+    runCharged = !!charged;
     const hardAllowed = Number.isInteger(id) && !!hard && !!save.stars[id];
     const Ld = id === 'daily' ? dailyLevel() : id === 'weekly' ? weeklyLevel() : levelMode(id, hardAllowed);
     if ((Ld.bossKind || Ld.scarab) && !EXTRA.done) await extraReady();
@@ -2018,8 +2282,10 @@
     card.querySelector('#mPlay').onclick = () => {
       Sound.init(); Sound.play('click');
       if (hardMode && !Records.validName(Records.getName())) return askWeeklyName(() => openPre(id, false), () => openPre(id, true));
-      for (const k in picked) if (picked[k] && save.items[k] > 0) save.items[k]--; else delete picked[k];
-      persist(); closeModal(); wipe(() => startLevel(id, picked, hardMode));
+      payEnergy(id, hardMode, (c) => {
+        for (const k in picked) if (picked[k] && save.items[k] > 0) save.items[k]--; else delete picked[k];
+        persist(); closeModal(); wipe(() => startLevel(id, picked, hardMode, c));
+      }, () => openPre(id, hardMode));
     };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); if (scene !== 'map') openMap(); };
     if (hardMode) loadLevelBoards(card, id, Records.listLevel(id, L.week));
@@ -2029,6 +2295,7 @@
     if (level.daily) return showDaily();
     Ads.gameplay(false);
     finishRun('win');
+    refundEnergy();
     const id = level.id, hardMode = !!level.hard, stars = LR.stars(state);
     const weeklyBest = hardMode ? hardWeeklyScores() : null;
     const prevBest = hardMode ? (weeklyBest[id] || 0) : (save.best[id] || 0), isNew = state.score > prevBest && prevBest > 0;
@@ -2045,6 +2312,7 @@
     const earned = hardMode ? 0 : coinsOf(state.score) + stars * 10;
     if (!hardMode) save.coins += earned;
     persist();
+    if (!hardMode && level.boss) maybeReview();
     Sound.play('win'); buzz([30, 60, 30, 60, 90]);
     setTimeout(() => Sound.voice('win', I18N.lang), 350);
     const last = id === LEVELS.length;
@@ -2140,7 +2408,7 @@
       '<button class="btn' + (usedExtra ? '' : ' stone') + '" id="mRetry" type="button">' + T('retry') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
     // perdeu e desistiu (tentar de novo ou mapa) = trilha zera; se pegar +5 movimentos e vencer, mantém
-    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); breakStreak(); closeModal(); wipe(() => startLevel(id, {}, !!level.hard)); };
+    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); breakStreak(); const hd = !!level.hard; payEnergy(id, hd, (c) => { closeModal(); wipe(() => startLevel(id, {}, hd, c)); }, () => wipe(openMap)); };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); breakStreak(); closeModal(); wipe(openMap); };
     if (!level.hard && !usedExtra && !state.cursed) { // desafio difícil e maldição não aceitam movimentos extras
       Ads.offerReward({
@@ -2179,7 +2447,7 @@
     paint(); paintGfx();
     card.querySelector('#mGfx').onclick = () => { Sound.play('click'); gfxPref = { auto: 'full', full: 'lite', lite: 'auto' }[gfxPref] || 'auto'; lsSet(GFX_KEY, gfxPref); applyGfx(); paintGfx(); };
     card.querySelector('#mResume').onclick = () => { Sound.play('click'); closeModal(); };
-    card.querySelector('#mRestart').onclick = () => { Sound.play('click'); abandonRun('restart'); breakStreak(); closeModal(); wipe(() => startLevel(level.id, {}, !!level.hard)); };
+    card.querySelector('#mRestart').onclick = () => { Sound.play('click'); abandonRun('restart'); breakStreak(); const lid = level.id, hd = !!level.hard; payEnergy(lid, hd, (c) => { closeModal(); wipe(() => startLevel(lid, {}, hd, c)); }, () => wipe(openMap)); };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); abandonRun('map'); breakStreak(); closeModal(); wipe(openMap); };
     card.querySelector('#mSfx').onclick = () => { Sound.setSfx(!Sound.sfx); paint(); };
     card.querySelector('#mMusic').onclick = () => { Sound.setMusic(!Sound.music); paint(); };
@@ -2626,6 +2894,8 @@
     }
     $('btnLang').textContent = T('lang');
     $('btnPause').setAttribute('aria-label', T('pause'));
+    paintAccount();
+    $('btnFeedback').textContent = T('fb.btn') + (save.feedbackRewarded ? '' : ' +' + FEEDBACK_COINS);
   }
   function openMenu() {
     scene = 'menu'; state = null; updateHammerBtn();
@@ -2668,6 +2938,8 @@
   $('btnDaily').onclick = () => { Sound.init(); Sound.play('click'); wipe(() => startLevel('daily')); };
   $('btnWeekly').onclick = () => { Sound.init(); Sound.play('click'); openRecordsHub(); };
   $('btnProgress').onclick = () => { Sound.init(); Sound.play('click'); openProgress(); };
+  $('btnAccount').onclick = () => { Sound.init(); Sound.play('click'); openAccount(); };
+  $('btnFeedback').onclick = () => { Sound.init(); Sound.play('click'); openFeedback(); };
   $('btnSfx').onclick = () => { Sound.init(); Sound.setSfx(!Sound.sfx); paintMenu(); Sound.play('click'); };
   $('btnMusic').onclick = () => { Sound.init(); Sound.setMusic(!Sound.music); paintMenu(); };
   $('btnLang').onclick = () => { I18N.toggle(); paintMenu(); Sound.play('click'); };
@@ -2682,6 +2954,7 @@
     $('hud').hidden = true; $('screen-menu').hidden = true; $('screen-map').hidden = false;
     paintMenu();
     buildMap();
+    startMapTick();
   }
   // ---------- pacote extra (15/10) ----------
   // A abertura só baixa e monta o essencial (joias, tabuleiro, interface). Chefes, bichos, barra de vida e o mapa 3D
@@ -3026,10 +3299,13 @@
     wp.onclick = () => goWorld(WI - 1); wx.onclick = () => { if (nextOpen) goWorld(WI + 1); };
     $('mapStarIc').src = ART.icon('star', 44);
     $('mapCoinIc').src = ART.icon('coin', 64);
+    $('mapEnergyIc').src = ART.icon('sun', 64); $('mapChestIc').src = ART.icon('chest', 128);
     paintWallet();
     inner.querySelectorAll('.node:not(.locked)').forEach((b) => { b.onclick = () => { Sound.init(); Sound.play('click'); openPre(+b.dataset.id); }; });
   }
   $('btnShop').onclick = () => { Sound.init(); openShop(); };
+  $('btnEnergy').onclick = () => { Sound.init(); Sound.play('click'); openEnergy(() => {}, () => {}); };
+  $('btnChest').onclick = openChest;
   // ---------- laço principal ----------
   let last = performance.now(), lastDt = 0.016;
   function frame(t) {
@@ -3045,7 +3321,7 @@
   }
 
   window.addEventListener('resize', () => { layout(); if (scene === 'map') buildMap(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) Sound.pause(); else Sound.resume(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { Sound.pause(); scheduleNotes(); cloudPush(true); } else { Sound.resume(); if (scene === 'map') paintEnergy(); } });
   window.addEventListener('pagehide', () => { if (scene === 'play' && !runEnded) abandonRun('pagehide'); });
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (modalOpen() && $('modalCard').querySelector('#mResume')) closeModal(); else openPause(); } });
   Ads.setHooks({ pause: () => Sound.pause(), resume: () => Sound.resume() });
@@ -3145,7 +3421,7 @@
     else if (location.hash === '#derrotademo') { startLevel(1); setTimeout(() => { showLose(); const x = document.getElementById('mExtra'); if (x) x.hidden = false; }, 900); }
     else if (location.hash === '#pontosdemo') { startLevel(1); setTimeout(() => { state.score = 1290; renderHUD(); floats.push({ x: cellX(3), y: cellY(4), text: '+90', num: 90, color: '#ffe08a', t: 0, hold: true }); }, 900); }
     else if (location.hash === '#vitoriademo') { startLevel(1); setTimeout(() => { state.score = 16900; showWin(); }, 1200); setTimeout(() => document.querySelectorAll('.stars-big img').forEach((im, i) => { if (i < 2) { im.src = ART.nodeImg('vstar') || im.src; im.classList.add('on'); } }), 2600); }
-    else openMenu();
+    else { openMenu(); if (CLOUD_ON && !cloud && !lsGet('lr.loginAsked')) { lsSet('lr.loginAsked', '1'); setTimeout(() => { if (!modalOpen()) openAccount(); }, 600); } }
     requestAnimationFrame(frame);
   }
   $('loadingTxt').textContent = T('loading');

@@ -609,6 +609,9 @@
     else if (key === 'dynamite') { drawDynamite(ctx, px * 0.95, false); ctx.scale(0.7, 0.7); paintGem(ctx, GEMS[0], px * 0.4); }
     else if (key === 'barrel') { drawBarrel(ctx, px, GEMS[2]); ctx.scale(0.46, 0.46); paintGem(ctx, GEMS[2], px * 0.4); }
     else if (key === 'coin' && drawAIPiece(ctx, 'coin', px, 1.05)) {}
+    // energia (30/10): o orbe solar pintado; sem ele, um sol dourado desenhado
+    else if (key === 'sun' && AI.fx.sunorb) { const o = AI.fx.sunorb, k = px * 1.15 / Math.max(o.width, o.height); ctx.drawImage(o, -o.width * k / 2, -o.height * k / 2, o.width * k, o.height * k); }
+    else if (key === 'sun') { const g = ctx.createRadialGradient(0, 0, 0, 0, 0, px * 0.45); g.addColorStop(0, '#fff6c8'); g.addColorStop(0.5, '#ffc23a'); g.addColorStop(1, 'rgba(224,112,30,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, px * 0.45, 0, Math.PI * 2); ctx.fill(); }
     else if (key === 'scarab' && drawAIPiece(ctx, 'scarab', px, 1.05)) {}
     else if (key === 'hammer') drawToolIcon(ctx, px, 'hammer');
     else if (key === 'hourglass') drawToolIcon(ctx, px, 'hourglass');
