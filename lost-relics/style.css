@@ -362,8 +362,10 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .ui-kit .card {
   background: none; box-shadow: none; border: 0;
   --cw: min(440px, calc(100vw - 32px)); width: var(--cw); max-width: 100%;
-  border-image-source: var(--ui-frame); border-image-slice: 20.7% 26.8% 17.2% 27% fill; border-image-repeat: stretch round;
-  border-image-width: calc(var(--cw) * .229) calc(var(--cw) * .2) calc(var(--cw) * .19) calc(var(--cw) * .2);
+  /* 30/10: a faixa do meio (linhas 261-701 da arte) foi refeita pra repetir sem emenda; antes o "round" repetia
+     um pedaço que não emendava e marcava um corte no meio das laterais e do fundo */
+  border-image-source: var(--ui-frame); border-image-slice: 25.49% 26.8% 31.54% 27% fill; border-image-repeat: stretch round;
+  border-image-width: calc(var(--cw) * .2814) calc(var(--cw) * .2) calc(var(--cw) * .3482) calc(var(--cw) * .2);
   padding: calc(var(--cw) * .229 + 6px) calc(var(--cw) * .18) calc(var(--cw) * .19 + 4px); max-height: none; overflow: visible; filter: drop-shadow(0 24px 40px rgba(0,0,0,.75));
 }
 .ui-kit .card::before { display: none; }
@@ -830,7 +832,7 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .ui-kit .card.pre { height: auto; max-height: none; overflow: visible; justify-content: flex-start; gap: 12px;
   padding-top: calc(var(--cw) * .229 + 12px); padding-bottom: calc(var(--cw) * .19 + 4px); }
 .plaque-title { margin: 0 0 4px; font-family: var(--f-display); font-weight: 900; font-size: 24px; letter-spacing: .08em; text-align: center; color: var(--gold-hi); }
-.ui-kit .card > h2.plaque-title, .ui-kit .card.records-hub > h2.plaque-title { position: absolute; max-width: none; left: calc(var(--cw) * .27); right: calc(var(--cw) * .27); width: auto; margin: 0; top: calc(var(--cw) * .108); transform: translateY(-50%); white-space: nowrap; font-size: calc(var(--cw) * .05); line-height: 1; color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.6); pointer-events: none; z-index: 2; text-transform: uppercase; }
+.ui-kit .card > h2.plaque-title, .ui-kit .card.records-hub > h2.plaque-title { position: absolute; max-width: none; left: calc(var(--cw) * .27); right: calc(var(--cw) * .27); width: auto; margin: 0; top: calc(var(--cw) * .118); transform: translateY(-50%); white-space: nowrap; font-size: calc(var(--cw) * .05); line-height: 1; color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.6); pointer-events: none; z-index: 2; text-transform: uppercase; }
 .ui-kit .card.records-hub, .ui-kit .card.season-card { padding-top: calc(var(--cw) * .229 + 12px); gap: 12px; }
 .card.records-hub .season-strip { gap: 3px; padding: 9px 10px; }
 .season-strip .season-name { white-space: nowrap; font-size: 11px; letter-spacing: .04em; }
@@ -860,7 +862,7 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .season-card .season-row .tier { padding: 2px 6px; font-size: 8.5px; letter-spacing: .06em; }
 .season-card .season-body { overflow-x: hidden; }
 .pre-title { margin: 0; font-family: var(--f-display); font-weight: 900; font-size: 24px; letter-spacing: .08em; text-align: center; color: var(--gold-hi); }
-.ui-kit .card.pre > .pre-title { position: absolute; left: calc(var(--cw) * .27); right: calc(var(--cw) * .27); width: auto; margin: 0; top: calc(var(--cw) * .108); white-space: nowrap; transform: translateY(-50%); font-size: calc(var(--cw) * .05); line-height: 1; color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.6); pointer-events: none; z-index: 2; }
+.ui-kit .card.pre > .pre-title { position: absolute; left: calc(var(--cw) * .27); right: calc(var(--cw) * .27); width: auto; margin: 0; top: calc(var(--cw) * .118); white-space: nowrap; transform: translateY(-50%); font-size: calc(var(--cw) * .05); line-height: 1; color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.6); pointer-events: none; z-index: 2; }
 .card.pre .mode-pick { grid-template-columns: 1fr 1fr 34px; gap: 6px; }
 .card.pre .mode-pick button { min-height: 34px; padding: 0 6px; font-size: 11.5px; display: flex; align-items: center; justify-content: center; gap: 4px; }
 .card.pre .mode-pick .lk { width: 11px; height: 11px; fill: currentColor; flex: none; }
@@ -940,3 +942,40 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .fb-stars button { width: 46px; height: 46px; padding: 0; border: 0; background: none; cursor: pointer; }
 .fb-stars img { width: 100%; height: 100%; object-fit: contain; }
 .fb-text { min-height: 84px; }
+
+/* 30/10: botão Entrar com Google com o "G" oficial */
+.g-btn, .acct-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.ui-kit .g-btn { letter-spacing: .02em; font-size: clamp(11px, calc(var(--cw, 440px) * .033), 14px); }
+.g-logo { width: 15px; height: 15px; flex: none; padding: 3px; border-radius: 50%; background: #fff; box-sizing: content-box; box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+.acct-btn .g-logo { width: 16px; height: 16px; padding: 2px; }
+/* coleção de relíquias (02/11) */
+.relic-line { margin: 6px 0; text-align: center; font-size: 13px; color: #e9d9b0; }
+.relic-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 4px 0; }
+.relic { position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+.relic img { max-width: 100%; max-height: 100%; filter: brightness(0) opacity(.55); }
+.relic.on img { filter: none; }
+.relic span { position: absolute; right: 1px; bottom: 0; font-size: 10px; color: #e7be5c; text-shadow: 0 1px 2px #000; }
+.relic-bar { height: 8px; margin: 2px 8px 8px; border-radius: 4px; background: rgba(0,0,0,.5); box-shadow: inset 0 0 0 1px rgba(231,190,92,.45); overflow: hidden; }
+.relic-bar i { display: block; height: 100%; background: #e7be5c; }
+/* aba Desafios (02/11) */
+.chal-wallet { justify-content: center; margin: 0 0 4px; }
+.chal-list { display: flex; flex-direction: column; gap: 6px; margin: 2px 0 6px; }
+.chal { display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-radius: 8px; background: rgba(0,0,0,.32); box-shadow: inset 0 0 0 1px rgba(231,190,92,.28); }
+.chal > img { width: 34px; height: 34px; object-fit: contain; flex: none; }
+.chal-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; line-height: 1.15; }
+.chal-txt b { font-size: 13px; color: #f3dfae; }
+.chal-txt span { font-size: 11px; color: #d8cdb5; }
+.chal-txt small { font-size: 10px; color: #8fe9dc; margin-top: 1px; }
+.chal .btn.small { flex: none; min-width: 66px; padding: 6px 6px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
+.chal .btn .coin { width: 14px; height: 14px; }
+.chal.locked > img { filter: grayscale(1) brightness(.6); }
+.relic-line.small { font-size: 11px; color: #8fe9dc; margin: 0 0 4px; }
+.relic.on { cursor: pointer; }
+.relic.worn { border-radius: 8px; box-shadow: 0 0 0 2px #8fe9dc, 0 0 10px rgba(143,233,220,.7); }
+.seal-line { margin: 3px 0; font-size: 11px; text-align: center; color: #d8cdb5; }
+.seal-line.on { color: #8fe9dc; }
+.power-list .btn { margin-bottom: 2px; }
+.chal-wallet b { font-size: 17px; }
+.chal-wallet .coin { width: 22px; height: 22px; }
+.chal .btn.dark.small { min-width: 78px; min-height: 34px; font-size: 12px; }
+.chal-txt span { font-size: 10.5px; }

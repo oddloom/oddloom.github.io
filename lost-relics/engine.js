@@ -34,20 +34,21 @@
     const H = rows.length, W = rows[0].length;
     const s = {
       W, H, mask: [], grid: [], sand: [],
-      colors: level.colors, seed: seed >>> 0, nextId: 1,
+      colors: level.colors, seed: (level.fixedSeed != null ? level.fixedSeed : seed) >>> 0, nextId: 1,
       score: 0, moves: level.moves, cascade: 0,
       goals: level.goals.map((g) => Object.assign({ count: 0 }, g)),
       artifactsLeft: level.artifacts || 0, artifactMax: level.artifactMax || 1,
       sandTotal: 0, level,
     };
-    const vines = [], bombs = [];
+    const vines = [], bombs = [], skulls = [];
+    s.plates = [];
     for (let y = 0; y < H; y++) {
       s.mask.push([]); s.grid.push([]); s.sand.push([]);
       for (let x = 0; x < W; x++) {
         const ch = rows[y][x];
         s.mask[y].push(ch !== 'x');
         let sand = 0;
-        if (ch === 's' || ch === 'w') sand = 1;
+        if (ch === 's' || ch === 'w' || ch === 'G') sand = 1;
         if (ch === 'S' || ch === 'W') sand = 2;
         s.sand[y].push(sand);
         s.sandTotal += sand;
@@ -55,6 +56,10 @@
         if (ch === 'r' || ch === 'R' || ch === 'T') p = { id: s.nextId++, kind: 'rock', hp: ch === 'r' ? 1 : ch === 'R' ? 2 : 3 };
         if (ch === 'a') { p = { id: s.nextId++, kind: 'artifact' }; s.artifactsLeft--; }
         if (ch === 'm') p = { id: s.nextId++, kind: 'moss', hp: 1 };
+        if (ch === 'g' || ch === 'G') p = { id: s.nextId++, kind: 'gate' }; // portão: nada passa nem quebra até pisar em todas as placas
+        if (ch === 'k') p = { id: s.nextId++, kind: 'keg' }; // barril no chão: combinação encostada explode 3x3
+        if (ch === 'p') s.plates.push({ x, y, on: false });
+        if (ch === 'c') skulls.push(y * W + x);
         if (ch === 'b') bombs.push(y * W + x);
         if (ch === 'v' || ch === 'w' || ch === 'W') vines.push(y * W + x);
         s.grid[y].push(p);
@@ -68,6 +73,18 @@
     }
     for (const k of vines) s.grid[Math.floor(k / W)][k % W].vine = true;
     for (const k of bombs) s.grid[Math.floor(k / W)][k % W].bomb = level.bombTimer || 10;
+    for (const k of skulls) s.grid[Math.floor(k / W)][k % W].skull = true;
+    // escuridão: só o que está perto de uma tocha aparece; o morcego apaga casas, então a fase dele também guarda a luz
+    if (level.dark || level.bossKind === 'bat') {
+      s.lit = s.mask.map((row) => row.map(() => !level.dark));
+      for (const [tx, ty] of (level.dark && level.dark.torches) || []) lightAround(s, tx, ty, 1);
+    }
+    s.flood = 0; s.ritualI = 0; s.cartI = 0;
+    for (const g of s.goals) {
+      if (g.type === 'plate') g.target = s.plates.length;
+      if (g.type === 'light') g.target = darkLeft(s);
+      if (g.type === 'cart') g.target = level.cart.path.length - 1;
+    }
     for (const g of s.goals) if (g.type === 'moss') g.target = countKind(s, 'moss');
     for (const g of s.goals) if (g.type === 'sand') g.target = s.sandTotal;
     s.bosses = [];
@@ -89,6 +106,7 @@
         const b = { kind: B.kind, hp: B.hp, max: B.hp, id: pickHost(s, spots[i % spots.length], 0), idle: 0, hitThisMove: false, claw: 0, weak: level.weak ? randInt(s, s.colors) : null };
         s.bosses.push(b);
         if (B.kind === 'serpent') placeSerpent(s, b, spots[i % spots.length], 0);
+        if (level.thief) b.id = pickLowHost(s);
       }
     }
     return s;
@@ -99,6 +117,20 @@
     if (level.scarab) return { kind: 'scarab', count: level.scarab, hp: level.scarabHp || 3 };
     return null;
   }
+
+  function lightAround(s, x, y, r) {
+    if (!s.lit) return;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (inside(s, x + dx, y + dy)) s.lit[y + dy][x + dx] = true;
+  }
+  function darkLeft(s) {
+    if (!s.lit) return 0;
+    let n = 0;
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) if (s.mask[y][x] && !s.lit[y][x]) n++;
+    return n;
+  }
+  // regra que entra na 2ª metade da vida do chefe: level.phase2 = { cavein, storm, river, spin }
+  const rule = (s, k) => s.level[k] || (s.phase2 && s.level.phase2 && s.level.phase2[k]) || null;
+  const flooded = (s, y) => s.flood > 0 && y >= s.H - s.flood;
 
   // ---------- chefes ----------
   // regras (14/10, depois do 1º teste dele: "fácil e rápido"): 1 golpe por jogada em cada escaravelho (cascata não
@@ -138,7 +170,7 @@
     if (b.kind === 'serpent') { const t = idPos(s, b.id2); if (t) out.push(t); }
     return out;
   }
-  const plainGem = (p) => !!p && p.kind === 'gem' && !p.special && !p.vine && !p.bomb;
+  const plainGem = (p) => !!p && p.kind === 'gem' && !p.special && !p.vine && !p.bomb && !p.skull;
   function takenIds(s) {
     const t = new Set();
     for (const b of s.bosses || []) if (b.hp > 0) { if (b.id != null) t.add(b.id); if (b.id2 != null) t.add(b.id2); }
@@ -186,6 +218,33 @@
     return pool.length ? pool[randInt(s, pool.length)].id : null;
   }
 
+  // Escaravelho Ladrão (02/11): sempre recomeça nas duas fileiras de baixo, longe da saída no topo
+  function pickLowHost(s) {
+    const taken = takenIds(s), pool = [];
+    for (let y = s.H - 2; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+      if (!inside(s, x, y)) continue;
+      const p = s.grid[y][x];
+      if (plainGem(p) && !taken.has(p.id)) pool.push(p);
+    }
+    return pool.length ? pool[randInt(s, pool.length)].id : pickHost(s, null, 0);
+  }
+  // sobe 1 casa (reto ou na diagonal); chegou na fileira de cima = fugiu com a relíquia e a fase acaba
+  function thiefClimb(s, b) {
+    const h = idPos(s, b.id);
+    if (!h) return null;
+    const taken = takenIds(s);
+    for (const [dx, dy] of [[0, -1], [-1, -1], [1, -1], [-1, 0], [1, 0]]) {
+      const x = h[0] + dx, y = h[1] + dy;
+      if (!inside(s, x, y)) continue;
+      const p = s.grid[y][x];
+      if (!plainGem(p) || taken.has(p.id)) continue;
+      b.id = p.id;
+      if (y === 0 && !s.cursed) { s.cursed = [x, y]; s.escaped = true; }
+      return { from: h, to: [x, y] };
+    }
+    return null;
+  }
+
   function safeColor(s, x, y) {
     for (let tries = 0; tries < 30; tries++) {
       const c = randInt(s, s.colors);
@@ -203,6 +262,8 @@
     c.sand = s.sand.map((row) => row.slice());
     c.goals = s.goals.map((g) => Object.assign({}, g));
     c.bosses = (s.bosses || []).map((b) => Object.assign({}, b));
+    c.plates = (s.plates || []).map((q) => Object.assign({}, q));
+    if (s.lit) c.lit = s.lit.map((row) => row.slice());
     return c;
   }
 
@@ -213,7 +274,7 @@
     const p = s.grid[y][x];
     return p && p.kind === 'gem' && p.special !== 'idol' && p.color != null ? p.color : -1;
   }
-  const movable = (p) => !!p && p.kind !== 'rock' && p.kind !== 'moss' && p.kind !== 'statue' && !p.vine;
+  const movable = (p) => !!p && p.kind !== 'rock' && p.kind !== 'moss' && p.kind !== 'statue' && p.kind !== 'gate' && p.kind !== 'keg' && !p.vine;
   const swappable = (p) => !!p && (p.kind === 'gem' || p.kind === 'artifact') && !p.vine;
   const isSpecial = (p) => !!p && p.kind === 'gem' && !!p.special;
 
@@ -222,7 +283,13 @@
     for (let yy = 0; yy < y; yy++) if (s.mask[yy][x]) return false;
     return true;
   }
-  function isExit(s, x, y) { return y === s.H - 1 || !s.mask[y + 1][x]; }
+  // Passagens secretas (02/11): level.portals = [[deX, deY, paraX, paraY], ...]. A peça do fim de uma coluna cortada
+  // sai no começo de outra. A entrada não conta como saída de baú.
+  const portalList = (s) => (s.level && s.level.portals) || [];
+  function isExit(s, x, y) {
+    if (portalList(s).some((q) => q[0] === x && q[1] === y)) return false;
+    return y === s.H - 1 || !s.mask[y + 1][x];
+  }
 
   // ---------- combinações ----------
   function findGroups(s) {
@@ -339,6 +406,7 @@
     if (g.type === 'score') return s.score >= g.target;
     if (g.type === 'sand') return sandLeft(s) === 0;
     if (g.type === 'moss') return countKind(s, 'moss') === 0;
+    if (g.type === 'light') return darkLeft(s) === 0;
     return g.count >= g.target;
   }
   function isWon(s) { return s.goals.every((g) => goalDone(s, g)); }
@@ -370,6 +438,14 @@
           continue;
         }
         if (p && p.kind === 'artifact') continue;
+        if (p && p.kind === 'gate') continue;
+        if (p && p.kind === 'keg') {
+          s.grid[y][x] = null; res.score += SCORE.barrel;
+          const area = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) area.push([x + dx, y + dy]);
+          res.blasts.push({ x, y, special: 'barrel', color: null, wave, area, second: true });
+          for (const [ax, ay] of area) next.push({ x: ax, y: ay, src: 'blast' });
+          continue;
+        }
         // Ídolo de Pedra: só explosão de joia especial machuca; combinação comum não faz nada nele
         if (p && p.kind === 'statue') { if (h.src === 'blast') blasted.add(p.boss); continue; }
         if (p && p.vine) {
@@ -390,11 +466,12 @@
         if (h.src === 'match') {
           for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
             const q = inside(s, x + dx, y + dy) && s.grid[y + dy][x + dx];
-            if (q && (q.kind === 'rock' || q.kind === 'moss')) next.push({ x: x + dx, y: y + dy, src: 'adj' });
+            if (q && (q.kind === 'rock' || q.kind === 'moss' || q.kind === 'keg')) next.push({ x: x + dx, y: y + dy, src: 'adj' });
           }
         }
         s.grid[y][x] = null;
         if (p.clock) { s.moves += 2; res.clocks.push({ x, y }); } // Joia de Tempo: +2 movimentos
+        if (p.skull) s.moves = Math.max(0, s.moves - 1); // Joia Maldita: quebrar custa 1 movimento
         res.removed.push({ piece: p, x, y, wave, src: h.src });
         if (p.color != null) bump(s, 'collect', p.color);
         res.score += SCORE.gem * mult;
@@ -423,6 +500,7 @@
         if (!hit) continue;
       }
       b.hp--; b.hitThisMove = true; b.idle = 0;
+      if (b.kind === 'mummy' && b.hp <= 0 && !b.revived) { b.revived = true; b.hp = Math.ceil(b.max / 2); res.revived = true; } // o Rei Múmia levanta uma vez
       if (b.weak != null && b.hp > 0) b.weak = (b.weak + 1 + randInt(s, s.colors - 1)) % s.colors; // o ponto fraco muda de cor depois de cada golpe
       res.score += SCORE.boss;
       const ev = { idx, kind: b.kind || 'scarab', from: cells[0], cells, hp: b.hp, dead: b.hp <= 0, weak: b.weak };
@@ -431,9 +509,10 @@
         if (b.kind === 'statue') for (const [x, y] of b.cells) s.grid[y][x] = null; // desmorona: as joias de cima caem no lugar
       } else if (b.kind === 'statue') b.shield = 2; // escudo de runas na próxima jogada
       else if (b.kind === 'serpent') { placeSerpent(s, b, cells[0], 3); ev.toId = b.id; }
-      else { b.id = pickHost(s, cells[0], 3); ev.toId = b.id; }
+      else { b.id = s.level.thief ? pickLowHost(s) : pickHost(s, cells[0], 3); ev.toId = b.id; }
       res.bosses.push(ev);
     }
+    afterHits(s, res);
     for (const c of creates || []) {
       if (!inside(s, c.x, c.y) || s.grid[c.y][c.x]) continue;
       const p = newGem(s, c.special === 'idol' ? null : c.color, c.special);
@@ -446,6 +525,36 @@
     return res;
   }
 
+  // o que depende do que acabou de quebrar: placas, luz, água, ritual, vagoneta e a virada do chefe
+  function afterHits(s, res) {
+    for (const r of res.removed) {
+      const q = s.plates.find((c) => c.x === r.x && c.y === r.y && !c.on);
+      if (q) { q.on = true; bump(s, 'plate'); res.pressed = true; }
+      lightAround(s, r.x, r.y, 1);
+    }
+    if (s.plates.length && res.pressed && s.plates.every((c) => c.on) && countKind(s, 'gate')) {
+      res.gates = [];
+      for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) { const p = s.grid[y][x]; if (p && p.kind === 'gate') { s.grid[y][x] = null; res.gates.push([x, y]); } }
+    }
+    // a água baixa 1 fileira com combinação logo acima dela, ou com explosão dentro dela
+    if (s.flood > 0 && !s.rush) {
+      const line = s.H - s.flood - 1;
+      if (res.removed.some((r) => (r.y === line && r.src === 'match') || (flooded(s, r.y) && r.src === 'blast'))) { s.flood--; res.drained = true; }
+    }
+    const rit = s.goals.find((g) => g.type === 'ritual');
+    if (rit && rit.count < rit.target && res.removed.some((r) => r.piece && r.piece.color === rit.order[s.ritualI % rit.order.length])) { s.ritualI++; bump(s, 'ritual'); }
+    // vagoneta: combinação encostada empurra 1 casa, no máximo uma por onda de quebra
+    const cart = s.level.cart;
+    if (cart && s.cartI < cart.path.length - 1) {
+      const [cx, cy] = cart.path[s.cartI];
+      if (res.removed.some((r) => Math.abs(r.x - cx) + Math.abs(r.y - cy) <= 1)) { s.cartI++; bump(s, 'cart'); res.cart = true; }
+    }
+    if (s.level.phase2 && !s.phase2 && (s.bosses || []).length) {
+      const hp = s.bosses.reduce((a, b) => a + Math.max(0, b.hp), 0), max = s.bosses.reduce((a, b) => a + b.max, 0);
+      if (hp > 0 && hp * 2 <= max) { s.phase2 = true; res.phase2 = true; }
+    }
+  }
+
   // ---------- gravidade (passo a passo, pra animar) ----------
   function spawnPiece(s) {
     const onBoard = s.artifactsLeft > 0 ? countKind(s, 'artifact') : 0;
@@ -454,10 +563,12 @@
       return { id: s.nextId++, kind: 'artifact' };
     }
     const g = newGem(s, randInt(s, s.colors)), L = s.level;
-    if (L.bombSpawn && countBombs(s) < (L.bombMax || 2) && rand(s) < L.bombSpawn) g.bomb = L.bombTimer || 10;
+    if (L.skullSpawn && countFlag(s, 'skull') < (L.skullMax || 2) && rand(s) < L.skullSpawn) g.skull = true;
+    else if (L.bombSpawn && countBombs(s) < (L.bombMax || 2) && rand(s) < L.bombSpawn) g.bomb = L.bombTimer || 10;
     else if (L.clockSpawn && countClocks(s) < (L.clockMax || 2) && rand(s) < L.clockSpawn) g.clock = true;
     return g;
   }
+  function countFlag(s, k) { let n = 0; for (const row of s.grid) for (const p of row) if (p && p[k]) n++; return n; }
   function countClocks(s) { let n = 0; for (const row of s.grid) for (const p of row) if (p && p.clock) n++; return n; }
   function countBombs(s) { let n = 0; for (const row of s.grid) for (const p of row) if (p && p.bomb) n++; return n; }
   function countKind(s, kind) {
@@ -472,6 +583,15 @@
     for (let y = s.H - 1; y >= 0; y--) {
       for (let x = 0; x < s.W; x++) {
         if (!s.mask[y][x] || s.grid[y][x]) continue;
+        const pt = portalList(s).find((q) => q[2] === x && q[3] === y);
+        if (pt) {
+          const q = s.grid[pt[1]][pt[0]];
+          if (movable(q) && !moved.has(q.id)) {
+            s.grid[y][x] = q; s.grid[pt[1]][pt[0]] = null; moved.add(q.id);
+            moves.push({ p: q, fx: pt[0], fy: pt[1], tx: x, ty: y, portal: true });
+            continue;
+          }
+        }
         if (y > 0 && s.mask[y - 1][x]) {
           const p = s.grid[y - 1][x];
           if (!p) continue; // a de cima ainda vai encher
@@ -530,15 +650,22 @@
   function doSwap(s, a, b) {
     if (!adjacent(a, b) || !inside(s, a[0], a[1]) || !inside(s, b[0], b[1])) return null;
     const pa = s.grid[a[1]][a[0]], pb = s.grid[b[1]][b[0]];
-    if (!swappable(pa) || !swappable(pb)) return null;
+    if (!swappable(pa) || !swappable(pb) || flooded(s, a[1]) || flooded(s, b[1])) return null;
     s.grid[a[1]][a[0]] = pb; s.grid[b[1]][b[0]] = pa;
     const start = comboStart(s, pa, pb, a, b);
-    if (start) { s.moves--; return start; }
-    if (findGroups(s).length || isPush(pa, pb, a, b)) { s.moves--; return { prefer: [b, a] }; }
+    if (start) { s.moves--; return withMirror(s, start, a, b); }
+    if (findGroups(s).length || isPush(pa, pb, a, b)) { s.moves--; return withMirror(s, { prefer: [b, a] }, a, b); }
     s.grid[a[1]][a[0]] = pa; s.grid[b[1]][b[0]] = pb;
     return null;
   }
 
+  // Espelho: a troca se repete do outro lado do tabuleiro (menos quando as duas casas se cruzam no meio)
+  function withMirror(s, start, a, b) {
+    if (!s.level.mirror) return start;
+    const ma = [s.W - 1 - a[0], a[1]], mb = [s.W - 1 - b[0], b[1]], same = (p, q) => p[0] === q[0] && p[1] === q[1];
+    if (!same(ma, a) && !same(ma, b) && !same(mb, a) && !same(mb, b)) start.mirror = [ma, mb];
+    return start;
+  }
   // Empurrar o baú uma casa pra baixo sempre vale (gasta movimento), pra ele não travar.
   function isPush(pa, pb, a, b) {
     if (pa.kind === 'artifact' && pb.kind === 'gem' && b[1] === a[1] + 1) return true;
@@ -607,12 +734,38 @@
   // ---------- resolução completa (gerador: o jogo anima cada passo) ----------
   function* resolve(s, start) {
     s.cascade = 0; s.mossHit = false;
+    if (start && start.mirror) {
+      const [ma, mb] = start.mirror;
+      if (inside(s, ma[0], ma[1]) && inside(s, mb[0], mb[1])) {
+        const qa = s.grid[ma[1]][ma[0]], qb = s.grid[mb[1]][mb[0]];
+        if (swappable(qa) && swappable(qb)) {
+          s.grid[ma[1]][ma[0]] = qb; s.grid[mb[1]][mb[0]] = qa;
+          yield { type: 'fall', steps: [[{ p: qa, fx: ma[0], fy: ma[1], tx: mb[0], ty: mb[1] }, { p: qb, fx: mb[0], fy: mb[1], tx: ma[0], ty: ma[1] }]], mirror: true };
+        }
+      }
+    }
     for (const b of s.bosses || []) {
       b.hitThisMove = false; // cada jogada nova pode dar 1 golpe em cada chefe
       if (b.shield > 0) b.shield--; // escudo do ídolo: dura a jogada seguinte ao golpe
     }
-    let first = start && start.hits ? start : null;
-    let prefer = start && start.prefer ? start.prefer : null;
+    yield* cascades(s, start && start.hits ? start : null, start && start.prefer ? start.prefer : null);
+    // Rio subterrâneo (02/11): as fileiras andam 1 casa no fim da jogada; o que combinar por causa disso sai de graça
+    if (rule(s, 'river') && !s.rush && !isWon(s)) {
+      const moved = riverShift(s);
+      if (moved.length) { yield { type: 'fall', steps: [moved], river: true }; yield* cascades(s, null, null); }
+    }
+    // Templo que gira: de tempos em tempos o tabuleiro inteiro roda 90 graus e a gravidade passa a puxar pro outro lado
+    if (rule(s, 'spin') && !s.rush && !isWon(s)) {
+      s.spinT = (s.spinT || 0) + 1;
+      if (s.spinT >= rule(s, 'spin').every) {
+        s.spinT = 0;
+        const moved = spinBoard(s);
+        if (moved.length) { yield { type: 'spin' }; yield { type: 'fall', steps: [moved], spin: true }; yield* cascades(s, null, null); }
+      }
+    }
+    yield* endOfMove(s);
+  }
+  function* cascades(s, first, prefer) {
     for (let guard = 0; guard < 60; guard++) {
       let hits, creates = [], kind = 'match';
       if (first) {
@@ -626,7 +779,8 @@
             const sp = groupSpecial(g);
             if (sp) {
               const spot = specialSpot(s, g, sp, prefer);
-              if (spot) creates.push({ x: spot[0], y: spot[1], special: sp.type, color: g.color });
+              const barred = s.level.noLine && (sp.type === 'lineH' || sp.type === 'lineV'); // Maldição da Semana: sem Flecha
+              if (spot && !barred) creates.push({ x: spot[0], y: spot[1], special: sp.type, color: g.color });
             }
           }
           prefer = null;
@@ -644,6 +798,10 @@
       const res = applyHits(s, hits, creates);
       res.kind = kind; res.cascade = s.cascade;
       yield Object.assign({ type: 'clear' }, res);
+      if (res.gates) yield { type: 'gates', cells: res.gates };
+      if (res.phase2) yield { type: 'phase2' };
+      if (res.revived) yield { type: 'revived' };
+      if (res.drained) yield { type: 'flood', drained: true };
       for (let g2 = 0; g2 < 20; g2++) {
         const steps = gravity(s);
         if (steps.length) yield { type: 'fall', steps };
@@ -664,6 +822,8 @@
         }
       }
     }
+  }
+  function* endOfMove(s) {
     // fim da jogada: regra de cada chefe
     for (const b of aliveBosses(s)) {
       const idx = s.bosses.indexOf(b);
@@ -685,6 +845,28 @@
         if (b.spit >= FROG_SPIT) {
           b.spit = 0;
           const from = bossPos(s, b), cells = spit(s, from, FROG_SLIME);
+          if (cells.length) yield { type: 'bossspit', idx, from, cells };
+        }
+        continue;
+      }
+      if (b.kind === 'bat') {
+        // morcego: a cada 2 jogadas sem apanhar apaga 3 casas perto dele; combinar acende de novo
+        if (b.hitThisMove) { b.web = 0; continue; }
+        b.web = (b.web || 0) + 1;
+        if (b.web >= 2) {
+          b.web = 0;
+          const from = bossPos(s, b), cells = batDark(s, from, 3);
+          if (cells.length) yield { type: 'batdark', idx, from, cells };
+        }
+        continue;
+      }
+      if (b.kind === 'mummy') {
+        // Rei Múmia: a cada 2 jogadas sem apanhar enfaixa 1 joia (presa por 2 combinações)
+        if (b.hitThisMove) { b.spit = 0; continue; }
+        b.spit = (b.spit || 0) + 1;
+        if (b.spit >= 2) {
+          b.spit = 0;
+          const from = bossPos(s, b), cells = spit(s, from, 1);
           if (cells.length) yield { type: 'bossspit', idx, from, cells };
         }
         continue;
@@ -730,6 +912,15 @@
       }
       // escaravelho: quem ficou 3 jogadas seguidas sem apanhar foge pra outra joia longe
       if (b.hitThisMove) continue;
+      if (s.level.thief) { // ladrão: não foge pra longe, sobe rumo à saída a cada N jogadas sem apanhar
+        b.idle++;
+        if (b.idle >= s.level.thief) {
+          b.idle = 0;
+          const c = thiefClimb(s, b);
+          if (c) yield { type: 'thiefclimb', idx, from: c.from, to: c.to, escaped: !!s.escaped };
+        }
+        continue;
+      }
       b.idle++;
       if (b.idle >= BOSS_FLEE) {
         const from = bossPos(s, b);
@@ -741,6 +932,12 @@
     if (!isWon(s) && !s.rush) {
       if (countCocoons(s)) { const c = cocoonTick(s); yield Object.assign({ type: 'cocoontick' }, c); }
       if (!s.mossHit) { const g = mossGrow(s); if (g) yield Object.assign({ type: 'mossgrow' }, g); }
+      if (rule(s, 'storm')) { const c = stormTick(s); if (c.length) yield { type: 'storm', cells: c }; }
+      if (rule(s, 'cavein')) { const c = caveinTick(s); if (c.length) yield { type: 'cavein', cells: c }; }
+      if (s.level.flood) {
+        s.floodT = (s.floodT || 0) + 1;
+        if (s.floodT >= s.level.flood.every) { s.floodT = 0; if (s.flood < (s.level.flood.max || 4)) { s.flood++; yield { type: 'flood', rose: true }; } }
+      }
       const ticks = [];
       for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
         const p = s.grid[y][x];
@@ -750,6 +947,85 @@
     }
     if (!findMove(s)) { shuffle(s); yield { type: 'shuffle' }; }
   }
+  // Rio subterrâneo: { row, dir } gira as peças que podem andar nessa fileira; pedra e joia presa ficam onde estão
+  function riverShift(s) {
+    const out = [];
+    for (const r of rule(s, 'river')) {
+      const cols = [];
+      for (let x = 0; x < s.W; x++) if (inside(s, x, r.row) && movable(s.grid[r.row][x])) cols.push(x);
+      if (cols.length < 2) continue;
+      const n = cols.length, pieces = cols.map((x) => s.grid[r.row][x]);
+      cols.forEach((x, i) => {
+        const j = (i + (r.dir > 0 ? 1 : n - 1)) % n, tx = cols[j];
+        s.grid[r.row][tx] = pieces[i];
+        const wrapped = r.dir > 0 ? j < i : j > i; // quem sai por um lado entra pelo outro
+        out.push({ p: pieces[i], fx: wrapped ? (r.dir > 0 ? tx - 1 : tx + 1) : x, fy: r.row, tx, ty: r.row });
+      });
+    }
+    return out;
+  }
+  // Giro: só em tabuleiro cheio (sem casa cortada); sentido horário. Areia gira junto, chefe segue a joia dele.
+  function spinBoard(s) {
+    if (s.W !== s.H || s.mask.some((row) => row.some((m) => !m)) || (s.bosses || []).some((b) => b.kind === 'statue')) return [];
+    const n = s.W, grid = [], sand = [], moves = [];
+    for (let y = 0; y < n; y++) { grid.push(new Array(n).fill(null)); sand.push(new Array(n).fill(0)); }
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      const tx = n - 1 - y, ty = x, p = s.grid[y][x];
+      grid[ty][tx] = p; sand[ty][tx] = s.sand[y][x];
+      if (p) moves.push({ p, fx: x, fy: y, tx, ty });
+    }
+    s.grid = grid; s.sand = sand;
+    return moves;
+  }
+  // morcego apaga casas acesas perto dele (nunca a casa do próprio chefe)
+  function batDark(s, from, n) {
+    if (!from || !s.lit) return [];
+    const list = [];
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+      const d = Math.abs(x - from[0]) + Math.abs(y - from[1]);
+      if (inside(s, x, y) && s.lit[y][x] && d >= 1 && d <= 3) list.push([x, y]);
+    }
+    const cells = pickSome(s, list, n);
+    for (const [x, y] of cells) s.lit[y][x] = false;
+    return cells;
+  }
+  // Casas que cada evento pode atingir: só joia comum, nunca a joia de um chefe
+  function plainCells(s, fn) {
+    const taken = takenIds(s), out = [];
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+      const p = s.grid[y][x];
+      if (plainGem(p) && !taken.has(p.id) && fn(x, y, p)) out.push([x, y]);
+    }
+    return out;
+  }
+  function pickSome(s, list, n) {
+    const out = [], pool = list.slice();
+    while (out.length < n && pool.length) out.push(pool.splice(randInt(s, pool.length), 1)[0]);
+    return out;
+  }
+  // Tempestade de areia: { every, n, cap } a cada N jogadas cobre n casas limpas; para quando há cap de areia no chão
+  function stormTick(s) {
+    const c = rule(s, 'storm');
+    s.stormT = (s.stormT || 0) + 1;
+    if (s.stormT < c.every) return [];
+    s.stormT = 0;
+    if (sandLeft(s) >= (c.cap || 12)) return [];
+    const cells = pickSome(s, plainCells(s, (x, y) => s.sand[y][x] === 0), c.n);
+    for (const [x, y] of cells) s.sand[y][x] = 1;
+    return cells;
+  }
+  // Templo desabando: { every, n, cap } a cada N jogadas n joias viram pedra; no máximo cap pedras no tabuleiro
+  function caveinTick(s) {
+    const c = rule(s, 'cavein');
+    s.caveT = (s.caveT || 0) + 1;
+    if (s.caveT < c.every) return [];
+    s.caveT = 0;
+    if (countKind(s, 'rock') >= (c.cap || 10)) return [];
+    const cells = pickSome(s, plainCells(s, () => true), c.n);
+    for (const [x, y] of cells) s.grid[y][x] = { id: s.nextId++, kind: 'rock', hp: 1 };
+    return cells;
+  }
+
   // Musgo Vivo: um musgo encostado numa joia comum engole essa joia (vira musgo também)
   function mossGrow(s) {
     const taken = takenIds(s), opts = [];
@@ -912,7 +1188,7 @@
   }
   function swapIsValid(s, a, b) {
     const pa = s.grid[a[1]][a[0]], pb = s.grid[b[1]][b[0]];
-    if (!swappable(pa) || !swappable(pb)) return false;
+    if (!swappable(pa) || !swappable(pb) || flooded(s, a[1]) || flooded(s, b[1])) return false;
     if (pa.kind === 'gem' && pb.kind === 'gem') {
       if (pa.special === 'idol' || pb.special === 'idol') return true;
       if (pa.special && pb.special) return true;
@@ -989,7 +1265,7 @@
   const api = {
     SCORE, GEM_NAMES, rand, createState, cloneState, findGroups, groupSpecial, applyHits, gravity, gravityStep,
     collectArtifacts, doSwap, swapIsValid, resolve, runAll, allMoves, findMove, shuffle, treasureRush,
-    isWon, goalDone, sandLeft, stars, colorAt, inside, swappable, isExit, bossPos, bossCells, countKind, countCocoons,
+    isWon, goalDone, sandLeft, darkLeft, stars, colorAt, inside, swappable, isExit, bossPos, bossCells, countKind, countCocoons,
   };
   root.LR = api;
   if (typeof module !== 'undefined') module.exports = api;

@@ -85,6 +85,7 @@
   function normalLevel(base) {
     const L = cloneLevel(base);
     L.normal = true;
+    if (L.puzzle) return L; // quebra-cabeça: as jogadas e a meta foram medidas pra esse tabuleiro, não facilita
     L.moves = Math.max(base.moves + 4, Math.ceil(base.moves * 1.25));
     L.weak = false;
     if (L.bossHp) L.bossHp = Math.max(2, Math.ceil(L.bossHp * 0.75));
@@ -312,7 +313,8 @@
     if (!sl) throw new Error('no_plugin');
     if (!socialReady) socialReady = sl.initialize({ google: { webClientId: window.LR_GOOGLE_ID } });
     await socialReady;
-    const res = await sl.login({ provider: 'google', options: { scopes: ['email', 'profile'] } });
+    // sem scopes: o plugin recusa scopes sem mudar a MainActivity ("You CANNOT use scopes...") e o idToken já vem no login básico (30/10)
+    const res = await sl.login({ provider: 'google', options: {} });
     const idToken = res && res.result && res.result.idToken;
     if (!idToken) throw new Error('no_token');
     const r = await cloudCall('/cloud/login', { idToken });
@@ -336,7 +338,7 @@
   function openAccount(after) {
     const done = () => { closeModal(); paintAccount(); if (after) after(); };
     if (cloud) {
-      const card = openModal('<h2 class="metal">' + T('acct.title') + '</h2><div class="orn"><i></i></div>' +
+      const card = openModal('<h2 class="plaque-title">' + T('acct.title') + '</h2><div class="orn"><i></i></div>' +
         '<p class="save-summary">' + T('acct.on', { n: cloud.name || 'Google' }) + '</p>' +
         '<div class="btns"><button class="btn" id="mAcOk" type="button">' + T('resume') + '</button>' +
         '<button class="btn dark small" id="mAcOut" type="button">' + T('acct.logout') + '</button></div>');
@@ -344,9 +346,9 @@
       card.querySelector('#mAcOut').onclick = async () => { Sound.play('click'); await googleLogout(); done(); };
       return;
     }
-    const card = openModal('<h2 class="metal">' + T('acct.title') + '</h2><div class="orn"><i></i></div>' +
+    const card = openModal('<h2 class="plaque-title">' + T('acct.title') + '</h2><div class="orn"><i></i></div>' +
       '<p class="save-summary">' + T('acct.why') + '</p>' +
-      '<div class="btns"><button class="btn stack" id="mAcIn" type="button">' + T('acct.login') + '<span class="sub">' + T('acct.loginSub') + '</span></button>' +
+      '<div class="btns"><button class="btn g-btn" id="mAcIn" type="button">' + G_LOGO + '<span>' + T('acct.login') + '</span></button>' +
       '<button class="btn dark small" id="mAcSkip" type="button">' + T('acct.skip') + '</button></div>' +
       '<p class="info-line" id="mAcMsg" hidden></p>');
     card.querySelector('#mAcSkip').onclick = () => { Sound.play('click'); track('login', { result: 'skip' }); done(); };
@@ -359,15 +361,18 @@
         b.disabled = false;
         const cancelled = /cancel/i.test(String(e && (e.message || e.code)));
         track('login', { result: cancelled ? 'cancel' : 'error' });
-        if (!cancelled) { msg.textContent = T('acct.fail'); msg.hidden = false; }
+        // mostra o código do erro: dá pra diagnosticar pelo print do celular (30/10)
+        msg.textContent = cancelled ? T('acct.cancel') : T('acct.fail') + ' (' + String((e && (e.code || e.message)) || 'erro').slice(0, 80) + ')'; msg.hidden = false;
       }
     };
   }
+  // "G" oficial do Google (cores da marca) nos botões de entrar
+  const G_LOGO = '<svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
   function paintAccount() {
     const b = $('btnAccount');
     if (!b) return;
     b.hidden = !CLOUD_ON;
-    b.textContent = cloud ? T('acct.btnOn') : T('acct.btn');
+    b.innerHTML = cloud ? T('acct.btnOn') : G_LOGO + '<span>' + T('acct.btn') + '</span>';
   }
 
   // ---------- avaliação na Play + "Sua opinião" (30/10) ----------
@@ -429,8 +434,8 @@
     try {
       await ln.cancel({ notifications: [{ id: 101 }, { id: 102 }] });
       const list = [], now = Date.now() + 60e3, full = energyFullAt();
-      if (save.chest.next > now) list.push({ id: 102, title: 'Lost Relics', body: T('note.chest'), schedule: { at: new Date(save.chest.next), allowWhileIdle: true } });
-      if (full > now) list.push({ id: 101, title: 'Lost Relics', body: T('note.energy'), schedule: { at: new Date(full), allowWhileIdle: true } });
+      if (save.chest.next > now) list.push({ id: 102, title: 'Lost Relics', body: T('note.chest'), schedule: { at: new Date(save.chest.next) }, isExactNotification: false });
+      if (full > now) list.push({ id: 101, title: 'Lost Relics', body: T('note.energy'), schedule: { at: new Date(full) }, isExactNotification: false });
       if (list.length) await ln.schedule({ notifications: list });
     } catch (e) {}
   }
@@ -501,18 +506,23 @@
   }
   const cellX = (x) => ox + (x + 0.5) * cs, cellY = (y) => oy + (y + 0.5) * cs;
 
+  let runStats = { items: false, cascade: 0, left: 0 };
   async function startLevel(id, boosts, hard, charged) {
     runCharged = !!charged;
     const hardAllowed = Number.isInteger(id) && !!hard && !!save.stars[id];
-    const Ld = id === 'daily' ? dailyLevel() : id === 'weekly' ? weeklyLevel() : levelMode(id, hardAllowed);
-    if ((Ld.bossKind || Ld.scarab) && !EXTRA.done) await extraReady();
+    const Ld = id === 'daily' ? dailyLevel() : id === 'weekly' ? weeklyLevel() : id === 'run' ? runLevel() : levelMode(id, hardAllowed);
+    if ((Ld.bossKind || Ld.scarab || Ld.portals || Ld.river) && !EXTRA.done) await extraReady();
     level = Ld;
     runStartedAt = Date.now(); runEnded = false; tutorialMove = null;
     weeklyReplay = level.weekly || level.hard ? [] : weeklyReplay;
     state = level.daily ? dailyState(level) : LR.createState(level, level.weekly || level.hard ? level.seed : ((Date.now() & 0x7fffffff) ^ (id * 7919)) >>> 0);
-    if (!level.daily && !level.weekly && !level.hard) { applyBoosts(boosts || {}); applyStreak(); } // modos competitivos são iguais pra todos: sem loja nem trilha
+    runStats = { items: !!(boosts && Object.values(boosts).some(Boolean)), cascade: 0, left: 0 };
+    if (level.run) applyBoosts(boosts || {}); // desafio: só o poder escolhido entre as etapas
+    else if (!level.daily && !level.weekly && !level.hard && !level.puzzle) { applyBoosts(boosts || {}); applyStreak(); applyRelicPower(); } // modos competitivos são iguais pra todos: sem loja nem trilha
     hammerMode = false;
     RUIN_KEYS.forEach(nodeImgObj);
+    if (level.portals) { nodeImgObj('portal0'); nodeImgObj('portal1'); }
+    if (level.river) { nodeImgObj('rioagua'); nodeImgObj('rioseta'); }
     vis = new Map(); dying = []; parts = []; floats = []; glints = []; bossAnims = []; bossFlash = []; serpTrail = []; bombTick = {}; threads = []; barShown = null; barHp = null; barHitT = -9;
     // fase de chefe: já carrega toda a arte dele (vidas, golpe, morte), senão o 1º golpe aparece sem desenho
     if (level.bossKind || level.scarab) { // chefe ou enxame de escaravelhos em fase comum
@@ -699,7 +709,13 @@
 
   async function play(gen) { for (const ev of gen) await handle(ev); }
   function handle(ev) {
-    if (ev.type === 'clear') return onClear(ev);
+    if (ev.type === 'clear') { runStats.cascade = Math.max(runStats.cascade, ev.cascade || 0); return onClear(ev); }
+    if (ev.type === 'gates') return onGates(ev);
+    if (ev.type === 'phase2') return onPhase2();
+    if (ev.type === 'revived') { Sound.play('barrel'); addShake(0.7); showPraise(T('boss.revived'), 'banner'); return wait(0.7); }
+    if (ev.type === 'flood') { Sound.play(ev.drained ? 'sand' : 'click'); buzz(15); return wait(0.25); }
+    if (ev.type === 'spin') { Sound.play('rock'); addShake(0.5); showPraise(T('spin.now'), 'info'); return wait(0.3); }
+    if (ev.type === 'batdark') { Sound.play('create'); bossAnims[ev.idx] = { type: 'fly', t0: now, from: ev.from ? [cellX(ev.from[0]), cellY(ev.from[1])] : null }; return wait(0.4); }
     if (ev.type === 'fall') return onFall(ev);
     if (ev.type === 'collect') return onCollect(ev);
     if (ev.type === 'shuffle') return onShuffle();
@@ -715,6 +731,9 @@
     if (ev.type === 'bossmove') return onBossMove(ev);
     if (ev.type === 'mossgrow') return onMossGrow(ev);
     if (ev.type === 'bombtick') return onBombTick(ev);
+    if (ev.type === 'thiefclimb') return onThiefClimb(ev);
+    if (ev.type === 'storm') return onStorm(ev);
+    if (ev.type === 'cavein') return onCavein(ev);
     return Promise.resolve();
   }
 
@@ -1307,6 +1326,7 @@
           if (m.spawn) vis.set(m.p.id, { x: m.fx, y: m.fy, s: 1, a: 1, sq: 0 });
         }
         e.pts.push([m.tx, m.ty]);
+        if (m.portal) (e.jumps = e.jumps || new Set()).add(e.pts.length - 2); // passagem secreta: some numa ponta e aparece na outra
       }
     });
     const proms = [];
@@ -1316,6 +1336,8 @@
       const n = e.pts.length - 1;
       proms.push(anim(n * CELL + 0.04, (q) => {
         const f = q * n, i = Math.min(n - 1, Math.floor(f)), fr = f - i, A = e.pts[i], B = e.pts[i + 1];
+        if (e.jumps && e.jumps.has(i)) { v.x = fr < 0.5 ? A[0] : B[0]; v.y = fr < 0.5 ? A[1] : B[1]; v.s = Math.abs(1 - 2 * fr); return; }
+        if (e.jumps) v.s = 1;
         v.x = A[0] + (B[0] - A[0]) * fr; v.y = A[1] + (B[1] - A[1]) * fr;
       }, 'fall', e.start * CELL).then(() => { v.sq = 0.17; tween(v, { sq: 0 }, 0.22, 'back'); }));
     }
@@ -1341,6 +1363,41 @@
     if (p) { const v = V(p, x, y); v.s = 0; tween(v, { s: 1 }, 0.35, 'back'); }
     leaves(x, y); Sound.play('vine'); buzz([20]);
     await wait(0.4);
+  }
+  async function onGates(ev) {
+    Sound.play('rock'); buzz([30, 40, 60]); addShake(0.6);
+    ev.cells.forEach(([x, y], k) => later(k * 0.05, () => dust(x, y)));
+    showPraise(T('gate.open'), 'info');
+    await wait(0.45);
+  }
+  async function onPhase2() {
+    Sound.play('barrel'); buzz([60, 40, 60]); addShake(0.9);
+    parts.push({ type: 'flash', life: 0, max: 0.4 });
+    showPraise(T('boss.phase2'), 'banner');
+    await wait(0.9);
+  }
+  // ladrão sobe uma casa; se chegou na fileira de cima, fugiu com a relíquia
+  async function onThiefClimb(ev) {
+    bossAnims[ev.idx] = { type: 'fly', t0: now, from: [cellX(ev.from[0]), cellY(ev.from[1])] };
+    Sound.play('create');
+    await wait(0.4);
+    if (ev.escaped) { Sound.play('barrel'); buzz([80, 40, 120]); addShake(0.9); ring(ev.to[0], ev.to[1], 'rgba(255,40,60,0.95)', 3); await wait(0.6); }
+  }
+  async function onStorm(ev) {
+    Sound.play('sand'); buzz(15); addShake(0.2);
+    ev.cells.forEach(([x, y], k) => later(k * 0.08, () => sandPuff(x, y)));
+    await wait(0.35);
+  }
+  // teto cai: as joias viram pedra com poeira
+  async function onCavein(ev) {
+    Sound.play('rock'); buzz([30, 40, 30]); addShake(0.45);
+    ev.cells.forEach(([x, y], k) => {
+      const p = state.grid[y][x];
+      if (!p) return;
+      const v = V(p, x, y); v.s = 0;
+      later(k * 0.12, () => { tween(v, { s: 1 }, 0.3, 'back'); dust(x, y); });
+    });
+    await wait(0.5);
   }
   // ídolos amaldiçoados contam 1 a menos; se algum zerou, explode e a fase acaba
   async function onBombTick(ev) {
@@ -1425,7 +1482,7 @@
     renderHUD();
     if (state.cursed) { showLose(); return; } // ídolo amaldiçoado zerou
     if (level.weekly && state.moves <= 0) { showWeekly(); return; }
-    if (LR.isWon(state)) { await treasureRush(); showWin(); return; }
+    if (LR.isWon(state)) { runStats.left = state.moves; if (!level.run) await treasureRush(); showWin(); return; } // nos desafios as jogadas que sobram seguem pra próxima etapa
     if (state.moves <= 0) { showLose(); return; }
     busy = false;
   }
@@ -1729,6 +1786,79 @@
     ctx.restore();
   }
 
+  // 02/11: rio (água pintada correndo na fileira, seta de pedra nas pontas) e faixa vermelha da saída do ladrão
+  function drawMechanics(BW) {
+    ctx.save();
+    const water = nodeImgObj('rioagua'), arrow = nodeImgObj('rioseta');
+    for (const r of level.river || []) {
+      const y0 = oy + r.row * cs, ym = y0 + cs / 2;
+      if (water) {
+        ctx.save();
+        ctx.beginPath(); ctx.rect(ox, y0, cs * BW, cs); ctx.clip();
+        const tw = cs * water.naturalWidth / water.naturalHeight, off = ((now * cs * 0.5 * r.dir) % tw + tw) % tw;
+        for (let x = ox - tw + off; x < ox + cs * BW; x += tw) ctx.drawImage(water, x, y0, tw, cs);
+        ctx.restore();
+      }
+      if (arrow) {
+        const aw = cs * 0.52, ah = aw * arrow.naturalHeight / arrow.naturalWidth;
+        for (const edge of [ox - aw * 0.52, ox + cs * BW + aw * 0.52]) {
+          ctx.save(); ctx.translate(edge, ym); ctx.scale(r.dir, 1); ctx.drawImage(arrow, -aw / 2, -ah / 2, aw, ah); ctx.restore();
+        }
+      }
+    }
+    // placas de pressão e trilho da vagoneta ficam no chão
+    (state.plates || []).forEach((q) => {
+      const im = nodeImgObj(q.on ? 'plate1' : 'plate0'), x = ox + q.x * cs, y = oy + q.y * cs;
+      if (im) { ctx.drawImage(im, x, y, cs, cs); return; }
+      ctx.fillStyle = q.on ? 'rgba(70,235,215,0.55)' : 'rgba(255,200,80,0.5)'; ctx.fillRect(x + cs * 0.06, y + cs * 0.06, cs * 0.88, cs * 0.88);
+      ctx.strokeStyle = q.on ? '#7ff5e4' : '#ffd77a'; ctx.lineWidth = Math.max(2, cs * 0.05); ctx.strokeRect(x + cs * 0.06, y + cs * 0.06, cs * 0.88, cs * 0.88);
+    });
+    if (level.cart) {
+      ctx.strokeStyle = 'rgba(200,170,110,0.75)'; ctx.lineWidth = Math.max(3, cs * 0.1); ctx.setLineDash([cs * 0.16, cs * 0.1]);
+      ctx.beginPath(); level.cart.path.forEach(([x, y], i) => { const px = cellX(x), py = oy + (y + 0.5) * cs; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }); ctx.stroke(); ctx.setLineDash([]);
+    }
+    if (level.thief) {
+      ctx.fillStyle = 'rgba(255,40,30,' + (0.34 + 0.14 * Math.sin(now * 4)) + ')';
+      ctx.fillRect(ox, oy, cs * BW, cs);
+    }
+    ctx.restore();
+  }
+  // o que fica por cima das joias: água, escuridão e a vagoneta
+  function drawOverPieces(BW, BH) {
+    if (state.flood > 0) {
+      const y0 = oy + (BH - state.flood) * cs, water = nodeImgObj('rioagua');
+      ctx.save(); ctx.globalAlpha = 0.55;
+      if (water) { const tw = cs * water.naturalWidth / water.naturalHeight, off = (now * cs * 0.25) % tw; for (let r = 0; r < state.flood; r++) for (let x = ox - tw + off; x < ox + cs * BW; x += tw) { ctx.save(); ctx.beginPath(); ctx.rect(ox, y0 + r * cs, cs * BW, cs); ctx.clip(); ctx.drawImage(water, x, y0 + r * cs, tw, cs); ctx.restore(); } }
+      else { ctx.fillStyle = 'rgba(30,140,200,1)'; ctx.fillRect(ox, y0, cs * BW, cs * state.flood); }
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(190,245,255,0.95)'; ctx.lineWidth = Math.max(2, cs * 0.05); ctx.beginPath(); ctx.moveTo(ox, y0); ctx.lineTo(ox + cs * BW, y0); ctx.stroke();
+    }
+    if (state.lit) {
+      ctx.fillStyle = 'rgba(4,3,8,0.93)';
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (state.mask[y][x] && !state.lit[y][x]) ctx.fillRect(ox + x * cs, oy + y * cs, cs + 0.5, cs + 0.5);
+      const torch = nodeImgObj('torch');
+      for (const [x, y] of (level.dark && level.dark.torches) || []) {
+        const cx = cellX(x), cy = oy + (y + 0.5) * cs;
+        if (torch) { const r = cs * 0.2, tx = cx + cs * 0.27, ty = cy - cs * 0.27; ctx.save(); ctx.beginPath(); ctx.arc(tx, ty, r, 0, Math.PI * 2); ctx.clip(); ctx.drawImage(torch, tx - r, ty - r, r * 2, r * 2); ctx.restore(); ctx.strokeStyle = 'rgba(255,190,90,0.9)'; ctx.lineWidth = Math.max(1.5, cs * 0.03); ctx.beginPath(); ctx.arc(tx, ty, r, 0, Math.PI * 2); ctx.stroke(); }
+        else { ctx.fillStyle = 'rgba(255,170,60,' + (0.7 + 0.3 * Math.sin(now * 8 + x)) + ')'; ctx.beginPath(); ctx.arc(cx, cy, cs * 0.14, 0, Math.PI * 2); ctx.fill(); }
+      }
+    }
+    if (level.cart) {
+      const a = level.cart.path[Math.min(state.cartI, level.cart.path.length - 1)], im = nodeImgObj('cart'), cx = cellX(a[0]), cy = oy + (a[1] + 0.5) * cs;
+      if (im) { const k = cs * 0.56, ix = cx + cs * 0.5 - k, iy = cy - cs * 0.5; ctx.save(); ART.roundRect(ctx, ix, iy, k, k, cs * 0.08); ctx.clip(); ctx.drawImage(im, ix, iy, k, k); ctx.restore(); ctx.strokeStyle = '#ffd77a'; ctx.lineWidth = Math.max(1.5, cs * 0.03); ART.roundRect(ctx, ix, iy, k, k, cs * 0.08); ctx.stroke(); }
+      else { const ic = ART.nodeImg('chest'); ctx.fillStyle = 'rgba(120,70,20,0.95)'; ART.roundRect(ctx, cx - cs * 0.34, cy - cs * 0.24, cs * 0.68, cs * 0.48, cs * 0.08); ctx.fill(); ctx.strokeStyle = '#ffd77a'; ctx.lineWidth = Math.max(2, cs * 0.05); ctx.stroke(); }
+    }
+  }
+  // passagens secretas: os anéis ficam na casa vazia do corte, entrada em cima e saída embaixo, com a mesma cor nas duas pontas
+  function drawPortals() {
+    (level.portals || []).forEach((q, i) => {
+      const im = nodeImgObj('portal' + (i % 2));
+      if (!im) return;
+      const w = cs * 0.72, h = w * im.naturalHeight / im.naturalWidth;
+      ctx.drawImage(im, cellX(q[0]) - w / 2, oy + (q[1] + 1) * cs + cs * 0.26 - h / 2, w, h);
+      ctx.drawImage(im, cellX(q[2]) - w / 2, oy + (q[3] - 1) * cs + cs * 0.74 - h / 2, w, h);
+    });
+  }
   function drawBoard() {
     const sh = shake * cs * 0.22;
     const sx = sh ? (Math.random() - 0.5) * sh : 0, sy = sh ? (Math.random() - 0.5) * sh : 0;
@@ -1740,6 +1870,7 @@
     for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
       if (state.mask[y][x] && state.sand[y][x] > 0) { ctx.globalAlpha = ART.board ? 0.82 : 1; ctx.drawImage(ART.sandSprite(state.sand[y][x], S), ox + x * cs, oy + y * cs, cs, cs); ctx.globalAlpha = 1; }
     }
+    drawMechanics(BW, BH);
     // saída dos baús
     if (level.artifacts) {
       ctx.fillStyle = 'rgba(255,214,110,' + (0.55 + 0.35 * Math.sin(now * 4)) + ')';
@@ -1773,6 +1904,8 @@
       drawPiece(p, v, extra, glintMap.get(p.id));
     }
     ctx.restore();
+    drawPortals();
+    drawOverPieces(BW, BH);
     for (const d of dying) {
       if (d.t < 0) { drawPiece(d.p, d.v, 1); continue; }
       const q = Math.min(1, d.t / d.dur);
@@ -1798,6 +1931,18 @@
     // joia que a onça transformou em pedra: pedra pintada com a marca verde da garra
     // joia engolida pela jiboia: bolo de escamas com a joia brilhando dentro
     // Musgo Vivo (16/10): o bloco de musgo pintado das ruínas, com um brilho verde que pulsa (está vivo, cresce)
+    if (p.kind === 'gate' || p.kind === 'keg') {
+      // arte pintada quando chegar; até lá, bloco de pedra com barras (portão) ou barril escuro com brilho (barril)
+      const im = nodeImgObj(p.kind);
+      if (im) ctx.drawImage(im, cx - w * 0.5, cy - h * 0.5, w, h);
+      else {
+        ctx.fillStyle = p.kind === 'gate' ? '#4a4338' : '#6b3f1d'; ART.roundRect(ctx, cx - w * 0.44, cy - h * 0.44, w * 0.88, h * 0.88, cs * 0.1); ctx.fill();
+        ctx.strokeStyle = p.kind === 'gate' ? '#a89878' : '#ffb04a'; ctx.lineWidth = Math.max(2, cs * 0.05); ctx.stroke();
+        if (p.kind === 'gate') for (const dx of [-0.2, 0, 0.2]) { ctx.beginPath(); ctx.moveTo(cx + w * dx, cy - h * 0.4); ctx.lineTo(cx + w * dx, cy + h * 0.4); ctx.stroke(); }
+        else { ctx.beginPath(); ctx.moveTo(cx - w * 0.4, cy); ctx.lineTo(cx + w * 0.4, cy); ctx.stroke(); }
+      }
+      ctx.globalAlpha = 1; return;
+    }
     if (p.kind === 'moss') {
       const im = nodeImgObj('ruin2'), pulse = 0.5 + 0.5 * Math.sin(now * 2.6 + p.id);
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, cs * 0.62 * s);
@@ -1907,6 +2052,14 @@
       ctx.restore();
     } else if (p.vine) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(now * 0.35 + p.id); ctx.globalAlpha = v.a * (0.85 + 0.15 * Math.sin(now * 3 + p.id)); ctx.drawImage(ART.vineSprite(S), -(cs * s) / 2, -(cs * s) / 2, cs * s, cs * s); ctx.restore(); }
     // Joia de Tempo (18/10): ampulheta turquesa no canto; combinar dá +2 movimentos
+    if (p.skull) {
+      const im = nodeImgObj('skull'), r = cs * s * 0.25, bx = cx + cs * s * 0.27, by = cy - cs * s * 0.27;
+      ctx.save(); ctx.globalAlpha = v.a; ctx.fillStyle = 'rgba(40,6,10,0.92)'; ctx.beginPath(); ctx.arc(bx, by, r * 1.2, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,90,80,0.95)'; ctx.lineWidth = Math.max(1.5, cs * 0.03); ctx.stroke();
+      if (im) ctx.drawImage(im, bx - r, by - r, r * 2, r * 2);
+      else { ctx.fillStyle = '#ffd9d0'; ctx.font = '900 ' + Math.round(r * 1.5) + 'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('-1', bx, by); }
+      ctx.restore();
+    }
     if (p.clock) {
       const im = nodeImgObj('ixmoves'), r = cs * s * 0.25, bx = cx + cs * s * 0.27, by = cy - cs * s * 0.27, pulse = 1 + 0.08 * Math.sin(now * 4 + p.id);
       ctx.save(); ctx.globalAlpha = v.a; ctx.fillStyle = 'rgba(8,20,24,0.88)'; ctx.beginPath(); ctx.arc(bx, by, r * 1.25 * pulse, 0, Math.PI * 2); ctx.fill();
@@ -2095,6 +2248,9 @@
     onca: { idle: 'oidle', hit: 'ohit', move: 'oidle', dead: 'ohit', l3: 'jlife3', l1: 'jlife1', size: 1.75 },
     // aranha-tecelã (18/10): casulos com contagem; a mesma pose serve pra tudo, o código mexe as pernas (balanço rápido)
     spider: { idle: 'spidle', hit: 'sphit', move: 'spidle', dead: 'sphit', eat: 'spidle', l3: 'jlife3', l1: 'jlife1', size: 2.2 },
+    // morcego e Rei Múmia (02/11, Gemini, assets/mecanicas/novas)
+    bat: { idle: 'batidle', hit: 'bathit', move: 'batfly', dead: 'batdead', l3: 'blife3', l1: 'blife1', size: 2.2 },
+    mummy: { idle: 'mumidle', hit: 'mumhit', move: 'mummove', dead: 'mumdead', eat: 'mumeat', l3: 'blife3', l1: 'blife1', size: 1.75 },
     monkey: { idle: 'midle', hit: 'mhit', move: 'mflee', dead: 'mflee', eat: 'mswap', l3: 'blife3', l1: 'blife1', size: 1.4 },
     boa: { idle: 'aidle', hit: 'ahit', move: 'aflee', dead: 'aflee', eat: 'aeat', l3: 'blife3', l1: 'blife1', size: 1.35 },
     serpent: { idle: 'kidle', hit: 'khit', move: 'kcoil', dead: 'kdead', l3: 'klife3', l1: 'klife1', size: 2.3,
@@ -2105,11 +2261,12 @@
   const MAKE_ART = { line: 'ixarrow', barrel: 'ixseal', idol: 'ixorb', nova: 'ixorb' };
   const goalIcon = (g, size, L) => (g.type === 'boss' && ART.nodeImg(BOSS_SPR[bossKindOf(L || level)].idle)) ||
     (g.type === 'moss' && ART.nodeImg('ruin2')) || (g.type === 'make' && ART.nodeImg(MAKE_ART[g.special])) || ART.icon(goalIconKey(g), size);
-  const goalIconKey = (g) => (g.type === 'score' ? 'star' : g.type === 'collect' ? 'gem' + g.color : g.type === 'sand' ? 'sand' : g.type === 'rock' ? 'rock' : g.type === 'vine' ? 'vine' : 'chest');
+  const goalIconKey = (g) => (g.type === 'score' ? 'star' : g.type === 'collect' ? 'gem' + g.color : g.type === 'sand' ? 'sand' : g.type === 'rock' ? 'rock' : g.type === 'vine' ? 'vine' : g.type === 'ritual' ? 'gem' + g.order[0] : g.type === 'plate' ? 'sand' : g.type === 'light' ? 'idol' : 'chest');
   function goalLeft(g) {
     if (g.type === 'score') return Math.max(0, g.target - state.score);
     if (g.type === 'sand') return LR.sandLeft(state);
     if (g.type === 'moss') return LR.countKind(state, 'moss'); // o musgo cresce: falta o que tem no tabuleiro
+    if (g.type === 'light') return LR.darkLeft(state);
     return Math.max(0, g.target - g.count);
   }
   let chipEls = [], lastLeft = [];
@@ -2180,6 +2337,7 @@
       if (!el) return;
       const done = LR.goalDone(state, g);
       el.classList.toggle('done', done);
+      if (g.type === 'ritual') { const im = el.querySelector('img'), k = 'gem' + g.order[state.ritualI % g.order.length]; if (im && im.dataset.k !== k) { im.dataset.k = k; im.src = ART.icon(k, 80); } } // a cor pedida agora
       // meta de pontos mostra quanto FALTA (desce a cada jogada), como as outras metas
       el.querySelector('b').textContent = done ? '✓' : left.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
       if (lastLeft[i] != null && left !== lastLeft[i]) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
@@ -2207,8 +2365,8 @@
     const s = T('goal.' + g.type, { n: g.type === 'score' ? g.target.toLocaleString() : g.target });
     return s.replace('baú(s)', g.target === 1 ? 'baú' : 'baús').replace('chest(s)', g.target === 1 ? 'chest' : 'chests');
   };
-  const TUT_ART = { moss: 'ruin2', make: 'ixseal', bomb: 'ixorb', nova: 'ixorb' }; // tutoriais das fases 21+ com arte pintada
-  const TUT_ICON = { swap: 'gem3', collect: 'gem0', line: 'dynamite', sand: 'sand', barrel: 'barrel', artifact: 'chest', idol: 'idol', rock: 'rock', diamond: 'gem5', vine: 'vine' };
+  const TUT_ART = { moss: 'ruin2', make: 'ixseal', bomb: 'ixorb', nova: 'ixorb', portal: 'ixorb', river: 'ixseal', puzzle: 'ixseal', clock: 'ixorb' }; // tutoriais das fases 21+ com arte pintada
+  const TUT_ICON = { swap: 'gem3', collect: 'gem0', line: 'dynamite', sand: 'sand', barrel: 'barrel', artifact: 'chest', idol: 'idol', rock: 'rock', diamond: 'gem5', vine: 'vine', storm: 'sand', cavein: 'rock' };
 
   // explicação da fase em tópicos curtos (texto do i18n separado por |); fase com ponto fraco ganha a linha do selo
   const tutBullets = (key, L) => {
@@ -2218,8 +2376,9 @@
   };
   const goalRowsHTML = (L) => L.goals.map((g) => {
     const gg = Object.assign({}, g);
-    if (g.type === 'sand') { gg.target = L.layout.join('').split('').reduce((n, c) => n + (c === 's' || c === 'w' ? 1 : c === 'S' || c === 'W' ? 2 : 0), 0); }
+    if (g.type === 'sand') { gg.target = L.layout.join('').split('').reduce((n, c) => n + (c === 's' || c === 'w' || c === 'G' ? 1 : c === 'S' || c === 'W' ? 2 : 0), 0); }
     if (g.type === 'moss') gg.target = L.layout.join('').split('m').length - 1;
+    if (g.type === 'plate' || g.type === 'light' || g.type === 'cart') gg.target = LR.createState(L, 1).goals.find((q) => q.type === g.type).target;
     return '<div class="goal-row"><img alt="" src="' + goalIcon(g, 80, L) + '"><span>' + goalText(gg, L) + '</span></div>';
   }).join('');
   const tutKeyOf = (L) => (L.tut ? 'tut.' + L.tut : L.id === 25 ? 'tip.combo' : null);
@@ -2237,6 +2396,7 @@
     const hardOpen = !!save.stars[id], hardMode = !!hard && hardOpen;
     const L = levelMode(id, hardMode);
     const tutKey = tutKeyOf(L);
+    prePuzzle = !!L.puzzle;
     const rows = goalRowsHTML(L);
     // 25/10 (pedido dele: "tudo clean, info só se clicar"): o card mostra só fase, modo, objetivo, movimentos e
     // itens/ranking. Explicação, regras do Difícil e Trilha ficam atrás do botão "i".
@@ -2253,6 +2413,7 @@
       '<button type="button" id="mInfo" class="info-dot" aria-label="' + T('info.btn') + '" aria-expanded="false">i</button></div>' +
       '<div class="pre-body"><div class="pre-main">' +
         (L.boss ? '<div class="boss-tag">' + T('boss') + '</div>' : '') +
+        (!hardMode ? sealLine(L) : '') +
         '<div class="goal-list">' + rows + '</div>' +
         '<div class="pre-moves">' + T('pre.moves', { n: '<b>' + L.moves + '</b>' }) + '</div>' +
         (hardMode ? '<div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' : boostPicker()) +
@@ -2292,6 +2453,7 @@
   }
 
   async function showWin() {
+    if (level.run) return runStageWon();
     if (level.daily) return showDaily();
     Ads.gameplay(false);
     finishRun('win');
@@ -2309,7 +2471,8 @@
       save.wins = (save.wins || 0) + 1;
       save.streak = Math.min(3, (save.streak || 0) + 1);
     }
-    const earned = hardMode ? 0 : coinsOf(state.score) + stars * 10;
+    const sealNew = !hardMode && sealCheck(level);
+    const earned = (hardMode ? 0 : coinsOf(state.score) + stars * 10) + (sealNew ? SEAL_COINS : 0);
     if (!hardMode) save.coins += earned;
     persist();
     if (!hardMode && level.boss) maybeReview();
@@ -2326,6 +2489,7 @@
         : '<div class="final-score"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '">+<span id="mScore">0</span></div>') +
       '<div class="best' + (isNew ? ' new' : '') + '">' + (isNew ? T('win.new') + ' · ' : '') + (hardMode ? T('mode.hard.score', { n: state.score.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') }) : walletHTML()) + '</div>' +
       (hardMode ? '<div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' : '<div class="moves-line streak-up">' + T('streak.up', { n: save.streak }) + '</div>') +
+      (sealNew ? '<div class="seal-line on">' + T('seal.done', { c: SEAL_COINS }) + '</div>' : '') +
       (last ? '<p>' + T('map.soon') + '</p>' : '') +
       '<div class="btns">' + (last || hardMode ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
       (hardMode ? '<button class="btn" id="mShare" type="button">' + T('records.share') + '</button>' : '') +
@@ -2390,6 +2554,7 @@
   }
 
   function showLose() {
+    if (level.run) return runLost();
     Ads.gameplay(false);
     if (level.hard || state.cursed || usedExtra) finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' });
     Sound.play('lose');
@@ -2399,7 +2564,7 @@
     const card = openModal(
       '<div class="eyebrow">' + T('level') + ' ' + id + '</div>' +
       '<h2 class="metal">' + T('lose.title') + '</h2><div class="orn"><i></i></div>' +
-      (state.cursed ? '<p>' + T('lose.cursed') + '</p>' : '') +
+      (state.cursed ? '<p>' + T(state.escaped ? 'lose.escaped' : 'lose.cursed') + '</p>' : '') +
       '<div class="moves-line">' + T('lose.left') + '</div>' +
       '<div class="goal-list">' + rows + '</div>' +
       (!level.hard && save.streak ? '<div class="moves-line streak-lost">' + T('streak.lost') + '</div>' : '') +
@@ -2447,6 +2612,7 @@
     paint(); paintGfx();
     card.querySelector('#mGfx').onclick = () => { Sound.play('click'); gfxPref = { auto: 'full', full: 'lite', lite: 'auto' }[gfxPref] || 'auto'; lsSet(GFX_KEY, gfxPref); applyGfx(); paintGfx(); };
     card.querySelector('#mResume').onclick = () => { Sound.play('click'); closeModal(); };
+    card.querySelector('#mRestart').hidden = !!level.run; // desafio não recomeça a etapa
     card.querySelector('#mRestart').onclick = () => { Sound.play('click'); abandonRun('restart'); breakStreak(); const lid = level.id, hd = !!level.hard; payEnergy(lid, hd, (c) => { closeModal(); wipe(() => startLevel(lid, {}, hd, c)); }, () => wipe(openMap)); };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); abandonRun('map'); breakStreak(); closeModal(); wipe(openMap); };
     card.querySelector('#mSfx').onclick = () => { Sound.setSfx(!Sound.sfx); paint(); };
@@ -2456,7 +2622,9 @@
   $('modal').addEventListener('pointerdown', (e) => { e.stopPropagation(); });
 
   // ---------- loja do templo e vantagens ----------
+  let prePuzzle = false; // quebra-cabeça é igual pra todos: sem itens na largada
   function boostPicker() {
+    if (prePuzzle) return '';
     const owned = SHOP.filter((it) => it.id !== 'hammer' && save.items[it.id] > 0);
     // 25/10: só os ícones dos itens que ele tem (nome no aria-label); sem item, nada (a loja fica no menu)
     if (!owned.length) return '';
@@ -2593,7 +2761,7 @@
   }
   function updateHammerBtn() {
     const b = $('btnHammer'); if (!b) return;
-    b.hidden = scene !== 'play' || (level && (level.daily || level.weekly || level.hard)) || !(save.items.hammer > 0);
+    b.hidden = scene !== 'play' || (level && (level.daily || level.weekly || level.hard || level.run)) || !(save.items.hammer > 0);
     b.classList.toggle('on', hammerMode);
     const n = save.items.hammer || 0, hc = $('hammerCount');
     if (b.classList.contains('painted')) {
@@ -2603,7 +2771,7 @@
   }
   $('btnHammer').onclick = () => { if (busy || scene !== 'play' || (level && level.hard) || !(save.items.hammer > 0)) return; hammerMode = !hammerMode; Sound.play('click'); updateHammerBtn(); };
   async function useHammer(c) {
-    hammerMode = false; save.items.hammer--; persist(); updateHammerBtn();
+    hammerMode = false; save.items.hammer--; runStats.items = true; persist(); updateHammerBtn();
     busy = true; praiseLevel = 0;
     // marretada: o martelo aceso ergue, desce na joia e racha (o golpe acontece no impacto)
     hammerFx = { x: c[0], y: c[1], t0: now };
@@ -2888,48 +3056,220 @@
     $('btnPlay').textContent = save.unlocked > 1 ? T('menu.continue') : T('menu.play');
     $('btnWeekly').textContent = T('weekly.btn');
     $('btnDaily').textContent = (save.daily && save.daily.date === todayKey() ? '✓ ' : '') + T('daily.btn');
-    $('btnProgress').textContent = T('save.btn');
     for (const [id, on, key] of [['btnSfx', Sound.sfx, 'menu.sound'], ['btnMusic', Sound.music, 'menu.music']]) {
       const b = $(id); b.classList.toggle('off', !on); b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', T(key) + ': ' + T(on ? 'on' : 'off')); b.title = T(key);
     }
     $('btnLang').textContent = T('lang');
     $('btnPause').setAttribute('aria-label', T('pause'));
     paintAccount();
+    $('btnChallenges').textContent = T('chal.btn') + (relicPending().coins ? ' !' : '');
     $('btnFeedback').textContent = T('fb.btn') + (save.feedbackRewarded ? '' : ' +' + FEEDBACK_COINS);
+  }
+  // ---------- coleção de relíquias + altar de estrelas (02/11) ----------
+  // Motivo pra seguir fora das fases: cada chefe vencido no Normal guarda uma relíquia; juntar estrelas enche o altar.
+  // Quem já venceu antes entra na coleção na hora (vem das estrelas salvas), e resgata as moedas de uma vez.
+  const RELIC_COINS = 50, ALTAR_STARS = 30, ALTAR_COINS = 100;
+  // fase do chefe -> relíquia da folha (assets/mecanicas/reliquias, peca12 = vaso canopo, da múmia; rl16 = amuleto do morcego)
+  const RELIC_ART = { 21: 1, 26: 2, 32: 3, 37: 4, 38: 5, 42: 6, 47: 7, 52: 8, 57: 9, 61: 10, 54: 16, 71: 11, 77: 12, 80: 15, 84: 13, 86: 14 };
+  const relicLevels = () => LEVELS.filter((L) => L.boss);
+  const totalStars = () => Object.values(save.stars || {}).reduce((a, b) => a + (+b || 0), 0);
+  function relicPending() {
+    const paid = save.relicsPaid || {}, relics = relicLevels().filter((L) => save.stars[L.id] && !paid[L.id]);
+    const altars = Math.max(0, Math.floor(totalStars() / ALTAR_STARS) - (save.altarPaid || 0));
+    return { relics, altars, coins: relics.length * RELIC_COINS + altars * ALTAR_COINS };
+  }
+  async function openRelics() {
+    if (!EXTRA.done) await extraReady();
+    const list = relicLevels(), got = list.filter((L) => save.stars[L.id]).length;
+    const stars = totalStars(), fill = stars % ALTAR_STARS, pend = relicPending();
+    const card = openModal('<h2 class="plaque-title">' + T('relic.title') + '</h2><div class="orn"><i></i></div>' +
+      '<p class="relic-line">' + T('relic.count', { n: got, m: list.length }) + '</p>' +
+      '<div class="relic-grid">' + list.map((L) => '<div class="relic' + (save.stars[L.id] ? ' on' : '') + (save.relicOn === L.id ? ' worn' : '') + '" data-id="' + L.id + '"><img alt="" src="' + (ART.nodeImg('rl' + RELIC_ART[L.id]) || ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) + '"><span>' + L.id + '</span></div>').join('') + '</div>' +
+      '<p class="relic-line small">' + (save.relicOn && save.stars[save.relicOn] ? T('relic.worn', { p: T('relic.power.' + RELIC_POWER[save.relicOn]) }) : T('relic.pick')) + '</p>' +
+      '<p class="relic-line">' + T('relic.altar', { n: fill, m: ALTAR_STARS, c: ALTAR_COINS }) + '</p>' +
+      '<div class="relic-bar"><i style="width:' + Math.round(100 * fill / ALTAR_STARS) + '%"></i></div>' +
+      '<div class="btns">' + (pend.coins ? '<button class="btn" id="mRelClaim" type="button">' + T('relic.claim', { c: pend.coins }) + '</button>' : '') +
+      '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
+    card.querySelectorAll('.relic.on').forEach((el) => { el.onclick = () => { const id = +el.dataset.id; save.relicOn = save.relicOn === id ? 0 : id; persist(); Sound.play('click'); openRelics(); }; });
+    const claim = card.querySelector('#mRelClaim');
+    if (claim) claim.onclick = () => {
+      const p = relicPending();
+      save.relicsPaid = save.relicsPaid || {};
+      p.relics.forEach((L) => { save.relicsPaid[L.id] = 1; });
+      save.altarPaid = (save.altarPaid || 0) + p.altars;
+      save.coins += p.coins; persist();
+      Sound.play('create'); showPraise('+' + p.coins, 'info'); paintMenu(); openRelics();
+    };
+    card.querySelector('#mBack').onclick = () => { Sound.play('click'); openChallenges(); };
+  }
+  // 1 relíquia em uso dá uma vantagem nas fases normais; não vale nos desafios nem no Difícil
+  const RELIC_POWER = { 21: 'moves', 26: 'dyn', 32: 'seal', 37: 'moves', 38: 'dyn', 42: 'seal', 47: 'moves', 52: 'dyn', 54: 'moves', 57: 'seal', 61: 'moves', 71: 'dyn', 77: 'dyn', 80: 'seal', 84: 'moves', 86: 'orb' };
+  function applyRelicPower() {
+    const id = save.relicOn;
+    if (id && save.stars[id] && RELIC_POWER[id]) applyBoosts({ [RELIC_POWER[id]]: 1 });
+  }
+
+  // ---------- selos de desafio (02/11): 1 objetivo extra por fase normal, paga uma vez ----------
+  const SEAL_COINS = 30;
+  const sealKind = (id) => ['noitem', 'combo', 'left'][id % 3];
+  function sealLine(L) {
+    if (L.puzzle || !Number.isInteger(L.id)) return '';
+    const done = !!(save.seals || {})[L.id];
+    return '<div class="seal-line' + (done ? ' on' : '') + '">' + (done ? '✓ ' : '') + T('seal.' + sealKind(L.id), { c: SEAL_COINS }) + '</div>';
+  }
+  function sealCheck(L) {
+    if (L.puzzle || !L.normal || !Number.isInteger(L.id)) return false;
+    save.seals = save.seals || {};
+    if (save.seals[L.id]) return false;
+    const k = sealKind(L.id);
+    const ok = k === 'noitem' ? !runStats.items && !usedExtra : k === 'combo' ? runStats.cascade >= 3 : runStats.left >= 3;
+    if (ok) save.seals[L.id] = 1;
+    return ok;
+  }
+
+  // ---------- aba Desafios (02/11): libera ao chegar na fase ou comprando com moedas ----------
+  const CHAL = { curse: { fase: 15, cost: 600 }, exp: { fase: 22, cost: 1500 }, rush: { fase: 27, cost: 1000 } };
+  const chalOpen = (k) => save.unlocked >= CHAL[k].fase || !!(save.chalBought || {})[k];
+  const chalRecord = (k) => (k === 'exp' ? T('chal.best.exp', { n: save.expBest || 0 }) : k === 'rush' ? T('chal.best.rush', { n: save.rushBest || 0, m: relicLevels().length }) : T(curseDoneThisWeek() ? 'chal.best.curseDone' : 'chal.best.curse', { c: CURSE_COINS }));
+  function openChallenges() {
+    const pend = relicPending();
+    const rows = Object.keys(CHAL).map((k) => {
+      const c = CHAL[k], open = chalOpen(k), icon = ART.nodeImg('chal_' + k);
+      const desc = k === 'curse' ? T('chal.curse.now', { c: T('curse.' + weekCurse().k) }) : T('chal.' + k + '.desc');
+      return '<div class="chal' + (open ? '' : ' locked') + '">' + (icon ? '<img alt="" src="' + icon + '">' : '') +
+        '<div class="chal-txt"><b>' + T('chal.' + k) + '</b><span>' + desc + '</span><small>' + (open ? chalRecord(k) : T('chal.unlock', { n: c.fase })) + '</small></div>' +
+        (open ? '<button class="btn dark small" type="button" data-play="' + k + '">' + T('play') + '</button>'
+          : '<button class="btn dark small" type="button" data-buy="' + k + '"' + (save.coins < c.cost ? ' disabled' : '') + '><img class="coin" alt="" src="' + ART.icon('coin', 48) + '">' + c.cost + '</button>') + '</div>';
+    }).join('');
+    const card = openModal('<h2 class="plaque-title">' + T('chal.title') + '</h2><div class="orn"><i></i></div>' + '<div class="wallet chal-wallet"><img class="coin" alt="" src="' + ART.icon('coin', 48) + '"><b>' + save.coins.toLocaleString() + '</b></div>' +
+      '<div class="chal-list">' + rows + '</div>' +
+      '<div class="btns"><button class="btn dark small" id="mRelics" type="button">' + T('relic.btn') + (pend.coins ? ' !' : '') + '</button>' +
+      '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
+    card.querySelectorAll('[data-play]').forEach((b) => { b.onclick = () => { Sound.play('click'); closeModal(); startRun(b.dataset.play); }; });
+    card.querySelectorAll('[data-buy]').forEach((b) => { b.onclick = () => {
+      const k = b.dataset.buy, cost = CHAL[k].cost;
+      if (save.coins < cost) return;
+      save.coins -= cost; save.chalBought = save.chalBought || {}; save.chalBought[k] = 1; persist();
+      Sound.play('create'); paintMenu(); openChallenges();
+    }; });
+    card.querySelector('#mRelics').onclick = () => { Sound.play('click'); openRelics(); };
+    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); };
+  }
+
+  // Maldição da Semana: uma fase e uma regra extra sorteadas pela semana, iguais pra todos
+  const CURSE_COINS = 150;
+  const CURSES = [
+    { k: 'noline', on: (L) => { L.noLine = true; } },
+    { k: 'color', on: (L) => { L.colors = 6; } },
+    { k: 'short', on: (L) => { L.moves = Math.max(8, Math.ceil(L.moves * 0.8)); } },
+    { k: 'storm', on: (L) => { L.storm = { every: 4, n: 2, cap: 14 }; } },
+    { k: 'cavein', on: (L) => { L.cavein = { every: 4, n: 2, cap: 10 }; } },
+    { k: 'river', on: (L) => { L.river = [{ row: 3, dir: 1 }, { row: 5, dir: -1 }]; } },
+    { k: 'spin', on: (L) => { L.spin = { every: 5 }; } },
+  ];
+  function weekCurse() {
+    const h = hardSeed(Records.week(), 0), pool = LEVELS.filter((L) => L.id >= 22 && L.id <= 60 && !L.puzzle);
+    return Object.assign({ level: pool[(h >>> 8) % pool.length].id }, CURSES[h % CURSES.length]);
+  }
+  const curseDoneThisWeek = () => save.curseWeek === Records.week();
+
+  // Expedição Sem Fim e Corrida de Chefes: etapas em sequência, as jogadas que sobram seguem adiante
+  let run = null;
+  const POWERS = ['moves', 'dyn', 'seal', 'orb', 'coins'];
+  function startRun(type) {
+    run = { type, stage: 0, carry: 0, coins: 0, boost: {}, used: [], extra: false, moves: 42, list: relicLevels().map((L) => L.id) };
+    nextRunStage();
+  }
+  function nextRunStage() {
+    run.stage++;
+    const boost = run.boost; run.boost = {};
+    closeModal();
+    wipe(() => startLevel('run', boost));
+  }
+  function runLevel() {
+    let L;
+    if (run.type === 'rush') {
+      L = normalLevel(LEVELS[run.list[run.stage - 1] - 1]);
+      L.goals = L.goals.filter((g) => g.type === 'boss');
+      L.moves = run.moves;
+    } else if (run.type === 'curse') {
+      const c = weekCurse();
+      L = normalLevel(LEVELS[c.level - 1]);
+      c.on(L);
+    } else {
+      // Expedição: a fase sorteada fica mais difícil conforme avança, sem repetir na mesma corrida
+      const top = Math.min(LEVELS.length, 14 + run.stage * 6), low = Math.max(4, run.stage * 3);
+      let pool = LEVELS.filter((q) => q.id >= low && q.id <= top && !q.puzzle && !run.used.includes(q.id));
+      if (!pool.length) { run.used = []; pool = LEVELS.filter((q) => q.id >= 4 && !q.puzzle); }
+      const base = pool[Math.floor(Math.random() * pool.length)];
+      run.used.push(base.id);
+      L = normalLevel(base);
+      L.moves = Math.max(8, Math.ceil(L.moves * Math.max(0.72, 1 - run.stage * 0.025))) + run.carry;
+      run.carry = 0;
+    }
+    L.run = run.type; L.id = run.stage; delete L.tut;
+    return L;
+  }
+  function runStageWon() {
+    Ads.gameplay(false); finishRun('win'); Sound.play('win'); buzz([30, 60, 30]);
+    if (run.type === 'curse') {
+      if (!curseDoneThisWeek()) { save.curseWeek = Records.week(); run.coins += CURSE_COINS; }
+      return runFinish(true);
+    }
+    if (run.type === 'rush') {
+      save.rushBest = Math.max(save.rushBest || 0, run.stage); run.coins += 40; persist();
+      if (run.stage >= run.list.length) return runFinish(true);
+      run.moves = state.moves + 6;
+      const card = openModal('<h2 class="plaque-title">' + T('chal.short.rush') + '</h2><div class="orn"><i></i></div>' +
+        '<p class="save-summary">' + T('run.rush.next', { n: run.stage, m: run.list.length, v: run.moves }) + '</p>' +
+        '<div class="btns"><button class="btn" id="mNext" type="button">' + T('next') + '</button><button class="btn dark small" id="mEnd" type="button">' + T('run.stop') + '</button></div>');
+      const go = () => nextRunStage();
+      card.querySelector('#mNext').onclick = () => { Sound.play('click'); if (run.stage % 3 === 0) Ads.interstitial(go, { level: 0 }); else go(); };
+      card.querySelector('#mEnd').onclick = () => { Sound.play('click'); runFinish(true); };
+      return;
+    }
+    save.expBest = Math.max(save.expBest || 0, run.stage); run.coins += 20; run.carry = Math.min(12, state.moves); persist();
+    const pick = POWERS.slice().sort(() => Math.random() - 0.5).slice(0, 3);
+    const card = openModal('<h2 class="plaque-title">' + T('chal.short.exp') + '</h2><div class="orn"><i></i></div>' +
+      '<p class="save-summary">' + T('run.exp.next', { n: run.stage, v: run.carry }) + '</p>' +
+      '<div class="btns power-list">' + pick.map((p) => '<button class="btn" type="button" data-p="' + p + '">' + T('power.' + p) + '</button>').join('') +
+      '<button class="btn dark small" id="mEnd" type="button">' + T('run.stop') + '</button></div>');
+    card.querySelectorAll('[data-p]').forEach((b) => { b.onclick = () => {
+      Sound.play('create');
+      const p = b.dataset.p;
+      if (p === 'moves') run.carry += 5; else if (p === 'coins') run.coins += 60; else run.boost = { [p]: 1 };
+      const go = () => nextRunStage();
+      if (run.stage % 3 === 0) Ads.interstitial(go, { level: 0 }); else go();
+    }; });
+    card.querySelector('#mEnd').onclick = () => { Sound.play('click'); runFinish(true); };
+  }
+  function runLost() {
+    Ads.gameplay(false); Sound.play('lose');
+    const card = openModal('<h2 class="plaque-title">' + T('chal.short.' + run.type) + '</h2><div class="orn"><i></i></div>' +
+      (state.cursed ? '<p>' + T(state.escaped ? 'lose.escaped' : 'lose.cursed') + '</p>' : '') +
+      '<p class="save-summary">' + T('run.lost', { n: run.stage }) + '</p>' +
+      '<div class="btns"><button class="btn stack" id="mExtra" type="button" hidden>' + T('lose.extra') + '<span class="sub">' + T('lose.extraAd') + '</span></button>' +
+      '<button class="btn" id="mEnd" type="button">' + T('run.finish') + '</button></div>');
+    card.querySelector('#mEnd').onclick = () => { Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); runFinish(false); };
+    if (!run.extra && !state.cursed) Ads.offerReward({ // 1 vez por corrida
+      level: 0,
+      onAvailable(show) { const b = card.querySelector('#mExtra'); if (!b) return; b.hidden = false; b.onclick = () => { Sound.play('click'); show(); }; },
+      onReward() { run.extra = true; state.moves += 5; closeModal(); renderHUD(); Ads.gameplay(true); busy = false; },
+    });
+  }
+  function runFinish(won) {
+    save.coins += run.coins; persist();
+    const type = run.type, stage = won ? run.stage : run.stage - 1, coins = run.coins;
+    const card = openModal('<h2 class="plaque-title">' + T('chal.short.' + type) + '</h2><div class="orn"><i></i></div>' +
+      '<p class="save-summary">' + (type === 'curse' ? T(won ? 'run.curse.won' : 'run.curse.lost') : T('run.result', { n: Math.max(0, stage) })) + (coins ? ' ' + T('run.coins', { c: coins }) : '') + '</p>' +
+      '<div class="btns"><button class="btn" id="mAgain" type="button">' + T('retry') + '</button><button class="btn dark small" id="mBack" type="button">' + T('chal.btn') + '</button></div>');
+    card.querySelector('#mAgain').onclick = () => { Sound.play('click'); closeModal(); startRun(type); };
+    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); run = null; wipe(() => { openMenu(); openChallenges(); }); };
   }
   function openMenu() {
     scene = 'menu'; state = null; updateHammerBtn();
     $('hud').hidden = true; $('screen-map').hidden = true; $('screen-menu').hidden = false;
     paintMenu();
-  }
-  async function openProgress() {
-    let code = '';
-    try { code = await PortableSave.exportCode(); } catch (e) { showPraise(T('save.invalid'), 'info'); return; }
-    const card = openModal(
-      '<h2 class="metal">' + T('save.title') + '</h2><div class="orn"><i></i></div>' +
-      '<p class="save-summary">' + T('save.info') + '</p>' +
-      '<textarea id="saveCode" class="save-code" spellcheck="false" autocomplete="off" aria-label="' + T('save.title') + '"></textarea>' +
-      '<div class="btns"><button class="btn" id="mCopySave" type="button">' + T('save.copy') + '</button>' +
-      '<button class="btn dark" id="mImportSave" type="button">' + T('save.import') + '</button>' +
-      '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
-    const box = card.querySelector('#saveCode'); box.value = code;
-    card.querySelector('#mCopySave').onclick = async () => {
-      Sound.play('click');
-      try { await navigator.clipboard.writeText(box.value); }
-      catch (e) { box.select(); document.execCommand('copy'); }
-      showPraise(T('daily.copied'), 'info'); track('save_export', { result: 'copied' });
-    };
-    card.querySelector('#mImportSave').onclick = async () => {
-      Sound.play('click');
-      try {
-        const checked = await PortableSave.inspect(box.value), s = checked.summary;
-        if (!window.confirm(T('save.confirm', { n: s.unlocked, s: s.stars, c: s.coins }))) return;
-        await PortableSave.importCode(box.value);
-        track('save_import', { result: 'ok', level: s.unlocked, value: s.stars });
-        window.alert(T('save.ok')); location.reload();
-      } catch (e) { showPraise(T('save.invalid'), 'info'); track('save_import', { result: 'invalid' }); }
-    };
-    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); };
   }
   $('btnPlay').onclick = () => {
     Sound.init(); Sound.play('click');
@@ -2937,8 +3277,8 @@
   };
   $('btnDaily').onclick = () => { Sound.init(); Sound.play('click'); wipe(() => startLevel('daily')); };
   $('btnWeekly').onclick = () => { Sound.init(); Sound.play('click'); openRecordsHub(); };
-  $('btnProgress').onclick = () => { Sound.init(); Sound.play('click'); openProgress(); };
   $('btnAccount').onclick = () => { Sound.init(); Sound.play('click'); openAccount(); };
+  $('btnChallenges').onclick = () => { Sound.init(); Sound.play('click'); openChallenges(); };
   $('btnFeedback').onclick = () => { Sound.init(); Sound.play('click'); openFeedback(); };
   $('btnSfx').onclick = () => { Sound.init(); Sound.setSfx(!Sound.sfx); paintMenu(); Sound.play('click'); };
   $('btnMusic').onclick = () => { Sound.init(); Sound.setMusic(!Sound.music); paintMenu(); };
@@ -3337,7 +3677,7 @@
     },
     swap(a, b) { if (!busy) trySwap(a, b); },
     get state() { return state; }, get busy() { return busy; }, get scene() { return scene; },
-    get save() { return save; }, get tutorialMove() { return tutorialMove; }, openPre, startLevel, openProgress, openRecordsHub, openShop,
+    get save() { return save; }, get tutorialMove() { return tutorialMove; }, openPre, startLevel, openRelics, openChallenges, startRun, openRecordsHub, openShop,
     findMove() { return state && LR.findMove(state); },
   };
 
@@ -3371,12 +3711,16 @@
     else if (location.hash === '#fxdemo') { startLevel(5); setTimeout(() => { state.grid[3][2].special = 'lineH'; state.grid[5][5].special = 'barrel'; state.grid[6][1] = { id: 9997, kind: 'gem', color: null, special: 'idol', armed: false, vine: false }; setInterval(() => { if (Math.random() < 0.34) blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); else if (Math.random() < 0.5) blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); else blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 1400); if (0) setInterval(() => { blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 900); }, 1500); }
     else if (/^#evento-/.test(location.hash)) { if (location.hash === '#evento-anton') document.documentElement.classList.add('ev-anton'); startLevel(3); setTimeout(() => { const p3 = I18N.lang === 'pt' && ART.nodeImg('p3'); showPraise(T('praise.3'), p3 ? 'art p3' : '', p3); const b = document.createElement('div'); const ra = I18N.lang === 'pt' && ART.nodeImg('rush'); b.className = 'praise ' + (ra ? 'art rush' : 'banner'); if (ra) b.innerHTML = '<img alt="" src="' + ra + '">'; else b.textContent = T('rush'); b.style.top = '62%'; b.style.animation = 'none'; b.style.transform = 'translate(-50%,-50%)'; document.body.appendChild(b); const a = document.querySelector('.praise:not(.banner)'); if (a) { a.style.animation = 'none'; a.style.transform = 'translate(-50%,-50%)'; a.style.opacity = '1'; a.style.top = '40%'; setTimeout(() => document.body.appendChild(a), 1); } }, 2600); }
     else if (location.hash === '#mapa') openMap();
+    // #conta / #progresso: janelas de login e do código de progresso (print da moldura, 30/10)
+    else if (location.hash === '#conta') openAccount();
     // #maparolaN: mapa com a fase N aberta, rolado meia tela pra baixo (confere a rolagem nativa e o botão de voltar)
     // #mapavoltaN: abre o mapa na fase N e toca de verdade (elementFromPoint) na seta de mundo; anota o título em body[data-teste]
     else if (/^#mapavolta\d+$/.test(location.hash)) { const u = +location.hash.slice(10); save.unlocked = u; save.fogShown = u - 1; for (let i = 1; i < u; i++) save.stars[i] = 1; openMap();
       setTimeout(() => { const r = document.querySelector('#mapWorlds .wprev').getBoundingClientRect(); const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); document.body.dataset.teste = 'toque em: ' + (el && (el.className || el.id || el.tagName)); el && el.click(); setTimeout(() => { document.body.dataset.teste += ' | titulo: ' + document.querySelector('.map-title strong').textContent; if (/Cenote/.test(document.querySelector('.map-title strong').textContent)) { mapWorld = 0; buildMap(); document.body.dataset.teste += ' | sem cortina: ' + document.querySelector('.map-title strong').textContent + ', fases na tela: ' + document.querySelectorAll('#mapInner .node').length; mapWorld = 1; buildMap(); document.body.dataset.teste += ' | volta ao 2: ' + document.querySelector('.map-title strong').textContent; } }, 2500); }, 4000); }
     else if (/^#maparola\d*$/.test(location.hash)) { const u = +location.hash.slice(9) || 20; save.unlocked = u; save.fogShown = u - 1; for (let i = 1; i < u; i++) save.stars[i] = (i % 3) + 1; openMap(); setTimeout(() => { $('mapScroll').scrollTop += 700; }, 5000); }
     else if (/^#mapademo\d*$/.test(location.hash)) { const u = +location.hash.slice(9) || 7; save.unlocked = u; save.fogShown = u - 2; for (let i = 1; i < u; i++) save.stars[i] = (i % 3) + 1; openMap(); }
+    else if (location.hash === '#reliquias') openRelics();
+    else if (location.hash === '#desafios') openChallenges();
     else if (/^#loja/.test(location.hash)) { const m2 = /^#loja-(\w+)(?:-(\w+))?/.exec(location.hash); if (m2 && m2[2]) { save.skins[{ gems: 'gem', words: 'word', trail: 'trail' }[m2[1]]] = m2[2]; applySkins(); } openMap(); openShop(null, m2 ? m2[1] : null); }
     // #pelesN: fase N com a skin de joia/rastro dada (#peles3-gold-fire), pra print
     else if (/^#peles\d+/.test(location.hash)) { const m2 = /^#peles(\d+)-(\w+)-(\w+)/.exec(location.hash); save.skins.gem = m2[2]; save.skins.trail = m2[3]; applySkins(); startLevel(+m2[1]); let n = 0; const iv = setInterval(() => { if (n === 70) blastFx({ special: 'lineH', x: 3, y: 4, area: [] }); stepTime(0.05); update(0.05); draw(); if (++n > 74) clearInterval(iv); }, 50); }

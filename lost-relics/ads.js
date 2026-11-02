@@ -176,8 +176,9 @@
       const C = root.Capacitor;
       am = C && ((C.Plugins && C.Plugins.AdMob) || (C.registerPlugin && C.registerPlugin('AdMob')));
       if (!am) return;
-      am.addListener('onInterstitialAdDismissed', () => amEnd('inter'));
-      am.addListener('onInterstitialAdFailedToShow', () => amEnd('inter'));
+      // nomes do plugin atual, sem "on" na frente; com o nome antigo o aviso nunca chegava e o jogo travava depois de fechar o anúncio (30/10)
+      am.addListener('interstitialAdDismissed', () => amEnd('inter'));
+      am.addListener('interstitialAdFailedToShow', () => amEnd('inter'));
       am.addListener('onRewardedVideoAdReward', () => { amGranted = true; });
       am.addListener('onRewardedVideoAdDismissed', () => amEnd('reward'));
       am.addListener('onRewardedVideoAdFailedToShow', () => amEnd('reward'));
