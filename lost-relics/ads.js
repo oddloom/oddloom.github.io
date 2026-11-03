@@ -228,7 +228,7 @@
     interstitial(cb, meta) {
       const level = Math.floor(+((meta && meta.level) || 0)), now = Date.now();
       // Protege a primeira sessão e evita anúncios repetidos em sequência.
-      if (provider === 'none' || (level && level <= 3) || now - adState.lastInterstitialAt < 4 * 60 * 1000) { cb(); return; }
+      if (provider === 'none' || (level && level <= 15) || now - adState.lastInterstitialAt < 4 * 60 * 1000) { cb(); return; }
       track('ad_offer', { mode: 'interstitial', level });
       impl.interstitial(() => {
         adState.lastInterstitialAt = Date.now(); saveAdState();

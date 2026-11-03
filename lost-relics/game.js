@@ -180,7 +180,7 @@
   // (pode passar de 5). Notificações locais avisam baú pronto e energia cheia (plugin LocalNotifications, se existir).
   // No site fica desligado; pra testar no navegador: ?energia=1
   const ENERGY_ON = APP || /[?&]energia=1\b/.test(location.search);
-  const E_MAX = 5, E_REGEN = 30 * 60e3, E_FREE_UNTIL = 10, E_COINS = 60, CHEST_EVERY = 12 * 3600e3;
+  const E_MAX = 5, E_REGEN = 30 * 60e3, E_FREE_UNTIL = 10, E_COINS = 60, E_COINS_DAY = 5, CHEST_EVERY = 12 * 3600e3;
   save.energy = save.energy || { n: E_MAX, t: Date.now() };
   save.chest = save.chest || { next: 0, streak: 0, day: '' };
   let runCharged = false, runChargedFrom = E_MAX;
@@ -210,14 +210,16 @@
     if (save.energy.n < Math.max(E_MAX, runChargedFrom)) save.energy.n++;
     persist(); scheduleNotes();
   }
+  const energyBoughtToday = () => { const d = new Date().toDateString(), b = save.energyBuy; return b && b.day === d ? b.n : 0; };
   function openEnergy(onReady, back) {
+    const buysLeft = () => Math.max(0, E_COINS_DAY - energyBoughtToday());
     const card = openModal(
       '<h2 class="metal">' + T('energy.title') + '</h2><div class="orn"><i></i></div>' +
       '<div class="en-big"><img alt="" src="' + ART.icon('sun', 160) + '"><b id="enCount"></b></div>' +
       '<div class="moves-line" id="enNext"></div>' +
       '<div class="btns">' +
       '<button class="btn stack" id="mEnAd" type="button" hidden>' + T('energy.ad') + '<span class="sub">' + T('energy.adSub') + '</span></button>' +
-      '<button class="btn stone stack" id="mEnCoins" type="button"' + (save.coins < E_COINS ? ' disabled' : '') + '>' + T('energy.coins') + '<span class="sub">' + T('energy.coinsSub', { n: E_COINS }) + '</span></button>' +
+      '<button class="btn stone stack" id="mEnCoins" type="button"' + (save.coins < E_COINS || !buysLeft() ? ' disabled' : '') + '>' + T('energy.coins') + '<span class="sub">' + T(buysLeft() ? 'energy.coinsSub' : 'energy.coinsDone', { n: E_COINS, r: buysLeft() }) + '</span></button>' +
       '<button class="btn dark small" id="mEnBack" type="button">' + T('map') + '</button></div>');
     card.classList.add('energy-card');
     const paint = () => {
@@ -228,7 +230,7 @@
     };
     const iv = setInterval(paint, 1000); paint();
     const grant = () => { save.energy.n = Math.max(save.energy.n, 0); addEnergy(1); paint(); };
-    card.querySelector('#mEnCoins').onclick = () => { if (save.coins < E_COINS) return; Sound.play('click'); save.coins -= E_COINS; paintWallet(); track('energy_buy', { via: 'coins' }); grant(); };
+    card.querySelector('#mEnCoins').onclick = () => { if (save.coins < E_COINS || !buysLeft()) return; Sound.play('click'); save.coins -= E_COINS; save.energyBuy = { day: new Date().toDateString(), n: energyBoughtToday() + 1 }; paintWallet(); track('energy_buy', { via: 'coins' }); grant(); };
     card.querySelector('#mEnBack').onclick = () => { Sound.play('click'); clearInterval(iv); closeModal(); if (back) back(); else if (scene !== 'map') wipe(openMap); };
     Ads.offerReward({
       level: 0,
@@ -2479,6 +2481,8 @@
     if (hardMode) loadLevelBoards(card, id, Records.listLevel(id, L.week));
   }
 
+  // anúncio entre fases (03/11, pedido dele): nenhum até a fase 15, 1 a cada 5 vitórias até a 30, depois 1 a cada 3
+  const adDue = (id) => id > 15 && save.wins % (id <= 30 ? 5 : 3) === 0;
   async function showWin() {
     if (level.run) return runStageWon();
     if (level.daily) return showDaily();
@@ -2540,7 +2544,7 @@
     if (next) next.onclick = () => {
       Sound.play('click'); closeModal();
       const go = () => openPre(id + 1);
-      if (save.wins % 3 === 0) Ads.interstitial(go, { level: id }); else go();
+      if (adDue(id)) Ads.interstitial(go, { level: id }); else go();
     };
     const share = card.querySelector('#mShare');
     if (share) share.onclick = async () => {
@@ -3253,7 +3257,7 @@
         '<p class="save-summary">' + T('run.rush.next', { n: run.stage, m: run.list.length, v: run.moves }) + '</p>' +
         '<div class="btns"><button class="btn" id="mNext" type="button">' + T('next') + '</button><button class="btn dark small" id="mEnd" type="button">' + T('run.stop') + '</button></div>');
       const go = () => nextRunStage();
-      card.querySelector('#mNext').onclick = () => { Sound.play('click'); if (run.stage % 3 === 0) Ads.interstitial(go, { level: 0 }); else go(); };
+      card.querySelector('#mNext').onclick = () => { Sound.play('click'); if (run.stage % 5 === 0) Ads.interstitial(go, { level: 0 }); else go(); };
       card.querySelector('#mEnd').onclick = () => { Sound.play('click'); runFinish(true); };
       return;
     }
@@ -3268,7 +3272,7 @@
       const p = b.dataset.p;
       if (p === 'moves') run.carry += 5; else if (p === 'coins') run.coins += 60; else run.boost = { [p]: 1 };
       const go = () => nextRunStage();
-      if (run.stage % 3 === 0) Ads.interstitial(go, { level: 0 }); else go();
+      if (run.stage % 5 === 0) Ads.interstitial(go, { level: 0 }); else go();
     }; });
     card.querySelector('#mEnd').onclick = () => { Sound.play('click'); runFinish(true); };
   }

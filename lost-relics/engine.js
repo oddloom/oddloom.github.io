@@ -424,6 +424,7 @@
       const next = [];
       for (const h of cur) {
         const { x, y } = h;
+        if (h.src === 'blast') s.bosses.forEach((b, i) => { if (b.kind === 'statue') blasted.add(i); });
         if (!inside(s, x, y)) continue;
         const k = y * s.W + x;
         if (done.has(k)) continue;
@@ -446,8 +447,8 @@
           for (const [ax, ay] of area) next.push({ x: ax, y: ay, src: 'blast' });
           continue;
         }
-        // Ídolo de Pedra: só explosão de joia especial machuca; combinação comum não faz nada nele
-        if (p && p.kind === 'statue') { if (h.src === 'blast') blasted.add(p.boss); continue; }
+        // Ídolo de Pedra: combinação comum não faz nada; explosão de joia especial machuca mesmo longe dele (ver acima)
+        if (p && p.kind === 'statue') continue;
         if (p && p.vine) {
           if (p.slime > 1) { p.slime--; res.vines.push({ x, y, wave, slime: true }); res.score += SCORE.vine; continue; } // gosma: 1ª combinação só afrouxa
           p.vine = false; p.slime = 0; bump(s, 'vine'); res.score += SCORE.vine;

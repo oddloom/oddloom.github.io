@@ -77,7 +77,7 @@
     { /*36*/ moves: 35, colors: 6, goals: [{ type: 'vine', target: 10 }], portals: [[1, 2, 6, 4], [6, 2, 1, 4]], layout: ['........', '.v....v.', '..v..v..', '.xx..xx.', '..v..v..', '.v....v.', '..v..v..', '........'] },
     // fase 15 = 3º chefe (14/10): ÍDOLO DE PEDRA. Bloco 2x2 fixo no meio; combinação comum não faz nada,
     // só explosão de joia especial (Flecha, Selo, Orbe) machuca. Depois de cada golpe, escudo de runas por 1 jogada.
-    { /*37*/ moves: 14, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 3, statueAt: [3, 3], boss: true, tut: 'statue', layout: FULL },
+    { /*37*/ moves: 16, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 3, statueAt: [3, 3], boss: true, tut: 'statue', layout: FULL },
     { /*38*/ moves: 14, colors: 6, goals: [{ type: 'boss', target: 1 }], scarab: 1, scarabHp: 3, thief: 2, boss: true, tut: 'thief', layout: FULL },
     { /*39*/ moves: 34, colors: 5, goals: [{ type: 'make', special: 'nova', target: 1 }], tut: 'nova', layout: FULL },
     // fase 18 (15/10, ideia dele): MACACO. Monta numa joia (golpe = joia dele ou encostada, ele pula pra longe);
@@ -105,7 +105,7 @@
     { /*50*/ moves: 3, colors: 5, puzzle: true, fixedSeed: 104, goals: [{ type: 'score', target: 3500 }], tut: 'puzzle', layout: FULL },
     { /*51*/ moves: 16, colors: 5, goals: [{ type: 'plate' }, { type: 'sand' }], tut: 'gate', layout: ['........', '..p..p..', '........', '.GG..GG.', '.GG..GG.', '........', '........', '........'] },
     // fase 30 = chefe: Ídolo de Pedra com 4 vidas e musgo crescendo em volta
-    { /*52*/ moves: 21, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 4, statueAt: [3, 3], boss: true, layout: [
+    { /*52*/ moves: 18, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 5, statueAt: [3, 3], boss: true, layout: [
       'm......m', '........', '........', '........', '........', '........', '........', 'm......m'] },
     { /*53*/ moves: 12, colors: 6, goals: [{ type: 'moss' }], river: [{ row: 3, dir: 1 }, { row: 4, dir: -1 }], layout: ['........', '.mm..mm.', '........', '........', '........', '........', '.mm..mm.', '........'] },
     { /*54*/ moves: 10, colors: 6, goals: [{ type: 'boss', target: 1 }], bossKind: 'bat', bossHp: 3, boss: true, tut: 'bat', layout: FULL },
@@ -134,7 +134,7 @@
     { /*69*/ moves: 28, colors: 5, goals: [{ type: 'cart' }], tut: 'cart', cart: { path: [[0, 7], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [7, 6], [7, 5], [7, 4], [6, 4], [5, 4], [4, 4], [3, 4], [2, 4], [1, 4], [0, 4]] }, layout: FULL },
     { /*70*/ moves: 3, colors: 6, puzzle: true, fixedSeed: 209, goals: [{ type: 'score', target: 3500 }], tut: 'puzzle', layout: FULL },
     // fase 50 = chefe: o ÍDOLO DA ESFINGE (ídolo de pedra com 4 vidas e musgo nos cantos)
-    { /*71*/ moves: 21, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 4, statueAt: [3, 3], boss: true, layout: [
+    { /*71*/ moves: 20, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 6, statueAt: [3, 3], boss: true, layout: [
       'm......m', '........', '........', '........', '........', '........', '........', 'm......m'] },
     // ---- fases 72-85 (18/10): 1 fase por disco de areia do Egito (são 29), só com mecânicas já ensinadas ----
     { /*72*/ moves: 22, colors: 6, goals: [{ type: 'collect', color: 0, target: 32 }], tut: 'spin', spin: { every: 4 }, layout: FULL },
@@ -149,7 +149,7 @@
     { /*81*/ moves: 32, colors: 6, goals: [{ type: 'plate' }, { type: 'collect', color: 4, target: 25 }], layout: ['........', '.p....p.', '........', '.gg..gg.', '.gg..gg.', '........', '..p..p..', '........'] },
     { /*82*/ moves: 36, colors: 6, goals: [{ type: 'sand' }], bombTimer: 16, clockSpawn: 0.08, clockMax: 2, storm: { every: 5, n: 1, cap: 26 }, layout: ['........', '..b..b..', 'SS....SS', 'SSssssSS', '.ssssss.', '..ssss..', '........', '........'] },
     { /*83*/ moves: 30, colors: 6, goals: [{ type: 'light' }, { type: 'make', special: 'barrel', target: 2 }], dark: { torches: [[3, 3], [4, 4]] }, layout: FULL },
-    { /*84*/ moves: 30, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 5, statueAt: [3, 3], boss: true, layout: [
+    { /*84*/ moves: 20, colors: 5, goals: [{ type: 'boss', target: 1 }], bossKind: 'statue', bossHp: 7, statueAt: [3, 3], boss: true, layout: [
       'm......m', '........', '........', '........', '........', '........', '........', 'm......m'] },
     { /*85*/ moves: 20, colors: 6, goals: [{ type: 'score', target: 26000 }], clockSpawn: 0.08, clockMax: 3, river: [{ row: 3, dir: 1 }, { row: 5, dir: -1 }], layout: FULL },
     // fase 51 = chefe final do Mundo 3: enxame real de 5 escaravelhos + meta de pontos, ídolos amaldiçoados caindo e relógios
@@ -164,16 +164,16 @@
     // Selva Esmeralda (eram 1-21)
     /*22*/[4500, 12500, 18500], /*23*/[7000, 21000, 27500], /*24*/[3000, 9000, 13500], /*25*/[4500, 13500, 24500], /*26*/[6500, 40500, 67500], // fase 5 recalibrada pros 3 escaravelhos (14/10)
     /*27*/[4000, 18000, 22500], /*28*/[6000, 17500, 26500], /*29*/[10000, 31500, 48000], /*30*/[5000, 18000, 30000], /*31*/[5500, 18500, 33000], /*32*/[15500, 47000, 73000], // fase 9 = onça normal (18/10, recalibrar); fase 11 = onça de jade
-    /*33*/[3500, 13500, 21500], /*34*/[8500, 34000, 44500], /*35*/[3000, 6000, 10000], /*36*/[6000, 17000, 21000], /*37*/[6500, 23000, 33000], // fase 15 = ídolo (14/10)
+    /*33*/[3500, 13500, 21500], /*34*/[8500, 34000, 44500], /*35*/[3000, 6000, 10000], /*36*/[6000, 17000, 21000], /*37*/[6500, 21000, 26000], // fase 15 = ídolo (14/10)
     /*38*/[4000, 9500, 12500], /*39*/[9000, 45000, 70000], /*40*/[5000, 20000, 22000], /*41*/[3000, 12000, 15500], /*42*/[12500, 30500, 36000], // fase 20 = serpente (14/10)
     // fases 21-35 (16/10, simulador 60 partidas): robô vence 78-100%, sobrando ~7-12 jogadas
     /*43*/[6500, 16500, 25000], /*44*/[3500, 14000, 23000], /*45*/[6500, 16500, 26000], /*46*/[6500, 16000, 22500], /*47*/[17000, 61500, 84500], // fase 25 = onça forte
-    /*48*/[8000, 31000, 40000], /*49*/[6000, 21500, 34500], /*50*/[3500, 8000, 20000], /*51*/[5000, 19500, 26500], /*52*/[13500, 35000, 53500], // fase 30 = ídolo forte
+    /*48*/[8000, 31000, 40000], /*49*/[6000, 21500, 34500], /*50*/[3500, 8000, 20000], /*51*/[5000, 19500, 26500], /*52*/[8000, 31000, 36000], // fase 30 = ídolo forte
     /*53*/[3500, 11500, 15500], /*54*/[3500, 7500, 10500], /*55*/[5500, 14500, 23000], /*56*/[5500, 32000, 44500], /*57*/[9500, 22500, 39500], // fase 35 = Kukulkán desperto
     // fases 37-51 (18/10): calibradas com tools/calibrar.js (robô vence 80-95%) + folga de movimentos pra jogador humano nas curtas
     /*58*/[10500, 39500, 50000], /*59*/[5000, 16500, 21000], /*60*/[2500, 8500, 11500], /*61*/[8000, 20500, 25000], /*62*/[3500, 10000, 16500],
     /*63*/[5500, 16000, 19500], /*64*/[10000, 28000, 34000], /*65*/[4500, 13500, 18000], /*66*/[6500, 34000, 52000], /*67*/[11000, 25500, 29500],
-    /*68*/[9000, 22500, 27000], /*69*/[11500, 33000, 40500], /*70*/[3500, 7000, 12000], /*71*/[13500, 35000, 53500], /*72*/[3000, 14500, 19000], /*73*/[11500, 27500, 31500], /*74*/[5000, 12500, 17000], /*75*/[5000, 15500, 19500], /*76*/[13500, 40000, 84000], /*77*/[15000, 49000, 56000], /*78*/[9500, 23500, 29000], /*79*/[6500, 16500, 19000], /*80*/[4000, 10000, 13000], /*81*/[6500, 16000, 23000], /*82*/[11500, 31500, 50000], /*83*/[8000, 20500, 25000], /*84*/[15000, 39500, 57500], /*85*/[18500, 41500, 45500], /*86*/[9000, 26000, 31000],
+    /*68*/[9000, 22500, 27000], /*69*/[11500, 33000, 40500], /*70*/[3500, 7000, 12000], /*71*/[9000, 32500, 47000], /*72*/[3000, 14500, 19000], /*73*/[11500, 27500, 31500], /*74*/[5000, 12500, 17000], /*75*/[5000, 15500, 19500], /*76*/[13500, 40000, 84000], /*77*/[15000, 49000, 56000], /*78*/[9500, 23500, 29000], /*79*/[6500, 16500, 19000], /*80*/[4000, 10000, 13000], /*81*/[6500, 16000, 23000], /*82*/[11500, 31500, 50000], /*83*/[8000, 20500, 25000], /*84*/[12000, 38000, 46500], /*85*/[18500, 41500, 45500], /*86*/[9000, 26000, 31000],
   ];
   // Chefes (14/10), simulador com robô que caça o chefe e enxerga as joias que vão cair (joga melhor que gente;
   // vale como comparação): fase 5 vence 100% sobrando 18 jogadas (ele testou e aprovou), 10 = 98%/12,
