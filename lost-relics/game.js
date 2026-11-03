@@ -73,7 +73,7 @@
   // aplica as skins em uso (joia e rastro trocam a arte no art.js; palavra troca as imagens do anúncio e dos elogios)
   const applySkins = () => ART.setSkins({ gem: save.skins.gem, fx: save.skins.trail });
   const wordImg = (k) => (save.skins.word === 'rare' && ART.nodeImg('wr_' + k)) || ART.nodeImg(k);
-  const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof cloudPush === 'function') cloudPush(); };
+  const persist = () => { save.savedAt = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof cloudPush === 'function') cloudPush(); };
   const hardWeeklyScores = () => {
     const week = Records.week();
     if (save.hardWeekly.week !== week) save.hardWeekly = { week, scores: {} };
@@ -291,7 +291,7 @@
   // Precisa do plugin SocialLogin (@capgo/capacitor-social-login) e do Web client ID em window.LR_GOOGLE_ID.
   const CLOUD_KEY = 'lr.cloud', CLOUD_API = window.LR_RECORDS_API || '';
   const SocialLogin = () => (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.SocialLogin) || null;
-  const CLOUD_ON = APP && !!window.LR_GOOGLE_ID && !!CLOUD_API;
+  const CLOUD_ON = !!window.LR_GOOGLE_ID && !!CLOUD_API; // app (plugin) e site (botão do Google); portais não recebem o ID
   let cloud = null;
   try { cloud = JSON.parse(lsGet(CLOUD_KEY) || 'null'); } catch (e) {}
   let cloudTimer = null, socialReady = null;
@@ -305,8 +305,33 @@
   function cloudPush(now) {
     try { if (!CLOUD_ON || !cloud) return; } catch (e) { return; } // persist() pode rodar antes deste bloco existir
     clearTimeout(cloudTimer);
-    const go = () => cloudCall('/cloud/save', { session: cloud.session, data: save }).catch((e) => { if (e.status === 401) { cloud = null; lsSet(CLOUD_KEY, 'null'); } });
+    const go = () => cloudCall('/cloud/save', { session: cloud.session, data: save }).then((r) => applyCloud(r && r.data)).catch((e) => { if (e.status === 401) { cloud = null; lsSet(CLOUD_KEY, 'null'); paintAccount(); } });
     if (now) go(); else cloudTimer = setTimeout(go, 4000);
+  }
+  // a resposta do servidor já vem juntada com o outro aparelho: entra aqui sem recarregar a página
+  function applyCloud(data) {
+    if (!data || typeof data !== 'object') return;
+    const merged = LR.mergeSaves(save, data), before = progressOf(save), coins = save.coins;
+    Object.assign(save, merged);
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
+    if (progressOf(save) === before && save.coins === coins) return;
+    if (modalOpen()) return;
+    if (scene === 'menu') paintMenu(); else if (scene === 'map') openMap();
+  }
+  async function finishLogin(idToken) {
+    if (!idToken) throw new Error('no_token');
+    const r = await cloudCall('/cloud/login', { idToken });
+    cloud = { session: r.session, name: r.name || '' };
+    lsSet(CLOUD_KEY, JSON.stringify(cloud));
+    track('login', { result: 'ok' });
+    if (r.data) applyCloud(r.data); // o que a nuvem tem a mais vem pra cá; o que este aparelho tem a mais sobe logo abaixo
+    cloudPush(true);
+  }
+  // site: botão oficial do Google (a janela de login é dele); o token volta pelo callback
+  let gsiLoading = null;
+  function loadGsi() {
+    if (!gsiLoading) gsiLoading = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = ok; sc.onerror = () => { gsiLoading = null; no(new Error('gsi_load')); }; document.head.appendChild(sc); });
+    return gsiLoading;
   }
   async function googleLogin() {
     const sl = SocialLogin();
@@ -315,23 +340,11 @@
     await socialReady;
     // sem scopes: o plugin recusa scopes sem mudar a MainActivity ("You CANNOT use scopes...") e o idToken já vem no login básico (30/10)
     const res = await sl.login({ provider: 'google', options: {} });
-    const idToken = res && res.result && res.result.idToken;
-    if (!idToken) throw new Error('no_token');
-    const r = await cloudCall('/cloud/login', { idToken });
-    cloud = { session: r.session, name: r.name || '' };
-    lsSet(CLOUD_KEY, JSON.stringify(cloud));
-    track('login', { result: 'ok' });
-    // fica o progresso maior: se a nuvem tem mais, ela vira o save deste aparelho
-    if (r.data && progressOf(r.data) > progressOf(save)) {
-      try { localStorage.setItem(SAVE_KEY, JSON.stringify(r.data)); } catch (e) {}
-      location.reload();
-      return;
-    }
-    cloudPush(true);
+    await finishLogin(res && res.result && res.result.idToken);
   }
   async function googleLogout() {
     const c = cloud; cloud = null; lsSet(CLOUD_KEY, 'null');
-    try { const sl = SocialLogin(); if (sl) await sl.logout({ provider: 'google' }); } catch (e) {}
+    try { const sl = SocialLogin(); if (sl) await sl.logout({ provider: 'google' }); else if (window.google && google.accounts) google.accounts.id.disableAutoSelect(); } catch (e) {}
     if (c) cloudCall('/cloud/logout', { session: c.session }).catch(() => {});
   }
   // janela "Salve seu progresso" (1ª abertura e botão do menu)
@@ -352,6 +365,20 @@
       '<button class="btn dark small" id="mAcSkip" type="button">' + T('acct.skip') + '</button></div>' +
       '<p class="info-line" id="mAcMsg" hidden></p>');
     card.querySelector('#mAcSkip').onclick = () => { Sound.play('click'); track('login', { result: 'skip' }); done(); };
+    if (!APP) {
+      // site: troca o botão pelo oficial do Google
+      const slot = card.querySelector('#mAcIn'), msg = card.querySelector('#mAcMsg'), box = document.createElement('div');
+      box.className = 'gsi-box'; slot.replaceWith(box);
+      const fail = (e) => { msg.textContent = T('acct.fail') + ' (' + String((e && (e.code || e.message)) || 'erro').slice(0, 80) + ')'; msg.hidden = false; };
+      loadGsi().then(() => {
+        google.accounts.id.initialize({ client_id: window.LR_GOOGLE_ID, callback: async (res) => {
+          try { await finishLogin(res && res.credential); done(); showPraise(T('acct.ok'), 'info'); }
+          catch (e) { track('login', { result: 'error' }); fail(e); }
+        } });
+        google.accounts.id.renderButton(box, { theme: 'filled_black', size: 'large', text: 'signin_with', shape: 'pill', locale: I18N.lang === 'pt' ? 'pt-BR' : 'en', width: 230 });
+      }).catch(fail);
+      return;
+    }
     card.querySelector('#mAcIn').onclick = async (ev) => {
       Sound.init(); Sound.play('click');
       const b = ev.currentTarget, msg = card.querySelector('#mAcMsg');
@@ -2640,9 +2667,10 @@
     { id: 'items', icon: 'ixmoves' },
     { id: 'gems', icon: 'ixpalette', slot: 'gem', skins: [
       { id: 'gem.classic', art: 'skclassic', value: null },
-      { id: 'gem.gold', art: 'skgold', value: 'gold', price: 800 },
       { id: 'gem.obsidian', art: 'skobsidian', value: 'obsidian', price: 800 },
-      { id: 'gem.temple', art: 'sktemple', value: 'temple', price: 800 }] },
+      { id: 'gem.gold', art: 'skgold', value: 'gold', price: 1500 },
+      // paga com dinheiro real (02/11): a compra pela Play ainda não existe; quem comprou com moedas antes continua dono
+      { id: 'gem.temple', art: 'sktemple', value: 'temple', paid: 'R$ 3,00' }] },
     { id: 'words', icon: 'ixorb', slot: 'word', skins: [
       { id: 'word.solar', art: 'p3', value: null },
       { id: 'word.rare', art: 'wr_p3', value: 'rare', price: 600 },
@@ -2672,7 +2700,7 @@
         : T0.skins.map((sk) => ({ key: sk.id, img: sk.art && ART.nodeImg(sk.art), sk,
           name: T('codex.' + sk.id), desc: T(sk.soon ? 'codex.soon.d' : 'codex.' + tab + '.d'),
           note: sk.soon ? T('codex.soon') : inUse(sk) ? T('codex.inuse') : owns(sk) ? T('codex.owned') : '',
-          btn: sk.soon || inUse(sk) ? null : owns(sk) ? 'use' : 'buy', price: sk.price }));
+          btn: sk.soon || inUse(sk) ? null : owns(sk) ? 'use' : sk.paid ? 'paid' : 'buy', price: sk.price, paid: sk.paid }));
       const pages = Math.max(1, Math.ceil(offers.length / PER));
       page = Math.min(page, pages - 1);
       const shown = offers.slice(page * PER, page * PER + PER);
@@ -2691,7 +2719,8 @@
             '<div class="ts-frame" style="background-image:url(' + ART.nodeImg('cxcard') + ')">' + (o.img ? '<img alt="" src="' + o.img + '">' : '<i>?</i>') + (o.it && save.items[o.it.id] ? '<em>×' + save.items[o.it.id] + '</em>' : '') + '</div>' +
             '<div class="ts-info"><b>' + o.name + '</b><span>' + o.desc + '</span>' + (o.note ? '<small>' + o.note + '</small>' : '') +
               (o.btn === 'buy' ? '<button type="button" class="btn small ts-buy" data-k="' + o.key + '" aria-label="' + T('shop.buy') + ' ' + o.price + '"' + (save.coins < o.price ? ' disabled' : '') + '>' + coin(o.price, 48) + '</button>' // 16/10: só o preço (pedido dele)
-                : o.btn === 'use' ? '<button type="button" class="btn dark small ts-use" data-k="' + o.key + '">' + T('codex.use') + '</button>' : '') +
+                : o.btn === 'use' ? '<button type="button" class="btn dark small ts-use" data-k="' + o.key + '">' + T('codex.use') + '</button>'
+                : o.btn === 'paid' ? '<button type="button" class="btn dark small" disabled>' + o.paid + '</button><small>' + T('codex.paid.soon') + '</small>' : '') +
             '</div></div>').join('') + '</div>' +
         '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('close') + '</button></div>');
       card.classList.add('tshop');
@@ -3661,7 +3690,7 @@
   }
 
   window.addEventListener('resize', () => { layout(); if (scene === 'map') buildMap(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { Sound.pause(); scheduleNotes(); cloudPush(true); } else { Sound.resume(); if (scene === 'map') paintEnergy(); } });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { Sound.pause(); scheduleNotes(); cloudPush(true); } else { cloudPush(true); Sound.resume(); if (scene === 'map') paintEnergy(); } });
   window.addEventListener('pagehide', () => { if (scene === 'play' && !runEnded) abandonRun('pagehide'); });
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (modalOpen() && $('modalCard').querySelector('#mResume')) closeModal(); else openPause(); } });
   Ads.setHooks({ pause: () => Sound.pause(), resume: () => Sound.resume() });
@@ -3765,7 +3794,7 @@
     else if (location.hash === '#derrotademo') { startLevel(1); setTimeout(() => { showLose(); const x = document.getElementById('mExtra'); if (x) x.hidden = false; }, 900); }
     else if (location.hash === '#pontosdemo') { startLevel(1); setTimeout(() => { state.score = 1290; renderHUD(); floats.push({ x: cellX(3), y: cellY(4), text: '+90', num: 90, color: '#ffe08a', t: 0, hold: true }); }, 900); }
     else if (location.hash === '#vitoriademo') { startLevel(1); setTimeout(() => { state.score = 16900; showWin(); }, 1200); setTimeout(() => document.querySelectorAll('.stars-big img').forEach((im, i) => { if (i < 2) { im.src = ART.nodeImg('vstar') || im.src; im.classList.add('on'); } }), 2600); }
-    else { openMenu(); if (CLOUD_ON && !cloud && !lsGet('lr.loginAsked')) { lsSet('lr.loginAsked', '1'); setTimeout(() => { if (!modalOpen()) openAccount(); }, 600); } }
+    else { openMenu(); if (cloud) cloudPush(true); if (APP && CLOUD_ON && !cloud && !lsGet('lr.loginAsked')) { lsSet('lr.loginAsked', '1'); setTimeout(() => { if (!modalOpen()) openAccount(); }, 600); } }
     requestAnimationFrame(frame);
   }
   $('loadingTxt').textContent = T('loading');

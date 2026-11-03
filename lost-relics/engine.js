@@ -1262,8 +1262,20 @@
     return s.score >= t[2] ? 3 : s.score >= t[1] ? 2 : 1;
   }
 
+  // Junta dois saves da mesma conta (celular + site): progresso nunca volta; o resto (moedas, itens, skins em uso) fica do mais recente
+  function mergeSaves(a, b) {
+    if (!a) return b; if (!b) return a;
+    const newer = (b.savedAt || 0) >= (a.savedAt || 0) ? b : a, older = newer === b ? a : b;
+    const out = Object.assign({}, older, newer);
+    const maxMap = (k) => { const m = Object.assign({}, older[k]); for (const i in newer[k] || {}) m[i] = Math.max(+m[i] || 0, +newer[k][i] || 0); out[k] = m; };
+    ['stars', 'best', 'hardBest', 'seals', 'relicsPaid', 'chalBought'].forEach((k) => { if (older[k] || newer[k]) maxMap(k); });
+    ['unlocked', 'wins', 'altarPaid', 'expBest', 'rushBest', 'fogShown', 'tutorialDone', 'feedbackRewarded'].forEach((k) => { if (older[k] != null || newer[k] != null) out[k] = Math.max(+older[k] || 0, +newer[k] || 0); });
+    out.owned = [...new Set([...(older.owned || []), ...(newer.owned || [])])];
+    return out;
+  }
+
   const api = {
-    SCORE, GEM_NAMES, rand, createState, cloneState, findGroups, groupSpecial, applyHits, gravity, gravityStep,
+    mergeSaves, SCORE, GEM_NAMES, rand, createState, cloneState, findGroups, groupSpecial, applyHits, gravity, gravityStep,
     collectArtifacts, doSwap, swapIsValid, resolve, runAll, allMoves, findMove, shuffle, treasureRush,
     isWon, goalDone, sandLeft, darkLeft, stars, colorAt, inside, swappable, isExit, bossPos, bossCells, countKind, countCocoons,
   };

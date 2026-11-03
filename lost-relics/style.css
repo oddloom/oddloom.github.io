@@ -979,3 +979,4 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .chal-wallet .coin { width: 22px; height: 22px; }
 .chal .btn.dark.small { min-width: 78px; min-height: 34px; font-size: 12px; }
 .chal-txt span { font-size: 10.5px; }
+.gsi-box { display: flex; justify-content: center; min-height: 44px; margin: 4px 0; }
