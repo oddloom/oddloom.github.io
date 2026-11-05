@@ -2769,6 +2769,21 @@
     let tab = startTab || 'gems', page = 0;
     const PER = 1; // 16/10, pedido dele: um item por página, centralizado
     const coin = (n, sz) => '<img class="coin" alt="" src="' + ART.icon('coin', sz) + '">' + n;
+    const showInfo = (offer, trigger) => {
+      Sound.play('click');
+      const dialog = document.createElement('dialog');
+      dialog.className = 'shop-info-dialog';
+      dialog.setAttribute('aria-labelledby', 'shopInfoTitle');
+      dialog.setAttribute('aria-describedby', 'shopInfoText');
+      dialog.innerHTML = '<div class="card shop-info-card"><h2 id="shopInfoTitle"></h2><p id="shopInfoText"></p><div class="btns"><button type="button" class="btn dark small">' + T('close') + '</button></div></div>';
+      dialog.querySelector('h2').textContent = offer.name;
+      dialog.querySelector('p').textContent = offer.desc + (offer.btn === 'paid' && !iapPrice(offer.paid) ? ' ' + T('codex.paid.soon') + '.' : '');
+      dialog.querySelector('button').onclick = () => dialog.close();
+      dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+      dialog.addEventListener('close', () => { dialog.remove(); if (trigger.isConnected) trigger.focus({ preventScroll: true }); }, { once: true });
+      document.body.appendChild(dialog);
+      dialog.showModal();
+    };
     const render = () => {
       const T0 = CODEX_TABS.find((t) => t.id === tab);
       const owns = (s) => s.value == null || save.owned.includes(s.id);
@@ -2795,11 +2810,12 @@
           (pages > 1 ? '<button type="button" class="ts-next"' + (page >= pages - 1 ? ' disabled' : '') + ' aria-label=">" style="background-image:url(' + arrow + ')"></button>' : '') + '</div>' +
         '<div class="ts-offers">' + shown.map((o) =>
           '<div class="ts-offer' + (o.sk && o.sk.soon ? ' soon' : '') + '">' +
+            '<button type="button" class="ts-about" data-info="' + o.key + '" aria-haspopup="dialog" aria-label="' + T('shop.info', { item: o.name }) + '">i</button>' +
             '<div class="ts-frame" style="background-image:url(' + ART.nodeImg('cxcard') + ')">' + (o.img ? '<img alt="" src="' + o.img + '">' : '<i>?</i>') + (o.it && save.items[o.it.id] ? '<em>×' + save.items[o.it.id] + '</em>' : '') + '</div>' +
-            '<div class="ts-info"><b>' + o.name + '</b><span>' + o.desc + '</span>' + (o.note ? '<small>' + o.note + '</small>' : '') +
+            '<div class="ts-info"><b>' + o.name + '</b>' + (o.note ? '<small>' + o.note + '</small>' : '') +
               (o.btn === 'buy' ? '<button type="button" class="btn small ts-buy" data-k="' + o.key + '" aria-label="' + T('shop.buy') + ' ' + o.price + '"' + (save.coins < o.price ? ' disabled' : '') + '>' + coin(o.price, 48) + '</button>' // 16/10: só o preço (pedido dele)
                 : o.btn === 'use' ? '<button type="button" class="btn dark small ts-use" data-k="' + o.key + '">' + T('codex.use') + '</button>'
-                : o.btn === 'paid' ? (iapPrice(o.paid) ? '<button type="button" class="btn small ts-iap" data-sku="' + o.paid + '">' + iapPrice(o.paid) + '</button>' : '<button type="button" class="btn dark small" disabled>R$ 3,00</button><small>' + T('codex.paid.soon') + '</small>') : '') +
+                : o.btn === 'paid' ? (iapPrice(o.paid) ? '<button type="button" class="btn small ts-iap" data-sku="' + o.paid + '">' + iapPrice(o.paid) + '</button>' : '<button type="button" class="btn dark small" disabled>R$ 3,00</button>') : '') +
             '</div></div>').join('') + '</div>' +
         '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('close') + '</button></div>');
       card.classList.add('tshop');
@@ -2809,6 +2825,7 @@
       if (prev) prev.onclick = () => { Sound.play('click'); page--; render(); };
       if (next) next.onclick = () => { Sound.play('click'); page++; render(); };
       const find = (k) => offers.find((o) => o.key === k);
+      card.querySelectorAll('.ts-about').forEach((b) => { b.onclick = () => { const offer = find(b.dataset.info); if (offer) showInfo(offer, b); }; });
       card.querySelectorAll('.ts-buy').forEach((b) => { b.onclick = () => {
         const o = find(b.dataset.k); if (!o || save.coins < o.price) return;
         save.coins -= o.price;

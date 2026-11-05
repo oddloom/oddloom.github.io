@@ -2,6 +2,7 @@
 (function (root) {
   const STRINGS = {
     pt: {
+      'shop.info': 'Informações de {item}',
       'acct.mesaManaged': 'Esta conta é gerenciada pelo Mesa. Para trocar de conta, volte ao Mesa.',
       'acct.mesaReconnect': 'A conexão com sua conta expirou. Volte ao Mesa e abra o jogo novamente.',
       'acct.mesaOn': 'CONTA DO MESA ✓', 'acct.mesaRetry': 'RECONECTAR PELO MESA',
@@ -94,6 +95,7 @@
       'loading': 'Abrindo o templo…',
     },
     en: {
+      'shop.info': 'About {item}',
       'acct.mesaManaged': 'This account is managed by Mesa. To switch accounts, return to Mesa.',
       'acct.mesaReconnect': 'Your account connection expired. Return to Mesa and reopen the game.',
       'acct.mesaOn': 'MESA ACCOUNT ✓', 'acct.mesaRetry': 'RECONNECT THROUGH MESA',

@@ -943,8 +943,17 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .tshop .wallet { grid-row: 2; margin: 0; }
 .tshop .ts-tabs { grid-row: 3; }
 .tshop .ts-pager { grid-row: 4; }
-.tshop .ts-offers { grid-row: 5; min-height: 0; overflow-y: auto; overflow-x: hidden; align-items: start; scrollbar-width: thin; scrollbar-color: var(--gold) transparent; overscroll-behavior: contain; touch-action: pan-y; }
-.tshop .ts-offer { height: auto; }
+.tshop .ts-offers { grid-row: 5; min-height: 0; overflow: hidden; align-items: stretch; }
+.tshop .ts-offer { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; height: 100%; min-height: 0; }
+.tshop .ts-frame { width: 100%; height: 100%; max-width: 140px; max-height: 148px; min-height: 0; aspect-ratio: auto; align-self: center; }
+.tshop .ts-info { flex: none; margin-top: 0; }
+.tshop .ts-about { position: absolute; top: 3px; right: 0; z-index: 3; width: 38px; height: 38px; padding: 0; border: 1px solid var(--gold); border-radius: 50%; background: #10251e; color: var(--gold-hi); font: italic 700 20px Georgia, serif; cursor: pointer; }
+.tshop .ts-about:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
+.shop-info-dialog { padding: 0; border: 0; background: transparent; color: var(--bone); width: min(360px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); overflow: visible; }
+.shop-info-dialog::backdrop { background: rgba(0, 0, 0, .72); }
+.ui-kit .card.shop-info-card { --cw: min(360px, calc(100vw - 32px)); width: var(--cw); gap: 14px; animation: none; }
+.shop-info-card h2 { font-size: 20px; letter-spacing: .02em; }
+.shop-info-card p { font-size: 15px; line-height: 1.4; }
 .tshop > .btns { grid-row: 6; margin-block: 0; }
 @media (max-height: 720px) {
   .ui-kit .card.tshop, .card.tshop { grid-template-rows: 32px 26px 38px 28px minmax(0, 1fr) 44px; gap: 8px; }
@@ -953,7 +962,22 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
   .tshop .wallet { font-size: 21px; }
   .tshop .wallet img.coin { width: 26px; height: 26px; }
   .ui-kit .tshop .ts-tab, .tshop .ts-tab { min-height: 38px; }
+  .tshop .ts-info { padding: 8px 8px 7px; gap: 3px; }
+  .tshop .ts-info b { font-size: 16px; }
+  .ui-kit .tshop .ts-info .btn, .tshop .ts-info .btn, .ui-kit .tshop .ts-info .ts-buy, .tshop .ts-info .ts-buy { min-height: 44px; margin-top: 3px; }
   .ui-kit .tshop > .btns .btn, .tshop > .btns .btn { min-height: 44px; }
+}
+@media (max-width: 360px) and (max-height: 720px) {
+  .ui-kit .card.tshop, .card.tshop { grid-template-columns: 1fr 1fr; grid-template-rows: 28px 38px 28px minmax(0, 1fr) 44px; }
+  .tshop .ts-title, .tshop .wallet { grid-row: 1; }
+  .tshop .ts-title { grid-column: 1; width: 80px; height: 28px; }
+  .tshop .ts-title span { font-size: 17px; }
+  .tshop .wallet { grid-column: 2; font-size: 19px; }
+  .tshop .wallet img.coin { width: 22px; height: 22px; }
+  .tshop .ts-tabs { grid-row: 2; grid-column: 1 / -1; }
+  .tshop .ts-pager { grid-row: 3; grid-column: 1 / -1; }
+  .tshop .ts-offers { grid-row: 4; grid-column: 1 / -1; }
+  .tshop > .btns { grid-row: 5; grid-column: 1 / -1; }
 }
 @media (max-width: 360px) {
   .tshop .ts-pager { gap: 6px; font-size: 11px; letter-spacing: .04em; }
@@ -968,11 +992,12 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
   .tshop .ts-tabs { grid-row: 2; grid-column: 1 / -1; }
   .tshop .ts-pager { grid-row: 3; grid-column: 1 / -1; }
   .tshop .ts-offers { grid-row: 4; grid-column: 1 / -1; }
-  .tshop .ts-offer { display: grid; grid-template-columns: 82px minmax(0, 1fr); align-items: start; gap: 10px; }
-  .tshop .ts-frame { width: 82px; }
+  .tshop .ts-offer { grid-template-columns: 82px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; gap: 10px; padding-right: 44px; }
+  .tshop .ts-frame { width: 82px; max-height: 100%; }
   .tshop .ts-info { margin-top: 0; }
   .tshop > .btns { grid-row: 5; grid-column: 1 / -1; }
   .ui-kit .tshop > .btns .btn, .tshop > .btns .btn { min-height: 40px; }
+  .ui-kit .card.shop-info-card { padding: 42px 60px 38px; border-image-width: 48px 54px 60px 54px; gap: 10px; }
 }
 
 /* fase atual: brilho suave e animado logo abaixo do botão */
