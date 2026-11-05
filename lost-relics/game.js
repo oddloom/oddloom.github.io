@@ -3203,6 +3203,16 @@
   // fase do chefe -> relíquia da folha (assets/mecanicas/reliquias, peca12 = vaso canopo, da múmia; rl16 = amuleto do morcego)
   const RELIC_ART = { 21: 1, 26: 2, 32: 3, 37: 4, 38: 5, 42: 6, 47: 7, 52: 8, 57: 9, 61: 10, 54: 16, 71: 11, 77: 12, 80: 15, 84: 13, 86: 14 };
   const relicLevels = () => LEVELS.filter((L) => L.boss);
+  // A coleção guarda cada fase; a corrida enfrenta cada tipo de chefe uma única vez.
+  function rushLevels() {
+    const seen = new Set();
+    return relicLevels().filter((L) => {
+      const kind = bossKindOf(L);
+      if (seen.has(kind)) return false;
+      seen.add(kind);
+      return true;
+    });
+  }
   const totalStars = () => Object.values(save.stars || {}).reduce((a, b) => a + (+b || 0), 0);
   function relicPending() {
     const paid = save.relicsPaid || {}, relics = relicLevels().filter((L) => save.stars[L.id] && !paid[L.id]);
@@ -3261,7 +3271,7 @@
   // ---------- aba Desafios (02/11): libera ao chegar na fase ou comprando com moedas ----------
   const CHAL = { curse: { fase: 15, cost: 600 }, exp: { fase: 22, cost: 1500 }, rush: { fase: 27, cost: 1000 } };
   const chalOpen = (k) => save.unlocked >= CHAL[k].fase || !!(save.chalBought || {})[k];
-  const chalRecord = (k) => (k === 'exp' ? T('chal.best.exp', { n: save.expBest || 0 }) : k === 'rush' ? T('chal.best.rush', { n: save.rushBest || 0, m: relicLevels().length }) : T(curseDoneThisWeek() ? 'chal.best.curseDone' : 'chal.best.curse', { c: CURSE_COINS }));
+  const chalRecord = (k) => (k === 'exp' ? T('chal.best.exp', { n: save.expBest || 0 }) : k === 'rush' ? T('chal.best.rush', { n: Math.min(save.rushBest || 0, rushLevels().length), m: rushLevels().length }) : T(curseDoneThisWeek() ? 'chal.best.curseDone' : 'chal.best.curse', { c: CURSE_COINS }));
   function openChallenges() {
     const pend = relicPending();
     const rows = Object.keys(CHAL).map((k) => {
@@ -3308,7 +3318,7 @@
   let run = null;
   const POWERS = ['moves', 'dyn', 'seal', 'orb', 'coins'];
   function startRun(type) {
-    run = { type, stage: 0, carry: 0, coins: 0, boost: {}, used: [], extra: false, moves: 42, list: relicLevels().map((L) => L.id) };
+    run = { type, stage: 0, carry: 0, coins: 0, boost: {}, used: [], extra: false, moves: 42, list: rushLevels().map((L) => L.id) };
     nextRunStage();
   }
   function nextRunStage() {
