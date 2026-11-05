@@ -9,7 +9,7 @@
     const buf = await crypto.subtle.digest('SHA-256', enc.encode(text));
     return [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, '0')).join('').slice(0, 24);
   }
-  const read = (key) => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const read = (key) => { try { return JSON.parse(LRStorage.getItem(key)) || null; } catch (e) { return null; } };
   async function exportCode() {
     const payload = { format: 'lostrelics-save', version: 1, createdAt: new Date().toISOString(), game: read(GAME_KEY), records: read(RECORDS_KEY) };
     const raw = JSON.stringify(payload), checksum = await digest(raw);
@@ -29,8 +29,8 @@
   }
   async function importCode(code) {
     const checked = await inspect(code), p = checked.payload;
-    localStorage.setItem(GAME_KEY, JSON.stringify(p.game));
-    if (p.records && typeof p.records === 'object') localStorage.setItem(RECORDS_KEY, JSON.stringify(p.records));
+    LRStorage.setItem(GAME_KEY, JSON.stringify(p.game));
+    if (p.records && typeof p.records === 'object') LRStorage.setItem(RECORDS_KEY, JSON.stringify(p.records));
     return checked.summary;
   }
   root.PortableSave = { exportCode, inspect, importCode };

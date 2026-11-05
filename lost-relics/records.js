@@ -5,8 +5,8 @@
   const KEY = 'lostrelics.records.v1';
   const API = String(root.LR_RECORDS_API || '').replace(/\/$/, '');
   let data = { name: '', playerId: '', token: '', scores: {}, levelScores: {} };
-  try { data = Object.assign(data, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} };
+  try { data = Object.assign(data, JSON.parse(LRStorage.getItem(KEY)) || {}); } catch (e) {}
+  const save = () => { try { LRStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} };
   // mesma regra do Worker (backend/worker.js): letras, números, espaço e . _ -; mínimo 2; nomes bloqueados
   const cleanName = (v) => String(v || '').replace(/[^\p{L}\p{N} ._-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 18);
   const BLOCKED_NAMES = ['nazi', 'hitler', 'racista', 'pedof', 'estupro'];

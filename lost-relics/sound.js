@@ -3,7 +3,7 @@
 (function (root) {
   let ctx = null, master = null, sfxBus = null, musicBus = null, noiseBuf = null;
   let sfxOn = true, musicOn = true, musicTimer = null, beat = 0;
-  try { sfxOn = localStorage.getItem('lostrelics.sfx') !== '0'; musicOn = localStorage.getItem('lostrelics.music') !== '0'; } catch (e) {}
+  try { sfxOn = LRStorage.getItem('lostrelics.sfx') !== '0'; musicOn = LRStorage.getItem('lostrelics.music') !== '0'; } catch (e) {}
 
   function init() {
     if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
@@ -171,8 +171,8 @@
     speak,    init,
     play(name, arg) { if (!ctx || !sfxOn) return; try { S[name](arg); } catch (e) {} },
     get sfx() { return sfxOn; }, get music() { return musicOn; },
-    setSfx(v) { sfxOn = v; if (sfxBus) sfxBus.gain.value = v ? 1 : 0; try { localStorage.setItem('lostrelics.sfx', v ? '1' : '0'); } catch (e) {} },
-    setMusic(v) { musicOn = v; if (musicBus) musicBus.gain.value = v ? 0.32 : 0; try { localStorage.setItem('lostrelics.music', v ? '1' : '0'); } catch (e) {} },
+    setSfx(v) { sfxOn = v; if (sfxBus) sfxBus.gain.value = v ? 1 : 0; try { LRStorage.setItem('lostrelics.sfx', v ? '1' : '0'); } catch (e) {} },
+    setMusic(v) { musicOn = v; if (musicBus) musicBus.gain.value = v ? 0.32 : 0; try { LRStorage.setItem('lostrelics.music', v ? '1' : '0'); } catch (e) {} },
     pause() { if (ctx && ctx.state === 'running') ctx.suspend(); },
     resume() { if (ctx && ctx.state === 'suspended') ctx.resume(); },
   };

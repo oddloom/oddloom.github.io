@@ -17,8 +17,8 @@
   let mockCount = 0;
   const AD_STATE_KEY = 'lostrelics.ads.v1';
   let adState = { lastInterstitialAt: 0 };
-  try { adState = Object.assign(adState, JSON.parse(localStorage.getItem(AD_STATE_KEY)) || {}); } catch (e) {}
-  const saveAdState = () => { try { localStorage.setItem(AD_STATE_KEY, JSON.stringify(adState)); } catch (e) {} };
+  try { adState = Object.assign(adState, JSON.parse(LRStorage.getItem(AD_STATE_KEY)) || {}); } catch (e) {}
+  const saveAdState = () => { try { LRStorage.setItem(AD_STATE_KEY, JSON.stringify(adState)); } catch (e) {} };
   const track = (name, params) => { if (root.Telemetry) root.Telemetry.event(name, params || {}); };
 
   // ---------- simulação ----------

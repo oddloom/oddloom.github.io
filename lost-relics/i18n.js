@@ -2,6 +2,10 @@
 (function (root) {
   const STRINGS = {
     pt: {
+      'acct.mesaManaged': 'Esta conta é gerenciada pelo Mesa. Para trocar de conta, volte ao Mesa.',
+      'acct.mesaReconnect': 'A conexão com sua conta expirou. Volte ao Mesa e abra o jogo novamente.',
+      'acct.mesaOn': 'CONTA DO MESA ✓', 'acct.mesaRetry': 'RECONECTAR PELO MESA',
+      'map.next': 'PRÓXIMO MUNDO', 'map.next.label': 'Ir para {world}', 'map.next.locked': 'Vença a fase {level} para abrir o próximo mundo', 'map.shop.label': 'Loja: {n} moedas',
       'title.sub': 'Uma expedição de joias',
       'daily.btn': 'JOGADA DO DIA', 'daily.title': 'JOGADA DO DIA', 'daily.hint': 'UMA JOGADA SÓ. ACHE A MELHOR!', 'daily.perfect': 'PERFEITO! Você achou a melhor jogada.', 'daily.close': 'Quase! Dá pra fazer mais.', 'daily.low': 'Existe uma jogada bem melhor... tente de novo!',
       'daily.pct': '{p}% da melhor', 'daily.best': 'melhor possível: {n}', 'daily.coins': '+{n} moedas pela jogada do dia', 'daily.shareBtn': 'COMPARTILHAR', 'daily.retry': 'TENTAR DE NOVO', 'daily.copied': 'Texto copiado!',
@@ -40,7 +44,7 @@
       'item.seal': 'Joias Selo', 'item.seal.d': 'Duas Joias Selo já no tabuleiro.',
       'codex.tab.items': 'ITENS', 'codex.tab.gems': 'SKINS DE JOIA', 'codex.tab.words': 'SKINS DE PALAVRA', 'codex.tab.trail': 'RASTRO DE COMBO',
       'codex.inuse': 'EM USO', 'codex.inuse.d': 'É a que está no jogo agora.', 'codex.soon': 'EM BREVE', 'codex.soon.t': 'Relíquia escondida', 'codex.soon.d': 'Ainda não foi encontrada. Chega numa próxima atualização.',
-      'codex.paid.soon': 'Compra em breve', 'codex.gem.classic': 'Joias Clássicas', 'codex.word.solar': 'Solar', 'codex.word.rare': 'Joias Raras', 'codex.word.goldgem': 'Ouro com Gema', 'codex.trail.gold': 'Rastro Dourado',
+      'codex.paid.soon': 'Compra em breve', 'energy.pack': '+{n} ENERGIAS', 'iap.fail': 'Não deu pra concluir a compra.', 'iap.pending': 'Pagamento pendente. Entregamos quando confirmar.', 'iap.recovered': 'Compra entregue!', 'codex.gem.classic': 'Joias Clássicas', 'codex.word.solar': 'Solar', 'codex.word.rare': 'Joias Raras', 'codex.word.goldgem': 'Ouro com Gema', 'codex.trail.gold': 'Rastro Dourado',
       'codex.gem.gold': 'Relíquias de Ouro', 'codex.gem.obsidian': 'Obsidiana Rúnica', 'codex.gem.temple': 'Joias do Templo', 'codex.trail.jade': 'Rastro de Jade', 'codex.trail.fire': 'Fogo Solar',
       'codex.owned': 'É SUA', 'codex.use': 'USAR', 'codex.gems.d': 'Muda o visual de todas as joias do tabuleiro.', 'codex.words.d': 'Muda as palavras de FASE e os elogios ÓTIMO, INCRÍVEL e LENDÁRIO.', 'codex.trail.d': 'Muda o rastro da Joia Flecha e o estouro da Joia Selo.',
       'goal.onca': 'Derrote a Onça-pintada', 'tut.onca': 'Quebre a joia da ONÇA ou uma encostada: golpe!|Ela salta pra longe a cada golpe.|A cada 3 jogadas ela crava a garra: 2 joias viram PEDRA.|Tire todas as vidas dela.',
@@ -90,6 +94,10 @@
       'loading': 'Abrindo o templo…',
     },
     en: {
+      'acct.mesaManaged': 'This account is managed by Mesa. To switch accounts, return to Mesa.',
+      'acct.mesaReconnect': 'Your account connection expired. Return to Mesa and reopen the game.',
+      'acct.mesaOn': 'MESA ACCOUNT ✓', 'acct.mesaRetry': 'RECONNECT THROUGH MESA',
+      'map.next': 'NEXT WORLD', 'map.next.label': 'Go to {world}', 'map.next.locked': 'Beat level {level} to unlock the next world', 'map.shop.label': 'Shop: {n} coins',
       'title.sub': 'A jewel expedition',
       'daily.btn': 'MOVE OF THE DAY', 'daily.title': 'MOVE OF THE DAY', 'daily.hint': 'ONE MOVE ONLY. FIND THE BEST!', 'daily.perfect': 'PERFECT! You found the best move.', 'daily.close': 'Close! You can do more.', 'daily.low': 'There is a much better move... try again!',
       'daily.pct': '{p}% of the best', 'daily.best': 'best possible: {n}', 'daily.coins': '+{n} coins for the daily move', 'daily.shareBtn': 'SHARE', 'daily.retry': 'TRY AGAIN', 'daily.copied': 'Text copied!',
@@ -128,7 +136,7 @@
       'item.seal': 'Seal Jewels', 'item.seal.d': 'Two Seal Jewels already on the board.',
       'codex.tab.items': 'ITEMS', 'codex.tab.gems': 'JEWEL SKINS', 'codex.tab.words': 'WORD SKINS', 'codex.tab.trail': 'COMBO TRAIL',
       'codex.inuse': 'IN USE', 'codex.inuse.d': 'This is the one in the game now.', 'codex.soon': 'SOON', 'codex.soon.t': 'Hidden relic', 'codex.soon.d': 'Not found yet. Coming in a future update.',
-      'codex.paid.soon': 'Purchase coming soon', 'codex.gem.classic': 'Classic Jewels', 'codex.word.solar': 'Solar', 'codex.word.rare': 'Rare Jewels', 'codex.word.goldgem': 'Gold and Gem', 'codex.trail.gold': 'Golden Trail',
+      'codex.paid.soon': 'Purchase coming soon', 'energy.pack': '+{n} ENERGY', 'iap.fail': 'Could not complete the purchase.', 'iap.pending': 'Payment pending. Delivered once confirmed.', 'iap.recovered': 'Purchase delivered!', 'codex.gem.classic': 'Classic Jewels', 'codex.word.solar': 'Solar', 'codex.word.rare': 'Rare Jewels', 'codex.word.goldgem': 'Gold and Gem', 'codex.trail.gold': 'Golden Trail',
       'codex.gem.gold': 'Gold Relics', 'codex.gem.obsidian': 'Runic Obsidian', 'codex.gem.temple': 'Temple Jewels', 'codex.trail.jade': 'Jade Trail', 'codex.trail.fire': 'Solar Fire',
       'codex.owned': 'OWNED', 'codex.use': 'USE', 'codex.gems.d': 'Changes the look of every jewel on the board.', 'codex.words.d': 'Changes the LEVEL word and the GREAT, AMAZING and LEGENDARY praise.', 'codex.trail.d': 'Changes the Arrow Jewel trail and the Seal Jewel burst.',
       'goal.onca': 'Defeat the Jaguar', 'tut.onca': 'Break the JAGUAR’s jewel or one next to it: a hit!|It leaps away after every hit.|Every 3 moves it slams a claw: 2 jewels turn to STONE.|Drain all its lives.',
@@ -183,7 +191,7 @@
     en: ['rubies', 'emeralds', 'sapphires', 'topazes', 'amethysts', 'diamonds'],
   };
   let lang = 'pt';
-  try { lang = localStorage.getItem('lostrelics.lang') || ''; } catch (e) {}
+  try { lang = LRStorage.getItem('lostrelics.lang') || ''; } catch (e) {}
   if (!STRINGS[lang]) lang = /^pt/i.test(navigator.language || '') ? 'pt' : 'en';
 
   root.I18N = {
@@ -196,12 +204,12 @@
     gem(i) { return GEM_NAMES[lang][i]; },
     toggle() {
       lang = lang === 'pt' ? 'en' : 'pt';
-      try { localStorage.setItem('lostrelics.lang', lang); } catch (e) {}
+      try { LRStorage.setItem('lostrelics.lang', lang); } catch (e) {}
       document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
     },
     setDefault(loc) {
       let saved = null;
-      try { saved = localStorage.getItem('lostrelics.lang'); } catch (e) {}
+      try { saved = LRStorage.getItem('lostrelics.lang'); } catch (e) {}
       if (!saved) lang = /^pt/i.test(loc) ? 'pt' : 'en';
     },
   };

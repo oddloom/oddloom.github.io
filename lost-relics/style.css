@@ -661,6 +661,37 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 #mapWorlds button:not(:disabled):active { transform: scale(.9); }
 #mapWorlds .wprev:not(:disabled):active { transform: scaleX(-1) scale(.9); }/* 16/10: o cabeçalho do mapa (z-index 40) cobria as setas de mundo e engolia o toque */
 #mapWorlds button { z-index: 45; }
+
+/* Continuação da expedição: placa pintada, seta dourada e nome do destino.
+   O movimento só roda no mapa visível, sem janela aberta; Leve e Reduce Motion ficam estáticos. */
+.map-head { left: 50%; transform: translateX(-50%); width: min(100%, var(--map-controls-width, 640px)); }
+.map-title { padding-left: 8px; padding-right: 88px; }
+.map-shop { position: absolute; top: max(6px, env(safe-area-inset-top)); right: 7px; width: 88px; min-height: 102px; display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: none; isolation: isolate; }
+.map-shop .shop-merchant { width: 70px; height: 66px; object-fit: contain; transform-origin: 50% 92%; }
+.map-shop-plaque { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 88px; height: 42px; margin-top: -7px; background: var(--ui-btn2) center / 100% 100% no-repeat; }
+.map-shop-plaque strong { font-family: var(--f-display); color: var(--gold-hi); font-size: 14px; line-height: 16px; text-shadow: 0 1px 2px #000; }
+.map-shop-wallet { display: flex; align-items: center; justify-content: center; gap: 3px; font-family: var(--f-body); font-size: 11px; line-height: 12px; font-weight: 700; color: var(--bone); font-variant-numeric: tabular-nums; }
+.map-shop-wallet img { width: 12px; height: 12px; }
+.map-shop:active .shop-merchant { transform: scale(.94); }
+#mapWorlds { position: absolute; z-index: 45; top: calc(var(--map-head-height, 112px) + 34px); left: 50%; transform: translateX(-50%); width: min(calc(100% - 24px), calc(var(--map-controls-width, 640px) - 24px)); display: flex; align-items: center; justify-content: space-between; pointer-events: none; }
+#mapWorlds button { position: relative; inset: auto; flex: none; width: 48px; height: 48px; pointer-events: auto; }
+#mapWorlds .wprev { left: auto; }
+#mapWorlds .wnext { right: auto; margin-left: auto; }
+#mapWorlds .wnext.next-open { display: flex; align-items: center; justify-content: center; gap: 4px; width: 228px; height: 74px; padding: 12px 14px 12px 23px; opacity: 1; filter: none; background: var(--ui-btn2) center / 100% 100% no-repeat; isolation: isolate; }
+.world-next-copy { display: grid; gap: 4px; flex: 1; min-width: 0; text-align: center; }
+.world-next-copy small { font-family: var(--f-body); font-size: 10px; font-weight: 700; letter-spacing: .08em; color: #bde9d2; line-height: 12px; }
+.world-next-copy strong { font-family: var(--f-display); font-size: 15px; line-height: 18px; color: var(--gold-hi); text-shadow: 0 2px 2px #000; }
+.world-next-arrow { width: 52px; height: 44px; object-fit: contain; flex: none; }
+.world-next-light { position: absolute; z-index: -1; inset: 9px 13px; border-radius: 8px; background: #d6b24b; opacity: 0; pointer-events: none; }
+.map-attention-active #mapWorlds .needs-visit .world-next-arrow { animation: nextWorldNudge 2.8s ease-in-out infinite; }
+.map-attention-active #mapWorlds .needs-visit .world-next-light { animation: nextWorldLight 2.8s ease-in-out infinite; }
+.map-attention-active .map-shop .shop-merchant { animation: merchantNudge 7.5s ease-in-out infinite; }
+.map-head .chest-btn { top: calc(var(--map-head-height, 112px) + 128px); bottom: auto; }
+@keyframes nextWorldNudge { 0%, 70%, 100% { transform: translateX(0); } 24%, 43% { transform: translateX(5px); } 34% { transform: translateX(1px); } }
+@keyframes nextWorldLight { 0%, 70%, 100% { opacity: 0; } 24% { opacity: .22; } 43% { opacity: .08; } }
+@keyframes merchantNudge { 0%, 18%, 100% { transform: rotate(0) translateY(0); } 3% { transform: rotate(-5deg) translateY(-3px); } 6% { transform: rotate(4deg) translateY(-3px); } 9% { transform: rotate(-2deg) translateY(-1px); } 12% { transform: rotate(0) translateY(0); } }
+.gfx-lite .map-shop .shop-merchant, .gfx-lite #mapWorlds .world-next-arrow, .gfx-lite #mapWorlds .world-next-light { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .map-shop .shop-merchant, #mapWorlds .world-next-arrow, #mapWorlds .world-next-light { animation: none !important; } }
 /* Jogada do Dia (18/10) */
 .daily-score { font-family: var(--f-display); font-weight: 900; font-size: 44px; color: var(--gold-hi, #f3d27a); text-shadow: 0 3px 0 #000, 0 0 20px rgba(255,190,90,.5); }
 .daily-stars { font-size: 34px; letter-spacing: .15em; color: #ffd76a; text-shadow: 0 2px 0 #000, 0 0 14px rgba(255,200,80,.7); }
@@ -906,6 +937,44 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .tshop .ts-frame { width: 52%; }
 .tshop .ts-info { padding: 14px 10px 10px; }
 
+/* A moldura e os controles da loja não acompanham a altura de cada oferta. */
+.ui-kit .card.tshop, .card.tshop { height: min(760px, calc(100dvh - 56px)); display: grid; grid-template-rows: auto 32px 42px 30px minmax(0, 1fr) 48px; gap: 12px; animation: none; }
+.tshop .ts-title { grid-row: 1; justify-self: center; }
+.tshop .wallet { grid-row: 2; margin: 0; }
+.tshop .ts-tabs { grid-row: 3; }
+.tshop .ts-pager { grid-row: 4; }
+.tshop .ts-offers { grid-row: 5; min-height: 0; overflow-y: auto; overflow-x: hidden; align-items: start; scrollbar-width: thin; scrollbar-color: var(--gold) transparent; overscroll-behavior: contain; touch-action: pan-y; }
+.tshop .ts-offer { height: auto; }
+.tshop > .btns { grid-row: 6; margin-block: 0; }
+@media (max-height: 720px) {
+  .ui-kit .card.tshop, .card.tshop { grid-template-rows: 32px 26px 38px 28px minmax(0, 1fr) 44px; gap: 8px; }
+  .tshop .ts-title { height: 32px; width: 112px; aspect-ratio: auto; }
+  .tshop .ts-title span { font-size: 20px; }
+  .tshop .wallet { font-size: 21px; }
+  .tshop .wallet img.coin { width: 26px; height: 26px; }
+  .ui-kit .tshop .ts-tab, .tshop .ts-tab { min-height: 38px; }
+  .ui-kit .tshop > .btns .btn, .tshop > .btns .btn { min-height: 44px; }
+}
+@media (max-width: 360px) {
+  .tshop .ts-pager { gap: 6px; font-size: 11px; letter-spacing: .04em; }
+  .tshop .ts-pager span { white-space: nowrap; }
+  .tshop .ts-pager button { width: 28px; }
+}
+@media (max-height: 480px) and (min-aspect-ratio: 1/1) {
+  .ui-kit .card.tshop, .card.tshop { --cw: min(680px, calc(100vw - 32px)); padding: 30px calc(var(--cw) * .12) 24px; border-image-width: 40px calc(var(--cw) * .12) 44px; grid-template-columns: 1fr 1fr; grid-template-rows: 28px 38px 28px minmax(0, 1fr) 40px; gap: 6px; }
+  .tshop .ts-title, .tshop .wallet { grid-row: 1; }
+  .tshop .ts-title { grid-column: 1; justify-self: center; height: 28px; }
+  .tshop .wallet { grid-column: 2; }
+  .tshop .ts-tabs { grid-row: 2; grid-column: 1 / -1; }
+  .tshop .ts-pager { grid-row: 3; grid-column: 1 / -1; }
+  .tshop .ts-offers { grid-row: 4; grid-column: 1 / -1; }
+  .tshop .ts-offer { display: grid; grid-template-columns: 82px minmax(0, 1fr); align-items: start; gap: 10px; }
+  .tshop .ts-frame { width: 82px; }
+  .tshop .ts-info { margin-top: 0; }
+  .tshop > .btns { grid-row: 5; grid-column: 1 / -1; }
+  .ui-kit .tshop > .btns .btn, .tshop > .btns .btn { min-height: 40px; }
+}
+
 /* fase atual: brilho suave e animado logo abaixo do botão */
 .node.simple.art-v2.current::after { content: ''; position: absolute; left: 50%; top: 58%; width: 175%; height: 75%; transform: translateX(-50%); border-radius: 50%; z-index: -1; pointer-events: none;
   background: radial-gradient(ellipse at center, rgba(130,245,230,.6) 0%, rgba(63,216,204,.25) 42%, transparent 70%); animation: curGlow 2.6s ease-in-out infinite; }
@@ -980,3 +1049,7 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .chal .btn.dark.small { min-width: 78px; min-height: 34px; font-size: 12px; }
 .chal-txt span { font-size: 10.5px; }
 .gsi-box { display: flex; justify-content: center; min-height: 44px; margin: 4px 0; }
+.energy-card.has-iap .en-big img { width: 56px; height: 56px; }
+.energy-card.has-iap .orn { display: none; }
+.energy-card.has-iap .moves-line { margin: 2px 0; font-size: 11px; }
+.energy-card.has-iap .btns .btn { transform: scale(.86); margin-top: -7px; margin-bottom: -7px; }

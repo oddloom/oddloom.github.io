@@ -11,7 +11,7 @@
   // ---------- progresso salvo no aparelho ----------
   const SAVE_KEY = 'lostrelics.save.v1';
   let save = { unlocked: 1, stars: {}, best: {}, wins: 0 };
-  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.unlocked) save = Object.assign(save, s); } catch (e) {}
+  try { const s = JSON.parse(LRStorage.getItem(SAVE_KEY)); if (s && s.unlocked) save = Object.assign(save, s); } catch (e) {}
   save.coins = save.coins == null ? 300 : save.coins;
   save.items = Object.assign({ moves: 0, dyn: 0, seal: 0, orb: 0, hammer: 1 }, save.items);
   // 18/10: entrou a Onça normal como fase 9; o progresso que era da fase 9 em diante passa a ser da fase seguinte (uma vez só, e já grava)
@@ -21,7 +21,7 @@
     if (save.unlocked >= 9) save.unlocked++;
     if (save.fogShown != null && save.fogShown >= 8) save.fogShown++;
     save.v2 = 1;
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
+    try { LRStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
   }
   // 18/10: entrou o Mundo 1 = Amazônia (15 fases novas na frente); todo progresso anda +15 (uma vez só, e já grava).
   // Quem nunca jogou (fase 1 aberta, sem estrela) começa na Amazônia.
@@ -35,7 +35,7 @@
       if (save.orbAt != null) save.orbAt += 15;
     }
     save.v3 = 1;
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
+    try { LRStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
   }
   // 18/10: Amazônia ganhou 6 fases (a antiga 15, chefe final, virou a 21) e o Egito 14 (o chefe final antigo, 66, virou a 86):
   // o progresso anda +6 a partir da 15 e +20 a partir da 66 (uma vez só, e já grava)
@@ -47,7 +47,7 @@
     if (save.fogShown != null) save.fogShown = mv(save.fogShown + 1) - 1;
     if (save.orbAt != null) save.orbAt = mv(save.orbAt + 1) - 1;
     save.v4 = 1;
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
+    try { LRStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
   }
   // skins compradas no Códice (16/10): owned = ids comprados; skins = a que está em uso em cada aba (null = a de fábrica)
   save.owned = save.owned || [];
@@ -73,7 +73,7 @@
   // aplica as skins em uso (joia e rastro trocam a arte no art.js; palavra troca as imagens do anúncio e dos elogios)
   const applySkins = () => ART.setSkins({ gem: save.skins.gem, fx: save.skins.trail });
   const wordImg = (k) => (save.skins.word === 'rare' && ART.nodeImg('wr_' + k)) || ART.nodeImg(k);
-  const persist = () => { save.savedAt = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof cloudPush === 'function') cloudPush(); };
+  const persist = () => { save.savedAt = Date.now(); try { LRStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof cloudPush === 'function') cloudPush(); };
   const hardWeeklyScores = () => {
     const week = Records.week();
     if (save.hardWeekly.week !== week) save.hardWeekly = { week, scores: {} };
@@ -158,8 +158,8 @@
   // 29/10: gráficos Completo/Leve. 'auto' começa Completo e mede os primeiros 8 s jogando: abaixo de 56 FPS passa pro
   // Leve e guarda (mede uma vez só). Aparelho com até 2 GB já começa Leve. O jogador pode fixar no menu de pausa.
   const GFX_KEY = 'lr.gfx', GFX_AUTO_KEY = 'lr.gfxAuto';
-  const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
-  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  const lsGet = (k) => { try { return LRStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { LRStorage.setItem(k, v); } catch (e) {} };
   let gfxPref = lsGet(GFX_KEY) || 'auto', gfxAuto = lsGet(GFX_AUTO_KEY) || (navigator.deviceMemory && navigator.deviceMemory <= 2 ? 'lite' : '');
   let LITE = false;
   function applyGfx() { LITE = gfxPref === 'lite' || (gfxPref === 'auto' && gfxAuto === 'lite'); document.documentElement.classList.toggle('gfx-lite', LITE); }
@@ -210,6 +210,60 @@
     if (save.energy.n < Math.max(E_MAX, runChargedFrom)) save.energy.n++;
     persist(); scheduleNotes();
   }
+  // ---------- compras com dinheiro real (03/11, só no app, pela Play) ----------
+  // O preço vem sempre da loja. Sem produto criado no Console ou fora do app, nenhum botão aparece.
+  // Ordem segura: entrega, grava e só então consome. Se o app fechar no meio, iapRecover entrega ao abrir de novo.
+  const IAP_ENERGY = { energy_5: 5, energy_15: 15 }, IAP_SKINS = { skin_temple: { id: 'gem.temple', slot: 'gem', value: 'temple' } };
+  const IapPlugin = () => (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.NativePurchases) || null;
+  let iapProducts = {};
+  const iapPrice = (sku) => (iapProducts[sku] && iapProducts[sku].priceString) || '';
+  function iapGrant(sku, token) {
+    const key = String(token || '').slice(0, 32);
+    save.iapDone = save.iapDone || {};
+    if (key && save.iapDone[key]) return false; // a mesma compra nunca entrega duas vezes
+    if (key) save.iapDone[key] = 1;
+    if (IAP_ENERGY[sku]) { energyNow(); save.energy.n += IAP_ENERGY[sku]; }
+    const sk = IAP_SKINS[sku];
+    if (sk && !save.owned.includes(sk.id)) { save.owned.push(sk.id); save.skins[sk.slot] = sk.value; applySkins(); }
+    persist(); paintEnergy(); scheduleNotes();
+    track('energy_buy', { via: 'iap', result: sku });
+    return true;
+  }
+  async function iapFinish(pl, sku, token) { if (IAP_ENERGY[sku] && token) await pl.consumePurchase({ purchaseToken: token }); else if (token) await pl.acknowledgePurchase({ purchaseToken: token }); }
+  async function iapBuy(sku) {
+    const pl = IapPlugin();
+    if (!pl) return false;
+    try {
+      const r = await pl.purchaseProduct({ productIdentifier: sku, productType: 'inapp', quantity: 1, isConsumable: false, autoAcknowledgePurchases: false });
+      if (r && r.purchaseState && String(r.purchaseState) !== '1') { showPraise(T('iap.pending'), 'info'); return false; } // Pix ou boleto ainda sem confirmar: entrega quando abrir depois de pago
+      iapGrant(sku, r && r.purchaseToken);
+      await iapFinish(pl, sku, r && r.purchaseToken).catch(() => {});
+      return true;
+    } catch (e) {
+      if (!/cancel/i.test(String(e && (e.code || e.message)))) showPraise(T('iap.fail'), 'info');
+      return false;
+    }
+  }
+  async function iapRecover(pl) {
+    const { purchases } = await pl.getPurchases({ productType: 'inapp' });
+    for (const p of purchases || []) {
+      const sku = p.productIdentifier, token = p.purchaseToken;
+      if (String(p.purchaseState) !== '1' || (!IAP_ENERGY[sku] && !IAP_SKINS[sku])) continue;
+      if (iapGrant(sku, token) && modalOpen()) showPraise(T('iap.recovered'), 'info');
+      if (IAP_ENERGY[sku] || p.isAcknowledged === false) await iapFinish(pl, sku, token).catch(() => {});
+    }
+  }
+  async function iapInit() {
+    const pl = IapPlugin();
+    if (!pl) return;
+    try {
+      const { isBillingSupported } = await pl.isBillingSupported();
+      if (!isBillingSupported) return;
+      const { products } = await pl.getProducts({ productIdentifiers: [...Object.keys(IAP_ENERGY), ...Object.keys(IAP_SKINS)], productType: 'inapp' });
+      for (const p of products || []) iapProducts[p.identifier] = p;
+      await iapRecover(pl);
+    } catch (e) {}
+  }
   const energyBoughtToday = () => { const d = new Date().toDateString(), b = save.energyBuy; return b && b.day === d ? b.n : 0; };
   function openEnergy(onReady, back) {
     const buysLeft = () => Math.max(0, E_COINS_DAY - energyBoughtToday());
@@ -220,8 +274,10 @@
       '<div class="btns">' +
       '<button class="btn stack" id="mEnAd" type="button" hidden>' + T('energy.ad') + '<span class="sub">' + T('energy.adSub') + '</span></button>' +
       '<button class="btn stone stack" id="mEnCoins" type="button"' + (save.coins < E_COINS || !buysLeft() ? ' disabled' : '') + '>' + T('energy.coins') + '<span class="sub">' + T(buysLeft() ? 'energy.coinsSub' : 'energy.coinsDone', { n: E_COINS, r: buysLeft() }) + '</span></button>' +
+      Object.keys(IAP_ENERGY).filter(iapPrice).map((sku) => '<button class="btn stack" type="button" data-iap="' + sku + '">' + T('energy.pack', { n: IAP_ENERGY[sku] }) + '<span class="sub">' + iapPrice(sku) + '</span></button>').join('') +
       '<button class="btn dark small" id="mEnBack" type="button">' + T('map') + '</button></div>');
     card.classList.add('energy-card');
+    if (card.querySelector('[data-iap]')) card.classList.add('has-iap'); // com os pacotes são 4 botões: compacta pra caber na moldura
     const paint = () => {
       if (!card.isConnected || $('modal').hidden) return clearInterval(iv);
       const n = energyNow(); card.querySelector('#enCount').textContent = n + '/' + E_MAX;
@@ -230,6 +286,7 @@
     };
     const iv = setInterval(paint, 1000); paint();
     const grant = () => { save.energy.n = Math.max(save.energy.n, 0); addEnergy(1); paint(); };
+    card.querySelectorAll('[data-iap]').forEach((b) => { b.onclick = async () => { Sound.play('click'); b.disabled = true; await iapBuy(b.dataset.iap); b.disabled = false; paint(); }; });
     card.querySelector('#mEnCoins').onclick = () => { if (save.coins < E_COINS || !buysLeft()) return; Sound.play('click'); save.coins -= E_COINS; save.energyBuy = { day: new Date().toDateString(), n: energyBoughtToday() + 1 }; paintWallet(); track('energy_buy', { via: 'coins' }); grant(); };
     card.querySelector('#mEnBack').onclick = () => { Sound.play('click'); clearInterval(iv); closeModal(); if (back) back(); else if (scene !== 'map') wipe(openMap); };
     Ads.offerReward({
@@ -292,10 +349,15 @@
   // (Worker) alguns segundos depois de cada gravação; ao entrar, fica o save com mais progresso (nuvem ou aparelho).
   // Precisa do plugin SocialLogin (@capgo/capacitor-social-login) e do Web client ID em window.LR_GOOGLE_ID.
   const CLOUD_KEY = 'lr.cloud', CLOUD_API = window.LR_RECORDS_API || '';
+  const MESA_ACCOUNT = window.LR_MESA && /^[A-Z0-9]{8}$/.test(window.LR_MESA.code) && typeof window.LR_MESA.session === 'string' && window.LR_MESA.session.length === 72 ? window.LR_MESA : null;
   const SocialLogin = () => (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.SocialLogin) || null;
-  const CLOUD_ON = !!window.LR_GOOGLE_ID && !!CLOUD_API; // app (plugin) e site (botão do Google); portais não recebem o ID
+  const CLOUD_ON = !!CLOUD_API && (!!MESA_ACCOUNT || !!window.LR_GOOGLE_ID);
   let cloud = null;
   try { cloud = JSON.parse(lsGet(CLOUD_KEY) || 'null'); } catch (e) {}
+  if (MESA_ACCOUNT) {
+    cloud = { session: MESA_ACCOUNT.session, name: MESA_ACCOUNT.name, source: 'mesa' };
+    lsSet(CLOUD_KEY, JSON.stringify(cloud));
+  }
   let cloudTimer = null, socialReady = null;
   const progressOf = (s) => (s.unlocked || 0) * 1000 + Object.values(s.stars || {}).reduce((a, b) => a + (+b || 0), 0);
   async function cloudCall(route, body) {
@@ -315,7 +377,7 @@
     if (!data || typeof data !== 'object') return;
     const merged = LR.mergeSaves(save, data), before = progressOf(save), coins = save.coins;
     Object.assign(save, merged);
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
+    try { LRStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
     if (progressOf(save) === before && save.coins === coins) return;
     if (modalOpen()) return;
     if (scene === 'menu') paintMenu(); else if (scene === 'map') openMap();
@@ -352,6 +414,14 @@
   // janela "Salve seu progresso" (1ª abertura e botão do menu)
   function openAccount(after) {
     const done = () => { closeModal(); paintAccount(); if (after) after(); };
+    if (MESA_ACCOUNT) {
+      const card = openModal('<h2 class="plaque-title">' + T('acct.title') + '</h2><div class="orn"><i></i></div>' +
+        '<p class="save-summary"></p><p class="info-line">' + T('acct.mesaManaged') + '</p>' +
+        '<div class="btns"><button class="btn" id="mAcOk" type="button">' + T('resume') + '</button></div>');
+      card.querySelector('.save-summary').textContent = cloud ? T('acct.on', { n: cloud.name || 'Google' }) : T('acct.mesaReconnect');
+      card.querySelector('#mAcOk').onclick = done;
+      return;
+    }
     if (cloud) {
       const card = openModal('<h2 class="plaque-title">' + T('acct.title') + '</h2><div class="orn"><i></i></div>' +
         '<p class="save-summary">' + T('acct.on', { n: cloud.name || 'Google' }) + '</p>' +
@@ -401,7 +471,7 @@
     const b = $('btnAccount');
     if (!b) return;
     b.hidden = !CLOUD_ON;
-    b.innerHTML = cloud ? T('acct.btnOn') : G_LOGO + '<span>' + T('acct.btn') + '</span>';
+    b.innerHTML = MESA_ACCOUNT ? T(cloud ? 'acct.mesaOn' : 'acct.mesaRetry') : cloud ? T('acct.btnOn') : G_LOGO + '<span>' + T('acct.btn') + '</span>';
   }
 
   // ---------- avaliação na Play + "Sua opinião" (30/10) ----------
@@ -509,6 +579,9 @@
   let vis = new Map(), dying = [], parts = [], floats = [], glints = [];
   let shake = 0, hint = null, idle = 0, selected = null, drag = null, usedExtra = false, praiseLevel = 0, glintClock = 0;
   const modalOpen = () => !$('modal').hidden;
+  function syncMapAttention() {
+    $('screen-map').classList.toggle('map-attention-active', scene === 'map' && !modalOpen() && !document.hidden);
+  }
   const runMode = () => level && (level.daily ? 'daily' : level.weekly ? 'weekly' : level.hard ? 'hard' : 'normal');
   function finishRun(result, extra) {
     if (runEnded || !level || !state) return;
@@ -561,6 +634,7 @@
     }
     hint = null; selected = null; drag = null; usedExtra = false; idle = 0; shake = 0;
     scene = 'play';
+    syncMapAttention();
     $('screen-map').hidden = true; $('screen-menu').hidden = true; $('hud').hidden = false;
     buildGoalChips();
     if (level.daily || level.weekly) { $('goals').innerHTML = ''; chipEls = []; }
@@ -2382,11 +2456,12 @@
     card.className = 'card';
     card.innerHTML = html;
     $('modal').hidden = false;
+    syncMapAttention();
     const first = card.querySelector('.btn');
     if (first) setTimeout(() => first.focus({ preventScroll: true }), 50);
     return card;
   }
-  function closeModal() { $('modal').hidden = true; }
+  function closeModal() { $('modal').hidden = true; syncMapAttention(); }
   const goalText = (g, L) => {
     if (g.type === 'collect') return T('goal.collect', { n: g.target }) + ' ' + I18N.gem(g.color);
     if (g.type === 'make') return T('goal.make.' + g.special, { n: g.target });
@@ -2669,12 +2744,12 @@
   // Skins: a de fábrica (value null) vem de graça; as outras se compram uma vez e depois é só tocar em USAR.
   const CODEX_TABS = [
     { id: 'items', icon: 'ixmoves' },
-    { id: 'gems', icon: 'ixpalette', slot: 'gem', skins: [
+    { id: 'gems', icon: 'skgold', slot: 'gem', skins: [
       { id: 'gem.classic', art: 'skclassic', value: null },
       { id: 'gem.obsidian', art: 'skobsidian', value: 'obsidian', price: 800 },
       { id: 'gem.gold', art: 'skgold', value: 'gold', price: 1500 },
       // paga com dinheiro real (02/11): a compra pela Play ainda não existe; quem comprou com moedas antes continua dono
-      { id: 'gem.temple', art: 'sktemple', value: 'temple', paid: 'R$ 3,00' }] },
+      { id: 'gem.temple', art: 'sktemple', value: 'temple', paid: 'skin_temple' }] },
     { id: 'words', icon: 'ixorb', slot: 'word', skins: [
       { id: 'word.solar', art: 'p3', value: null },
       { id: 'word.rare', art: 'wr_p3', value: 'rare', price: 600 },
@@ -2691,7 +2766,7 @@
   function openShop(back, startTab) {
     if (!ART.nodeImg('cxcard')) return openShopList(back);
     Sound.play('click');
-    let tab = startTab || 'items', page = 0;
+    let tab = startTab || 'gems', page = 0;
     const PER = 1; // 16/10, pedido dele: um item por página, centralizado
     const coin = (n, sz) => '<img class="coin" alt="" src="' + ART.icon('coin', sz) + '">' + n;
     const render = () => {
@@ -2724,7 +2799,7 @@
             '<div class="ts-info"><b>' + o.name + '</b><span>' + o.desc + '</span>' + (o.note ? '<small>' + o.note + '</small>' : '') +
               (o.btn === 'buy' ? '<button type="button" class="btn small ts-buy" data-k="' + o.key + '" aria-label="' + T('shop.buy') + ' ' + o.price + '"' + (save.coins < o.price ? ' disabled' : '') + '>' + coin(o.price, 48) + '</button>' // 16/10: só o preço (pedido dele)
                 : o.btn === 'use' ? '<button type="button" class="btn dark small ts-use" data-k="' + o.key + '">' + T('codex.use') + '</button>'
-                : o.btn === 'paid' ? '<button type="button" class="btn dark small" disabled>' + o.paid + '</button><small>' + T('codex.paid.soon') + '</small>' : '') +
+                : o.btn === 'paid' ? (iapPrice(o.paid) ? '<button type="button" class="btn small ts-iap" data-sku="' + o.paid + '">' + iapPrice(o.paid) + '</button>' : '<button type="button" class="btn dark small" disabled>R$ 3,00</button><small>' + T('codex.paid.soon') + '</small>') : '') +
             '</div></div>').join('') + '</div>' +
         '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('close') + '</button></div>');
       card.classList.add('tshop');
@@ -2741,6 +2816,7 @@
         else { save.owned.push(o.sk.id); save.skins[T0.slot] = o.sk.value; applySkins(); }
         persist(); Sound.play('chest'); render(); paintWallet();
       }; });
+      card.querySelectorAll('.ts-iap').forEach((b) => { b.onclick = async () => { Sound.play('click'); b.disabled = true; if (await iapBuy(b.dataset.sku)) Sound.play('chest'); render(); }; });
       card.querySelectorAll('.ts-use').forEach((b) => { b.onclick = () => {
         const o = find(b.dataset.k); if (!o) return;
         save.skins[T0.slot] = o.sk.value; persist(); applySkins(); Sound.play('create'); render();
@@ -2774,7 +2850,12 @@
     };
     render();
   }
-  function paintWallet() { const el = $('mapCoins'); if (el) el.textContent = save.coins.toLocaleString(); }
+  function paintWallet() {
+    const el = $('mapCoins');
+    if (el) el.textContent = save.coins.toLocaleString();
+    $('mapShopName').textContent = T('shop.title');
+    $('btnShop').setAttribute('aria-label', T('map.shop.label', { n: save.coins.toLocaleString() }));
+  }
 
   // martelo: o próximo toque quebra a joia escolhida (não gasta movimento)
   let hammerMode = false, hammerFx = null;
@@ -3303,6 +3384,7 @@
     scene = 'menu'; state = null; updateHammerBtn();
     $('hud').hidden = true; $('screen-map').hidden = true; $('screen-menu').hidden = false;
     paintMenu();
+    syncMapAttention();
   }
   $('btnPlay').onclick = () => {
     Sound.init(); Sound.play('click');
@@ -3328,6 +3410,7 @@
     paintMenu();
     buildMap();
     startMapTick();
+    syncMapAttention();
   }
   // ---------- pacote extra (15/10) ----------
   // A abertura só baixa e monta o essencial (joias, tabuleiro, interface). Chefes, bichos, barra de vida e o mapa 3D
@@ -3665,15 +3748,36 @@
     if (!wn) { wn = document.createElement('div'); wn.id = 'mapWorlds'; wn.innerHTML = '<button type="button" class="wprev"></button><button type="button" class="wnext"></button>'; $('screen-map').appendChild(wn); }
     const [wp, wx] = wn.querySelectorAll('button'), arw = ART.nodeImg('navarrow');
     [wp, wx].forEach((b) => { if (arw) b.style.backgroundImage = 'url(' + arw + ')'; });
-    const nextOpen = WI + 1 < WORLDS.length && save.unlocked >= WORLDS[WI + 1].from && NEW3 && D[WORLDS[WI + 1].map];
+    const nextOpen = Boolean(WI + 1 < WORLDS.length && save.unlocked >= WORLDS[WI + 1].from && NEW3 && D[WORLDS[WI + 1].map]);
     wp.hidden = WI === 0; wx.hidden = WI + 1 >= WORLDS.length; wx.disabled = !nextOpen;
+    // A passagem para outro mundo deve parecer continuação da expedição, não fim do jogo.
+    // O destaque só insiste até a primeira visita; depois a placa continua legível, sem insistência.
+    save.mapWorldSeen = save.mapWorldSeen || {};
+    save.mapWorldSeen[WI] = true;
+    const novoDestino = nextOpen && !save.mapWorldSeen[WI + 1];
+    wn.classList.toggle('has-next-open', nextOpen);
+    wx.classList.toggle('needs-visit', novoDestino);
+    wx.classList.toggle('next-open', nextOpen);
+    wp.innerHTML = ''; wx.innerHTML = '';
+    if (nextOpen) {
+      const nome = T('map.title' + (WI + 2));
+      wx.innerHTML = '<span class="world-next-copy"><small>' + T('map.next') + '</small><strong>' + nome + '</strong></span><img class="world-next-arrow" alt="" src="' + arw + '"><i class="world-next-light" aria-hidden="true"></i>';
+      wx.style.backgroundImage = '';
+      wx.title = T('map.next.label', { world: nome });
+    } else {
+      wx.title = T('map.next.locked', { level: Wd.to });
+    }
     wp.setAttribute('aria-label', T('map.world' + (WI > 1 ? WI : ''))); wx.setAttribute('aria-label', T('map.world' + (WI + 2)));
+    if (nextOpen) wx.setAttribute('aria-label', T('map.next.label', { world: T('map.title' + (WI + 2)) }));
     const goWorld = (k) => { Sound.play('click'); mapWorld = k; wipe(buildMap); };
     wp.onclick = () => goWorld(WI - 1); wx.onclick = () => { if (nextOpen) goWorld(WI + 1); };
     $('mapStarIc').src = ART.icon('star', 44);
     $('mapCoinIc').src = ART.icon('coin', 64);
     $('mapEnergyIc').src = ART.icon('sun', 64); $('mapChestIc').src = ART.icon('chest', 128);
     paintWallet();
+    const mapa = $('screen-map');
+    mapa.style.setProperty('--map-controls-width', w + 'px');
+    mapa.style.setProperty('--map-head-height', Math.ceil(mapa.querySelector('.map-head').getBoundingClientRect().height) + 'px');
     inner.querySelectorAll('.node:not(.locked)').forEach((b) => { b.onclick = () => { Sound.init(); Sound.play('click'); openPre(+b.dataset.id); }; });
   }
   $('btnShop').onclick = () => { Sound.init(); openShop(); };
@@ -3694,7 +3798,7 @@
   }
 
   window.addEventListener('resize', () => { layout(); if (scene === 'map') buildMap(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { Sound.pause(); scheduleNotes(); cloudPush(true); } else { cloudPush(true); Sound.resume(); if (scene === 'map') paintEnergy(); } });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { Sound.pause(); scheduleNotes(); cloudPush(true); } else { cloudPush(true); Sound.resume(); if (scene === 'map') paintEnergy(); } syncMapAttention(); });
   window.addEventListener('pagehide', () => { if (scene === 'play' && !runEnded) abandonRun('pagehide'); });
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (modalOpen() && $('modalCard').querySelector('#mResume')) closeModal(); else openPause(); } });
   Ads.setHooks({ pause: () => Sound.pause(), resume: () => Sound.resume() });
@@ -3798,7 +3902,7 @@
     else if (location.hash === '#derrotademo') { startLevel(1); setTimeout(() => { showLose(); const x = document.getElementById('mExtra'); if (x) x.hidden = false; }, 900); }
     else if (location.hash === '#pontosdemo') { startLevel(1); setTimeout(() => { state.score = 1290; renderHUD(); floats.push({ x: cellX(3), y: cellY(4), text: '+90', num: 90, color: '#ffe08a', t: 0, hold: true }); }, 900); }
     else if (location.hash === '#vitoriademo') { startLevel(1); setTimeout(() => { state.score = 16900; showWin(); }, 1200); setTimeout(() => document.querySelectorAll('.stars-big img').forEach((im, i) => { if (i < 2) { im.src = ART.nodeImg('vstar') || im.src; im.classList.add('on'); } }), 2600); }
-    else { openMenu(); if (cloud) cloudPush(true); if (APP && CLOUD_ON && !cloud && !lsGet('lr.loginAsked')) { lsSet('lr.loginAsked', '1'); setTimeout(() => { if (!modalOpen()) openAccount(); }, 600); } }
+    else { if (MESA_ACCOUNT && MESA_ACCOUNT.data) applyCloud(MESA_ACCOUNT.data); openMenu(); iapInit(); if (cloud) cloudPush(true); if (APP && CLOUD_ON && !MESA_ACCOUNT && !cloud && !lsGet('lr.loginAsked')) { lsSet('lr.loginAsked', '1'); setTimeout(() => { if (!modalOpen()) openAccount(); }, 600); } }
     requestAnimationFrame(frame);
   }
   $('loadingTxt').textContent = T('loading');

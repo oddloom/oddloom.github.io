@@ -17,7 +17,7 @@
   };
   const clean = (v, n) => String(v == null ? '' : v).replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, n || 80);
   let stored = { anonId: randomId(), queue: [] };
-  try { stored = Object.assign(stored, JSON.parse(localStorage.getItem(STATE_KEY)) || {}); } catch (e) {}
+  try { stored = Object.assign(stored, JSON.parse(LRStorage.getItem(STATE_KEY)) || {}); } catch (e) {}
   if (!stored.anonId) stored.anonId = randomId();
   if (!Array.isArray(stored.queue)) stored.queue = [];
   const sessionId = randomId();
@@ -29,7 +29,7 @@
 
   const query = new URLSearchParams(location.search);
   let campaign = {};
-  try { campaign = JSON.parse(localStorage.getItem(CAMPAIGN_KEY)) || {}; } catch (e) {}
+  try { campaign = JSON.parse(LRStorage.getItem(CAMPAIGN_KEY)) || {}; } catch (e) {}
   const incoming = {};
   ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach((k) => {
     if (query.get(k)) incoming[k.slice(4)] = clean(query.get(k), 60);
@@ -37,12 +37,12 @@
   if (query.get('ref')) incoming.ref = clean(query.get('ref'), 60);
   if (Object.keys(incoming).length) {
     campaign = Object.assign({ firstAt: new Date().toISOString() }, incoming, { lastAt: new Date().toISOString() });
-    try { localStorage.setItem(CAMPAIGN_KEY, JSON.stringify(campaign)); } catch (e) {}
+    try { LRStorage.setItem(CAMPAIGN_KEY, JSON.stringify(campaign)); } catch (e) {}
   }
 
   let timer = 0, sending = false;
   const persist = () => {
-    try { localStorage.setItem(STATE_KEY, JSON.stringify({ anonId: stored.anonId, queue: stored.queue.slice(-MAX_QUEUE) })); } catch (e) {}
+    try { LRStorage.setItem(STATE_KEY, JSON.stringify({ anonId: stored.anonId, queue: stored.queue.slice(-MAX_QUEUE) })); } catch (e) {}
   };
   const compactParams = (params) => {
     const out = {};
