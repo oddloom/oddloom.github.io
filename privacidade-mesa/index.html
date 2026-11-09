@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Política de Privacidade · Mesa · Oddloom Games</title>
+<meta name="theme-color" content="#ffffff">
+<style>
+  :root { --bg:#fff; --text:#1D1D1F; --muted:#6E6E73; --line:#E5E5EA; --accent:#0071E3;
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif; color-scheme:light; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font); font-size:17px; line-height:1.6; padding-inline:16px; -webkit-font-smoothing:antialiased; }
+  main { max-width:68ch; margin:0 auto; padding-block:40px 64px; display:flex; flex-direction:column; gap:18px; }
+  h1 { font-size:clamp(30px,5vw,44px); font-weight:700; letter-spacing:-.03em; line-height:1.1; }
+  h2 { font-size:19px; font-weight:600; margin-top:14px; letter-spacing:-.02em; }
+  .meta { color:var(--muted); font-size:14px; }
+  ul { padding-left:20px; display:flex; flex-direction:column; gap:6px; }
+  a { color:var(--accent); }
+  .back { font-size:15px; color:var(--accent); text-decoration:none; }
+  hr { border:0; border-top:1px solid var(--line); margin-block:18px; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../">‹ Oddloom Games</a>
+  <h1>Política de Privacidade do Mesa</h1>
+  <p class="meta">Mesa · desenvolvido por Oddloom Games · última atualização: 09/11/2026</p>
+
+  <p>O Mesa é um aplicativo social de jogos (site e app) da Oddloom Games, para pessoas com 13 anos ou mais. Você pode jogar algumas partidas como visitante, sem conta. Para ter perfil, amigos, conversas, salas de voz, ranking, loja e canal, é preciso entrar com uma conta Google. Esta página explica o que fica guardado, o que não guardamos e quem mais pode receber informações quando você usa o Mesa.</p>
+
+  <h2>1. Login com Google</h2>
+  <p>Ao tocar em “Entrar com Google”, o Google envia ao Mesa um token de login. Nosso servidor (Cloudflare) confere esse token com o Google. Do token, usamos:</p>
+  <ul>
+    <li>o identificador da sua conta Google só para gerar o seu código de amigo de 8 caracteres (um resumo criptográfico; o identificador em si não é guardado);</li>
+    <li>o primeiro nome (ou o nome da conta) só na primeira entrada, como nome de exibição inicial (até 16 caracteres). Depois você pode trocá-lo no perfil.</li>
+  </ul>
+  <p>O e-mail e a foto da sua conta Google não são guardados nem mostrados no Mesa. O e-mail pode vir no token só na hora da conferência do login e é descartado em seguida. Você pode sair da conta no próprio app; isso encerra a sessão naquele aparelho, mas não apaga a conta. Para excluir a conta, veja a página <a href="../excluir-conta-mesa/">Excluir conta Mesa</a>.</p>
+
+  <h2>2. O que fica na sua conta</h2>
+  <p>Cada conta fica num servidor da Cloudflare. Guardamos:</p>
+  <ul>
+    <li>Perfil: código de amigo, nome de exibição, nome de usuário (@) se você escolher um, avatar, moldura, faixa e tabuleiro (escolhas da loja, não a foto do Google), recado, estatísticas por jogo, data de criação da conta e, se houver, até quando o Mesa VIP está ativo.</li>
+    <li>Até 5 sessões de login (identificadores aleatórios), para você entrar em mais de um aparelho.</li>
+    <li>Amigos (até 100), pedidos enviados e recebidos (até 50) e pessoas bloqueadas — cada um com uma cópia do perfil público visível naquele momento.</li>
+    <li>Conversas com amigos: até 200 mensagens por conversa, com texto, fotos em JPEG que você envia e links de GIFs do Giphy. Cada lado da conversa guarda a própria cópia, inclusive a própria cópia das fotos. Também ficam as contagens de não lidas.</li>
+    <li>Convites para jogar (até 20; valem 15 minutos).</li>
+    <li>Histórico das últimas 60 partidas (jogo, resultado, se foi contra robô ou outras pessoas, nomes dos adversários e, se houve, o valor da aposta em moedas).</li>
+    <li>Saldo de moedas (moeda fictícia, ganha jogando e na recompensa diária; não se compra nem se saca), saldo de diamantes, itens da loja que você comprou, horário da última recompensa diária e moedas reservadas numa aposta em andamento.</li>
+    <li>Identificadores das compras aprovadas no Mercado Pago (até os 300 mais recentes, no formato do identificador do pagamento), para creditar uma vez só e evitar cobrança repetida.</li>
+    <li>O código da sala de voz que você criou, se houver (uma por conta).</li>
+    <li>Se você tiver um canal de transmissão (recurso do Mesa VIP): nome e descrição do canal, até 100 publicações (texto, foto JPEG, reações e, nos posts “bomba”, a hora em que somem — de 10 minutos a 7 dias), a lista de quem segue o canal (até 5 mil códigos) e as fotos das publicações ativas.</li>
+    <li>Se a moderação suspender a conta, um marcador de suspensão.</li>
+  </ul>
+  <p>O nome de usuário que você escolher fica reservado à parte, ligado só ao seu código de amigo, para ninguém repetir o mesmo @.</p>
+
+  <h2>3. Salas de voz, chat e partidas</h2>
+  <p>Nas salas de voz só entra quem tem conta. De cada sala guardamos nome, dono, se é pública ou privada, visual (tema, cor, parede), listas de quem foi liberado, banido ou silenciado, e o chat. A senha de sala privada nunca é guardada em texto: fica só um sal aleatório e um resumo criptográfico.</p>
+  <ul>
+    <li>O chat da sala guarda até 100 mensagens por 7 dias (texto, fotos JPEG e links de GIFs). Convites de partida no chat valem 15 minutos. Quem passa desse limite perde as mensagens mais antigas, e as fotos delas são apagadas.</li>
+    <li>Se alguém colocar um vídeo, o servidor guarda qual é (identificador do YouTube, Vimeo, Dailymotion ou Twitch, ou o endereço https de um arquivo de vídeo em sala privada) e em que ponto está a reprodução — não o arquivo do vídeo em si.</li>
+    <li>Sala vazia é apagada depois de 7 dias, junto com o chat e as fotos dela.</li>
+    <li>A lista pública de salas mostra código, nome, quantas pessoas estão lá, se o dono tem VIP e o visual.</li>
+  </ul>
+  <p>Nas mesas de jogo, o chat da partida guarda as últimas 50 mensagens. Quem joga sem conta entra com um nome de visitante aleatório e um identificador do aparelho, os dois gerados no próprio aparelho; se você estiver logado, a partida também fica ligada ao seu código de amigo (estatísticas, histórico, ranking e apostas em moedas).</p>
+  <p>O Bob é um anfitrião automático da sala “Cinema do Bob”: não é uma pessoa. Ele pode mandar uma saudação no chat usando o nome que você mostrou na sala.</p>
+
+  <h2>4. Ranking, denúncias e códigos de presente</h2>
+  <ul>
+    <li>O ranking é por mês e por jogo (e um geral). Guardamos código de amigo, nome, avatar, moldura, pontos, vitórias e partidas. A lista pública mostra os 50 primeiros. O ranking contra robô só conta no nível médio ou difícil.</li>
+    <li>Uma denúncia guarda quem denunciou (código de amigo), o tipo (pessoa, sala ou canal), o motivo, dados públicos do alvo e até 20 textos recentes da conversa ou do chat, para a moderação olhar. A mesma pessoa denunciando o mesmo alvo atualiza a denúncia, em vez de criar outra. Denúncias ficam até a moderação arquivar.</li>
+    <li>Se você resgatar um código de presente, o servidor guarda só o resumo criptográfico do código e o código de amigo de quem usou, para aquele código não valer de novo.</li>
+  </ul>
+
+  <h2>5. Voz</h2>
+  <p>A voz ao vivo passa pelo LiveKit Cloud. O Mesa gera um passe temporário (válido por 6 horas) com o seu código de amigo e o nome de exibição, só para aquela sala e só para o microfone. O código do Mesa não grava, não armazena e não transcreve a conversa de voz. O áudio circula em tempo real pelo serviço de voz e termina quando você sai ou a sala acaba.</p>
+
+  <h2>6. Compras com dinheiro real</h2>
+  <p>Diamantes e o Mesa VIP podem ser comprados pelo Mercado Pago (Checkout Pro: Pix ou cartão). As moedas do jogo não são vendidas: só se ganham jogando e na recompensa diária, e não podem ser sacadas. O VIP é avulso (por exemplo, 30 dias com diamantes de bônus), sem renovação automática.</p>
+  <p>Quando você pede uma compra, o servidor envia ao Mercado Pago o nome do pacote, o preço em reais e uma referência interna (seu código de amigo, o pacote e um identificador aleatório). Não enviamos seu e-mail nem os dados do cartão ou do Pix. Esses dados você informa na página do Mercado Pago, que os trata segundo a política dele. Se o pagamento for aprovado, creditamos sua conta e guardamos o identificador dessa cobrança para não creditar duas vezes.</p>
+
+  <h2>7. O que fica no seu aparelho</h2>
+  <p>No navegador ou no app, o Mesa usa o armazenamento local (localStorage) para:</p>
+  <ul>
+    <li>a sessão de login (código de amigo e identificador da sessão);</li>
+    <li>preferências de aparência e som (tema da interface, idioma, pedras do dominó, mesa da sinuca, estilo das damas, qualidade gráfica, som);</li>
+    <li>lembretes da interface (último nome e avatar escolhidos, última mesa, se o aviso de login já apareceu, dicas de jogo);</li>
+    <li>se você joga sem conta: um nome de visitante aleatório e um identificador do aparelho para sentar na mesa.</li>
+  </ul>
+  <p>Para apagá-los, limpe os dados do site nas configurações do navegador ou os dados do aplicativo nas configurações do aparelho. O filtro que barra foto imprópria antes do envio roda no próprio aparelho; a imagem não é enviada a outro serviço para essa verificação.</p>
+
+  <h2>8. Quem mais pode receber informações</h2>
+  <ul>
+    <li><strong>Google</strong> — login com a conta Google. Veja a <a href="https://policies.google.com/privacy" rel="noopener">política de privacidade do Google</a>.</li>
+    <li><strong>Cloudflare</strong> — hospeda o servidor do Mesa (Workers e Durable Objects). Como qualquer servidor, pode registrar dados técnicos de acesso, como endereço IP, para segurança e funcionamento. Veja a <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">política da Cloudflare</a>.</li>
+    <li><strong>LiveKit Cloud</strong> — transmite a voz ao vivo. Veja a <a href="https://livekit.io/legal/privacy-policy" rel="noopener">política da LiveKit</a>.</li>
+    <li><strong>Mercado Pago</strong> — processa o pagamento quando você compra diamantes ou VIP. Veja a <a href="https://www.mercadopago.com.br/privacidade" rel="noopener">política do Mercado Pago</a>.</li>
+    <li><strong>YouTube, Vimeo, Dailymotion ou Twitch</strong> — se alguém reproduzir um vídeo na sala, o player dessa plataforma pode coletar dados segundo as regras dela (em sala pública o Mesa só aceita YouTube).</li>
+    <li><strong>Giphy</strong> — se você buscar ou enviar um GIF, a busca vai para a API do Giphy. Veja a <a href="https://support.giphy.com/hc/en-us/articles/360032872931-Giphy-Privacy-Policy" rel="noopener">política do Giphy</a>.</li>
+    <li><strong>GitHub Pages</strong> — hospeda este site e os arquivos do app. Pode registrar dados técnicos de acesso. Veja a <a href="https://docs.github.com/pt/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">declaração de privacidade do GitHub</a>.</li>
+    <li><strong>Lost Relics</strong> — se você abrir o Lost Relics de dentro do Mesa estando logado, o servidor daquele jogo recebe seu código de amigo, a sessão e o nome de exibição para salvar o progresso. Esse jogo tem a <a href="../privacidade/">própria política de privacidade</a>.</li>
+  </ul>
+  <p>O Mesa, no código atual, não exibe anúncios, não envia notificações push e não dispara eventos de análise de uso (telemetria) para um serviço à parte.</p>
+
+  <h2>9. Crianças</h2>
+  <p>O Mesa é para pessoas com 13 anos ou mais. Não é direcionado a menores de 13 anos e não coletamos dados de crianças de propósito. Há chat, voz, fotos e contato entre pessoas. Se você é responsável por uma criança e acredita que algum dado dela foi coletado, fale com a gente pelo e-mail abaixo.</p>
+
+  <h2>10. Seus direitos (LGPD)</h2>
+  <p>Você pode pedir informações sobre os dados da sua conta ou a exclusão deles pelo e-mail de contato, enviando a mensagem pelo mesmo Gmail com o qual entrou no Mesa. A exclusão está descrita em <a href="../excluir-conta-mesa/">Excluir conta Mesa</a> e é concluída em até 30 dias. Dados que ficam só no seu aparelho você apaga limpando o armazenamento do app ou do site.</p>
+
+  <h2>11. Mudanças</h2>
+  <p>Esta política pode ser atualizada. A data no topo mostra a versão em vigor.</p>
+
+  <h2>12. Contato</h2>
+  <p>Oddloom Games · <a href="mailto:officialoddloom@gmail.com">officialoddloom@gmail.com</a></p>
+
+  <hr>
+  <h2>Privacy Policy (English summary)</h2>
+  <p>Mesa is a social games app by Oddloom Games. You can play some matches as a guest. Friends, chat, voice rooms, ranking, the shop and broadcast channels require Google sign-in. Our server (Cloudflare) verifies the Google token and uses your Google account identifier only to generate an 8-character friend code (the identifier itself is not stored). Your Google email and profile photo are not stored or shown; email may appear in the token only while we verify the login. We store your profile (display name, optional @username, chosen shop cosmetics, status, stats, VIP expiry), up to 5 login sessions, friends and blocks, direct messages (up to 200 per chat, with JPEG photos and Giphy links; each person keeps their own copy), the last 60 matches, fictional coins, diamonds, purchased items, Mercado Pago payment IDs (up to 300), reports, monthly ranking lines, and — if you create one — your VIP channel (up to 100 posts and 5,000 followers). Voice rooms keep up to 100 chat messages for 7 days; private-room passwords are stored only as a salted hash. Voice is streamed live through LiveKit Cloud and is not recorded by Mesa. Paid diamonds and VIP are checked out on Mercado Pago (Pix or card); we send the package name, price in BRL and an internal reference, not your card or email. Guests get a random local nickname and device token. Photo moderation runs on the device. GIFs go through Giphy; room videos may load YouTube (or, in private rooms, Vimeo, Dailymotion, Twitch or an https video file). Playing Lost Relics from Mesa while signed in sends your friend code, session and display name to that game’s server. Mesa’s current code does not show ads, send push notifications or log separate analytics events. Hosting (Cloudflare, GitHub Pages) may record technical access data such as IP address. Mesa is for people aged 13 and over and is not directed to children under 13. To delete your account, email us from the Google account you used; see <a href="../excluir-conta-mesa/">Delete your Mesa account</a>. Contact: officialoddloom@gmail.com.</p>
+</main>
+</body>
+</html>
