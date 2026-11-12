@@ -1,0 +1,4 @@
+{
+  "prompt": "Production 16-bit game flame sprite atlas, EXACT 4 columns x 2 rows, equal square cells and consistent anchors. TOP ROW: four animation frames of one VERTICAL continuous flame segment, flame touches top and bottom cell edges, white-hot yellow center column, orange scalloped pixel edges, width about 65% cell, no horizontal arms. BOTTOM ROW: four animation frames of one UPPER END CAP for that flame, connects to bottom edge of cell and terminates with rounded pointed fire at top, same width and materials. Rich crisp pixel fire, bright ivory-yellow core, vivid orange edges. Fully transparent background, NO solid colored rectangle behind flame, NO smoke, NO crosses, NO text, NO labels, NO other elements. All eight sprites separate in fixed grid.",
+  "createdAt": "2026-11-12T12:44:33.749Z"
+}
