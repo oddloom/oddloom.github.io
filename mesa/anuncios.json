@@ -1,5 +1,5 @@
 {
-  "ativo": false,
+  "ativo": true,
   "cliente": "ca-pub-5319729966048059",
-  "locais": {}
+  "locais": { "inicio": "4482716543", "perfil": "9253641582", "sala": "7261903061" }
 }
