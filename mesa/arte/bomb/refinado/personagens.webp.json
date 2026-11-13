@@ -1,4 +1,4 @@
 {
-  "prompt": "Create production game sprite atlas faithfully matching the blue helmeted small pixel character inside the reference arena, with white face window, peach face and dark vertical eyes, cyan suit and boots, dark outlines. EXACT 4 columns by 4 rows equal 64x64 conceptual cells, all sprites same scale, same centered anchor. Row1 front/down: neutral standing, left step, neutral, right step. Row2 back/up: neutral standing, left step, neutral, right step. Row3 left profile: neutral, left step, neutral, right step. Row4 right profile: neutral, left step, neutral, right step. Beautiful detailed crisp 16-bit pixel art, faithful reference richness. Transparent background, no glow, no shadow, no floor, NO text, NO labels, no cell borders, full sprites entirely inside cells.",
-  "createdAt": "2026-11-12T12:24:35.690Z"
+  "prompt": "Turma da Demolição (personagem original). Prompt completo em Desktop/AppSocialJogos/arte/bomb-personagens-2026-11-12/PROMPT-PERSONAGENS.txt; fonte 02-azul.png gerada pelo Moa no ChatGPT. Reenquadrado em 4x4 células de 128px, escala única para as 4 cores, base dos pés em 97% como o atlas anterior.",
+  "createdAt": "2026-11-13T02:56:13.127Z"
 }
