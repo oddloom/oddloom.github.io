@@ -1,0 +1,3 @@
+/* 14/11: ⋮ e pessoas centralizados no círculo (o 100% dentro de <details> não resolvia); "1 de N lugares" centralizado na sala. */
+:root:root:root:root:root:root:root:root:root body .atalhos>details>summary{width:var(--vm-tam);height:var(--vm-tam);min-height:0}
+:root body .espera-colorida .ee-mesa .ee-contagem.xe-contagem{align-self:stretch;width:auto;transform:none;translate:none;left:auto;text-align:center}
