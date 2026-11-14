@@ -1,0 +1,4 @@
+/* Selos de status sobre a cabeça: maldição (roxo, à esquerda) e escudo (bolha azul, à direita). */
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-peao.amaldicoado::after,:root:root:root:root:root:root:root:root body .bomb-tela .bomb-peao.tem-escudo::before{content:'';position:absolute;top:-52%;width:62%;aspect-ratio:1;pointer-events:none;z-index:4;background-repeat:no-repeat;background-position:center;background-size:contain;filter:drop-shadow(0 1px 1px #0a164688);}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-peao.amaldicoado::after{left:-14%;background-image:url('/mesa/arte/bomb/refinado/v4/status-amaldicoado.webp');}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-peao.tem-escudo::before{right:-14%;background-image:url('/mesa/arte/bomb/refinado/v4/status-escudo.webp');}
