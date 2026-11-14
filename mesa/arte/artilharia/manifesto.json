@@ -1118,385 +1118,385 @@
  "pilotos/macaco-azul-parado": {
   "w": 157,
   "h": 200,
-  "bytes": 13514,
+  "bytes": 13596,
   "origem": [
    38,
    14,
    326,
    416
   ],
-  "baseX": 0.5636942675159236
+  "baseX": 0.3343558282208589
  },
  "pilotos/macaco-azul-anda-0": {
   "w": 159,
   "h": 200,
-  "bytes": 14168,
+  "bytes": 14284,
   "origem": [
    475,
    14,
    332,
    417
   ],
-  "baseX": 0.5660377358490566
+  "baseX": 0.8313253012048193
  },
  "pilotos/macaco-azul-anda-1": {
   "w": 158,
   "h": 200,
-  "bytes": 14398,
+  "bytes": 14444,
   "origem": [
    920,
    14,
    329,
    416
   ],
-  "baseX": 0.5632911392405063
+  "baseX": 0.8343465045592705
  },
  "pilotos/macaco-azul-anda-2": {
   "w": 160,
   "h": 200,
-  "bytes": 13548,
+  "bytes": 14012,
   "origem": [
    1365,
    16,
    332,
    415
   ],
-  "baseX": 0.5375
+  "baseX": 0.8042168674698795
  },
  "pilotos/macaco-azul-feliz": {
   "w": 184,
   "h": 210,
-  "bytes": 16714,
+  "bytes": 16990,
   "origem": [
    33,
    459,
    362,
    414
   ],
-  "baseX": 0.5217391304347826
+  "baseX": 0.7638121546961326
  },
  "pilotos/macaco-azul-dano": {
   "w": 166,
   "h": 210,
-  "bytes": 16166,
+  "bytes": 16318,
   "origem": [
    468,
    445,
    339,
    429
   ],
-  "baseX": 0.5692771084337349
+  "baseX": 0.8303834808259587
  },
  "pilotos/macaco-azul-derrotado": {
   "w": 208,
   "h": 170,
-  "bytes": 13556,
+  "bytes": 13730,
   "origem": [
    858,
    483,
    456,
    373
   ],
-  "baseX": 0.42788461538461536
+  "baseX": 0.5986842105263158
  },
  "pilotos/macaco-azul-anda-3": {
   "w": 161,
   "h": 200,
-  "bytes": 13674,
+  "bytes": 13932,
   "origem": [
    1366,
    460,
    334,
    415
   ],
-  "baseX": 0.5652173913043478
+  "baseX": 0.8323353293413174
  },
  "pilotos/macaco-laranja-parado": {
   "w": 157,
   "h": 200,
-  "bytes": 13244,
+  "bytes": 13322,
   "origem": [
    38,
    14,
    326,
    416
   ],
-  "baseX": 0.5636942675159236
+  "baseX": 0.3343558282208589
  },
  "pilotos/macaco-laranja-anda-0": {
   "w": 159,
   "h": 200,
-  "bytes": 13706,
+  "bytes": 13990,
   "origem": [
    475,
    14,
    332,
    417
   ],
-  "baseX": 0.5660377358490566
+  "baseX": 0.8313253012048193
  },
  "pilotos/macaco-laranja-anda-1": {
   "w": 158,
   "h": 200,
-  "bytes": 14006,
+  "bytes": 14048,
   "origem": [
    920,
    14,
    329,
    416
   ],
-  "baseX": 0.5632911392405063
+  "baseX": 0.8343465045592705
  },
  "pilotos/macaco-laranja-anda-2": {
   "w": 160,
   "h": 200,
-  "bytes": 13254,
+  "bytes": 13690,
   "origem": [
    1365,
    16,
    332,
    415
   ],
-  "baseX": 0.5375
+  "baseX": 0.8042168674698795
  },
  "pilotos/macaco-laranja-feliz": {
   "w": 184,
   "h": 210,
-  "bytes": 16302,
+  "bytes": 16588,
   "origem": [
    33,
    459,
    362,
    414
   ],
-  "baseX": 0.5217391304347826
+  "baseX": 0.7638121546961326
  },
  "pilotos/macaco-laranja-dano": {
   "w": 166,
   "h": 210,
-  "bytes": 15944,
+  "bytes": 16076,
   "origem": [
    468,
    445,
    339,
    429
   ],
-  "baseX": 0.5692771084337349
+  "baseX": 0.8303834808259587
  },
  "pilotos/macaco-laranja-derrotado": {
   "w": 208,
   "h": 170,
-  "bytes": 13458,
+  "bytes": 13690,
   "origem": [
    858,
    483,
    456,
    373
   ],
-  "baseX": 0.42788461538461536
+  "baseX": 0.5986842105263158
  },
  "pilotos/macaco-laranja-anda-3": {
   "w": 161,
   "h": 200,
-  "bytes": 13434,
+  "bytes": 13664,
   "origem": [
    1366,
    460,
    334,
    415
   ],
-  "baseX": 0.5652173913043478
+  "baseX": 0.8323353293413174
  },
  "pilotos/macaco-rosa-parado": {
   "w": 157,
   "h": 200,
-  "bytes": 13306,
+  "bytes": 13386,
   "origem": [
    38,
    14,
    326,
    416
   ],
-  "baseX": 0.5636942675159236
+  "baseX": 0.3343558282208589
  },
  "pilotos/macaco-rosa-anda-0": {
   "w": 159,
   "h": 200,
-  "bytes": 13980,
+  "bytes": 13808,
   "origem": [
    475,
    14,
    332,
    417
   ],
-  "baseX": 0.5660377358490566
+  "baseX": 0.8313253012048193
  },
  "pilotos/macaco-rosa-anda-1": {
   "w": 158,
   "h": 200,
-  "bytes": 14160,
+  "bytes": 14210,
   "origem": [
    920,
    14,
    329,
    416
   ],
-  "baseX": 0.5632911392405063
+  "baseX": 0.8343465045592705
  },
  "pilotos/macaco-rosa-anda-2": {
   "w": 160,
   "h": 200,
-  "bytes": 13348,
+  "bytes": 13796,
   "origem": [
    1365,
    16,
    332,
    415
   ],
-  "baseX": 0.5375
+  "baseX": 0.8042168674698795
  },
  "pilotos/macaco-rosa-feliz": {
   "w": 184,
   "h": 210,
-  "bytes": 16230,
+  "bytes": 16556,
   "origem": [
    33,
    459,
    362,
    414
   ],
-  "baseX": 0.5217391304347826
+  "baseX": 0.7638121546961326
  },
  "pilotos/macaco-rosa-dano": {
   "w": 166,
   "h": 210,
-  "bytes": 15940,
+  "bytes": 16070,
   "origem": [
    468,
    445,
    339,
    429
   ],
-  "baseX": 0.5692771084337349
+  "baseX": 0.8303834808259587
  },
  "pilotos/macaco-rosa-derrotado": {
   "w": 208,
   "h": 170,
-  "bytes": 13534,
+  "bytes": 13618,
   "origem": [
    858,
    483,
    456,
    373
   ],
-  "baseX": 0.42788461538461536
+  "baseX": 0.5986842105263158
  },
  "pilotos/macaco-rosa-anda-3": {
   "w": 161,
   "h": 200,
-  "bytes": 13482,
+  "bytes": 13732,
   "origem": [
    1366,
    460,
    334,
    415
   ],
-  "baseX": 0.5652173913043478
+  "baseX": 0.8323353293413174
  },
  "pilotos/macaco-verde-parado": {
   "w": 157,
   "h": 200,
-  "bytes": 13478,
+  "bytes": 13558,
   "origem": [
    38,
    14,
    326,
    416
   ],
-  "baseX": 0.5636942675159236
+  "baseX": 0.3343558282208589
  },
  "pilotos/macaco-verde-anda-0": {
   "w": 159,
   "h": 200,
-  "bytes": 14098,
+  "bytes": 14204,
   "origem": [
    475,
    14,
    332,
    417
   ],
-  "baseX": 0.5660377358490566
+  "baseX": 0.8313253012048193
  },
  "pilotos/macaco-verde-anda-1": {
   "w": 158,
   "h": 200,
-  "bytes": 14310,
+  "bytes": 14358,
   "origem": [
    920,
    14,
    329,
    416
   ],
-  "baseX": 0.5632911392405063
+  "baseX": 0.8343465045592705
  },
  "pilotos/macaco-verde-anda-2": {
   "w": 160,
   "h": 200,
-  "bytes": 13526,
+  "bytes": 13978,
   "origem": [
    1365,
    16,
    332,
    415
   ],
-  "baseX": 0.5375
+  "baseX": 0.8042168674698795
  },
  "pilotos/macaco-verde-feliz": {
   "w": 184,
   "h": 210,
-  "bytes": 16602,
+  "bytes": 17000,
   "origem": [
    33,
    459,
    362,
    414
   ],
-  "baseX": 0.5217391304347826
+  "baseX": 0.7638121546961326
  },
  "pilotos/macaco-verde-dano": {
   "w": 166,
   "h": 210,
-  "bytes": 16120,
+  "bytes": 16272,
   "origem": [
    468,
    445,
    339,
    429
   ],
-  "baseX": 0.5692771084337349
+  "baseX": 0.8303834808259587
  },
  "pilotos/macaco-verde-derrotado": {
   "w": 208,
   "h": 170,
-  "bytes": 13574,
+  "bytes": 13760,
   "origem": [
    858,
    483,
    456,
    373
   ],
-  "baseX": 0.42788461538461536
+  "baseX": 0.5986842105263158
  },
  "pilotos/macaco-verde-anda-3": {
   "w": 161,
   "h": 200,
-  "bytes": 13610,
+  "bytes": 13910,
   "origem": [
    1366,
    460,
    334,
    415
   ],
-  "baseX": 0.5652173913043478
+  "baseX": 0.8323353293413174
  }
 }
