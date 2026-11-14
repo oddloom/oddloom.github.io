@@ -1,0 +1,15 @@
+/* Arte V4 do Bomb (14/11): itens com placa, moeda, pisos de gelo/portal/esteira. Só CSS + imagens; mesma sequência de classes do JS. */
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-item:is(.bomb-item-patins,.bomb-item-luva,.bomb-item-perfurante,.bomb-item-remota,.bomb-item-maldicao,.bomb-item-moeda){border:0;border-radius:0;box-shadow:none;padding:0;image-rendering:auto;background-color:transparent;background-position:center;background-size:100% 100%;background-repeat:no-repeat;}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-item:is(.bomb-item-patins,.bomb-item-luva,.bomb-item-perfurante,.bomb-item-remota,.bomb-item-maldicao,.bomb-item-moeda) svg{display:none;}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-item-patins{background-image:url('/mesa/arte/bomb/refinado/v4/item-patins.webp');}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-item-luva{background-image:url('/mesa/arte/bomb/refinado/v4/item-luva.webp');}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-item-perfurante{background-image:url('/mesa/arte/bomb/refinado/v4/item-perfurante.webp');}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-item-remota{background-image:url('/mesa/arte/bomb/refinado/v4/item-remota.webp');}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-item-maldicao{background-image:url('/mesa/arte/bomb/refinado/v4/item-maldicao.webp');}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-item-moeda{background-image:url('/mesa/arte/bomb/refinado/v4/item-moeda.webp');background-size:88% 88%;}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-casa.bomb-chao.bomb-t-gelo{background:url('/mesa/arte/bomb/refinado/v4/piso-gelo.webp') center/100% 100% no-repeat;border:0;animation:none;filter:none;}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-casa.bomb-chao.bomb-t-portal{background:url('/mesa/arte/bomb/refinado/v4/piso-portal.webp') center/100% 100% no-repeat;border:0;animation:none;filter:none;}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-casa.bomb-chao.bomb-t-esteira-cima{background:url('/mesa/arte/bomb/refinado/v4/piso-esteira-cima.webp') center/100% 100% no-repeat;border:0;animation:none;filter:none;}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-casa.bomb-chao.bomb-t-esteira-baixo{background:url('/mesa/arte/bomb/refinado/v4/piso-esteira-baixo.webp') center/100% 100% no-repeat;border:0;animation:none;filter:none;}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-casa.bomb-chao.bomb-t-esteira-esquerda{background:url('/mesa/arte/bomb/refinado/v4/piso-esteira-esquerda.webp') center/100% 100% no-repeat;border:0;animation:none;filter:none;}
+:root:root:root:root:root:root:root:root body .bomb-tela .bomb-casa.bomb-chao.bomb-t-esteira-direita{background:url('/mesa/arte/bomb/refinado/v4/piso-esteira-direita.webp') center/100% 100% no-repeat;border:0;animation:none;filter:none;}
