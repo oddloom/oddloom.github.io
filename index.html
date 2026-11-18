@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Oddloom Games</title>
-<meta name="description" content="Jogos grátis pra jogar no navegador: Neon Snake, Lost Relics e Sinuca. Sem instalar e sem cadastro.">
+<meta name="description" content="Jogos grátis pra jogar no navegador: Mesa, Lost Relics, Sinuca e Neon Snake. Sem instalar e sem cadastro.">
 <meta name="theme-color" content="#ffffff">
 <meta property="og:title" content="Oddloom Games">
 <meta property="og:description" content="Jogos grátis pra jogar no navegador. Sem instalar, sem cadastro, funciona no celular.">
@@ -60,6 +60,7 @@ main{max-width:1080px;margin:0 auto;padding:clamp(40px,8vw,88px) clamp(16px,4vw,
 .head{text-align:center;margin-bottom:clamp(32px,5vw,56px)}
 h1{font-weight:700;font-size:clamp(36px,6vw,64px);line-height:1.05;letter-spacing:-.035em}
 h1 span{color:var(--blue)}
+.head-mascote{width:clamp(96px,15vw,150px);height:auto;margin:-8px auto -8px;filter:drop-shadow(0 8px 14px #8ba6b333)}
 .head p{color:var(--muted);font-size:clamp(17px,2vw,21px);margin-top:14px}
 
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(16px,2.5vw,28px)}
@@ -113,17 +114,18 @@ footer a:hover{color:var(--text)}
 
 <main>
   <div class="head">
+    <img class="head-mascote" src="img/nubo.webp" alt="Nubo, mascote do Mesa" width="640" height="640">
     <h1>Jogos para jogar <span>agora.</span></h1>
     <p>Grátis, no navegador. Sem instalar, sem cadastro.</p>
   </div>
 
   <div class="grid">
-    <a class="card snake" href="neon-snake/" aria-label="Jogar Neon Snake">
-      <div class="pic"><img class="cover-art" src="img/jogo-snake.jpg" alt="Cobra de escamas pretas com brilho verde sobre uma grade de neon" width="1600" height="900"></div>
+    <a class="card mesa" href="mesa/" aria-label="Jogar Mesa">
+      <div class="pic"><img class="cover-art" src="img/jogo-mesa.webp" alt="Mesa de feltro verde com cartas, dominó, bolas de sinuca e cartas coloridas, cercada de cadeiras com microfones e balões de fala" width="1600" height="900"></div>
       <div class="body">
         <div>
-          <h2>Neon Snake</h2>
-          <p>Cobrinha arcade em 5 fases.</p>
+          <h2>Mesa</h2>
+          <p>Truco, dominó, sinuca, UNI e salas de voz.</p>
         </div>
         <span class="play">Jogar</span>
       </div>
@@ -154,12 +156,12 @@ footer a:hover{color:var(--text)}
       </div>
     </a>
 
-    <a class="card mesa" href="mesa/" aria-label="Jogar Mesa">
-      <div class="pic"><img class="cover-art" src="img/jogo-mesa.webp" alt="Mesa de feltro verde com cartas, dominó, bolas de sinuca e cartas coloridas, cercada de cadeiras com microfones e balões de fala" width="1600" height="900"></div>
+    <a class="card snake" href="neon-snake/" aria-label="Jogar Neon Snake">
+      <div class="pic"><img class="cover-art" src="img/jogo-snake.jpg" alt="Cobra de escamas pretas com brilho verde sobre uma grade de neon" width="1600" height="900"></div>
       <div class="body">
         <div>
-          <h2>Mesa</h2>
-          <p>Truco, dominó, sinuca, UNI e salas de voz.</p>
+          <h2>Neon Snake</h2>
+          <p>Cobrinha arcade em 5 fases.</p>
         </div>
         <span class="play">Jogar</span>
       </div>
