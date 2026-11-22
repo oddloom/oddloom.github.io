@@ -45,8 +45,14 @@
   .lista-salas {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
-    gap: 22px 14px;
-    align-items: start;
+    gap: 28px 14px;
+    align-items: center; /* centro dos dois cards na mesma altura */
+    padding-top: 18px; /* espaço da coroa do card VIP */
+  }
+
+  /* o card VIP tem margem de 16px no topo só para a coroa; aqui o espaço vem da grade */
+  .lista-salas > .sala-card.sala-card-vip {
+    margin-top: 0;
   }
 
   /* Barra inferior: continua flutuante e centralizada, sem esticar na janela inteira */
