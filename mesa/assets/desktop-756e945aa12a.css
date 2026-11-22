@@ -1,0 +1,46 @@
+/* Versão de computador: usa a tela toda (sem faixas pretas laterais).
+   Só vale em janela larga com mouse; celular e tablet continuam como estavam. */
+@media (min-width: 900px) and (hover: hover) and (pointer: fine) {
+  .tela {
+    max-width: none;
+  }
+
+  /* ---- Menus (Jogos, Salas, Amigos, Perfil...): ocupam a largura toda ---- */
+  .tela .mh-rolagem,
+  .tela .rolagem {
+    padding-inline: clamp(24px, 4vw, 80px) !important; /* .mh-rolagem já usa !important */
+  }
+
+  /* Amigos e Perfil são telas de leitura: coluna centralizada de ~960px, fundo continua na janela toda */
+  .abas-sociais .mh-rolagem,
+  .abas-sociais .rolagem {
+    padding-inline: max(24px, calc((100vw - 960px) / 2)) !important;
+  }
+
+  /* Jogos: mais colunas conforme a largura */
+  .jogos-colorido .mj-grade {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  /* Salas: duas ou mais colunas em vez de uma faixa esticada */
+  .lista-salas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+    gap: 22px 14px;
+    align-items: start;
+  }
+
+  /* Barra inferior: continua flutuante e centralizada, sem esticar na janela inteira */
+  .barra {
+    left: 0;
+    right: 0;
+    margin-inline: auto;
+    width: min(640px, calc(100% - 24px));
+  }
+
+  /* ---- Partidas: o fundo (madeira, feltro...) preenche a janela e o jogo fica numa coluna
+     centralizada, com largura que cresce junto com a altura da janela para o tabuleiro caber. ---- */
+  .tela:not(.inicio):not(.tela-sinuca-site):not(.tela-videos) {
+    padding-inline: max(0px, calc((100vw - max(560px, 62dvh)) / 2));
+  }
+}
