@@ -5,6 +5,11 @@
     max-width: none;
   }
 
+  /* Vídeos: feed vertical, mantém a coluna central com bordas pretas (decisão do Moa, 22/11) */
+  .tela.tela-videos {
+    max-width: 560px;
+  }
+
   /* ---- Menus (Jogos, Salas, Amigos, Perfil...): ocupam a largura toda ---- */
   .tela .mh-rolagem,
   .tela .rolagem {
