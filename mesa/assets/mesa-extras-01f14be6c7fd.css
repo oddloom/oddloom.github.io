@@ -1,0 +1,75 @@
+/* Minimizar a busca de partida (ver mesa-extras.js). */
+.pp-minimizar {
+  display: block;
+  margin: 2px auto 0;
+  padding: 10px 16px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0.72;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.pp-minimizar:hover,
+.pp-minimizar:focus-visible { opacity: 1; }
+
+/* Indicador discreto da busca em andamento: pílula pequena acima da barra inferior. */
+.pp-chip {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
+  transform: translateX(-50%);
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  max-width: calc(100vw - 24px);
+  border-radius: 999px;
+  background: #10243dd9;
+  color: #fff;
+  box-shadow: 0 4px 14px #0005, inset 0 0 0 1px #ffffff1f;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font: 700 13px/1 Nunito, Inter, system-ui, sans-serif;
+  white-space: nowrap;
+}
+.pp-chip[hidden] { display: none; }
+.pp-chip button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.pp-chip-abrir {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 6px 0 14px;
+}
+.pp-chip-tempo { font-variant-numeric: tabular-nums; opacity: 0.85; }
+.pp-chip-ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #5ee6a0;
+  animation: pp-chip-pulsa 1.4s ease-in-out infinite;
+}
+.pp-chip-x {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+  opacity: 0.8;
+}
+.pp-chip-x:hover,
+.pp-chip-x:focus-visible { opacity: 1; background: #ffffff1f; }
+@keyframes pp-chip-pulsa { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .pp-chip-ponto { animation: none; } }
