@@ -16,6 +16,20 @@
     padding-inline: clamp(24px, 4vw, 80px) !important; /* .mh-rolagem já usa !important */
   }
 
+  /* Loja: cards com o tamanho de leitura do celular (a grade proporcional ao card), em várias colunas; antes viravam 370 px de largura */
+  :root .tela.inicio.loja.loja-colecao .loja-grade-itens {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 168px));
+    justify-content: start;
+    gap: 14px;
+  }
+
+  /* Loja → Faixa: barras em colunas de ~400 px em vez de uma por linha na largura inteira */
+  :root .tela.inicio.loja .loja-grade {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 400px));
+    justify-content: start;
+    gap: 12px;
+  }
+
   /* Amigos e Perfil são telas de leitura: coluna centralizada de ~960px, fundo continua na janela toda */
   .abas-sociais .mh-rolagem,
   .abas-sociais .rolagem {
