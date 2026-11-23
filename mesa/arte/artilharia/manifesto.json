@@ -1,388 +1,4 @@
 {
- "pilotos/azul-parado": {
-  "w": 155,
-  "h": 200,
-  "bytes": 14260,
-  "origem": [
-   60,
-   8,
-   317,
-   409
-  ],
-  "baseX": 0.5580645161290323
- },
- "pilotos/rosa-parado": {
-  "w": 169,
-  "h": 200,
-  "bytes": 16836,
-  "origem": [
-   47,
-   15,
-   344,
-   407
-  ],
-  "baseX": 0.5621301775147929
- },
- "pilotos/laranja-parado": {
-  "w": 155,
-  "h": 200,
-  "bytes": 13892,
-  "origem": [
-   60,
-   8,
-   317,
-   409
-  ],
-  "baseX": 0.5580645161290323
- },
- "pilotos/verde-parado": {
-  "w": 169,
-  "h": 200,
-  "bytes": 17174,
-  "origem": [
-   47,
-   15,
-   344,
-   407
-  ],
-  "baseX": 0.5621301775147929
- },
- "pilotos/azul-anda-0": {
-  "w": 154,
-  "h": 200,
-  "bytes": 14026,
-  "origem": [
-   502,
-   9,
-   314,
-   409
-  ],
-  "baseX": 0.5551948051948052
- },
- "pilotos/azul-anda-1": {
-  "w": 152,
-  "h": 200,
-  "bytes": 14186,
-  "origem": [
-   946,
-   16,
-   307,
-   403
-  ],
-  "baseX": 0.5230263157894737
- },
- "pilotos/azul-anda-2": {
-  "w": 163,
-  "h": 200,
-  "bytes": 14334,
-  "origem": [
-   1384,
-   13,
-   331,
-   407
-  ],
-  "baseX": 0.4601226993865031
- },
- "pilotos/azul-anda-3": {
-  "w": 152,
-  "h": 200,
-  "bytes": 14622,
-  "origem": [
-   1400,
-   456,
-   309,
-   406
-  ],
-  "baseX": 0.5526315789473685
- },
- "pilotos/rosa-anda-0": {
-  "w": 168,
-  "h": 200,
-  "bytes": 17136,
-  "origem": [
-   493,
-   13,
-   342,
-   408
-  ],
-  "baseX": 0.5625
- },
- "pilotos/rosa-anda-1": {
-  "w": 164,
-  "h": 200,
-  "bytes": 16004,
-  "origem": [
-   940,
-   9,
-   339,
-   413
-  ],
-  "baseX": 0.5609756097560976
- },
- "pilotos/rosa-anda-2": {
-  "w": 166,
-  "h": 200,
-  "bytes": 16744,
-  "origem": [
-   1384,
-   14,
-   338,
-   408
-  ],
-  "baseX": 0.5662650602409639
- },
- "pilotos/rosa-anda-3": {
-  "w": 166,
-  "h": 200,
-  "bytes": 16106,
-  "origem": [
-   1383,
-   457,
-   339,
-   409
-  ],
-  "baseX": 0.5572289156626506
- },
- "pilotos/laranja-anda-0": {
-  "w": 154,
-  "h": 200,
-  "bytes": 13754,
-  "origem": [
-   502,
-   9,
-   314,
-   409
-  ],
-  "baseX": 0.5551948051948052
- },
- "pilotos/laranja-anda-1": {
-  "w": 152,
-  "h": 200,
-  "bytes": 13946,
-  "origem": [
-   946,
-   16,
-   307,
-   403
-  ],
-  "baseX": 0.5230263157894737
- },
- "pilotos/laranja-anda-2": {
-  "w": 163,
-  "h": 200,
-  "bytes": 14062,
-  "origem": [
-   1384,
-   13,
-   331,
-   407
-  ],
-  "baseX": 0.4601226993865031
- },
- "pilotos/laranja-anda-3": {
-  "w": 152,
-  "h": 200,
-  "bytes": 14164,
-  "origem": [
-   1400,
-   456,
-   309,
-   406
-  ],
-  "baseX": 0.5526315789473685
- },
- "pilotos/verde-anda-0": {
-  "w": 168,
-  "h": 200,
-  "bytes": 17446,
-  "origem": [
-   493,
-   13,
-   342,
-   408
-  ],
-  "baseX": 0.5625
- },
- "pilotos/verde-anda-1": {
-  "w": 164,
-  "h": 200,
-  "bytes": 16394,
-  "origem": [
-   940,
-   9,
-   339,
-   413
-  ],
-  "baseX": 0.5609756097560976
- },
- "pilotos/verde-anda-2": {
-  "w": 166,
-  "h": 200,
-  "bytes": 17134,
-  "origem": [
-   1384,
-   14,
-   338,
-   408
-  ],
-  "baseX": 0.5662650602409639
- },
- "pilotos/verde-anda-3": {
-  "w": 166,
-  "h": 200,
-  "bytes": 16470,
-  "origem": [
-   1383,
-   457,
-   339,
-   409
-  ],
-  "baseX": 0.5572289156626506
- },
- "pilotos/azul-dano": {
-  "w": 166,
-  "h": 210,
-  "bytes": 16618,
-  "origem": [
-   498,
-   452,
-   324,
-   409
-  ],
-  "baseX": 0.536144578313253
- },
- "pilotos/rosa-dano": {
-  "w": 173,
-  "h": 210,
-  "bytes": 19488,
-  "origem": [
-   494,
-   452,
-   341,
-   414
-  ],
-  "baseX": 0.5606936416184971
- },
- "pilotos/laranja-dano": {
-  "w": 166,
-  "h": 210,
-  "bytes": 16478,
-  "origem": [
-   498,
-   452,
-   324,
-   409
-  ],
-  "baseX": 0.536144578313253
- },
- "pilotos/verde-dano": {
-  "w": 173,
-  "h": 210,
-  "bytes": 20046,
-  "origem": [
-   494,
-   452,
-   341,
-   414
-  ],
-  "baseX": 0.5606936416184971
- },
- "pilotos/azul-derrotado": {
-  "w": 211,
-  "h": 170,
-  "bytes": 15644,
-  "origem": [
-   875,
-   493,
-   454,
-   365
-  ],
-  "baseX": 0.47393364928909953
- },
- "pilotos/rosa-derrotado": {
-  "w": 220,
-  "h": 170,
-  "bytes": 17542,
-  "origem": [
-   893,
-   501,
-   450,
-   348
-  ],
-  "baseX": 0.4818181818181818
- },
- "pilotos/laranja-derrotado": {
-  "w": 211,
-  "h": 170,
-  "bytes": 15454,
-  "origem": [
-   875,
-   493,
-   454,
-   365
-  ],
-  "baseX": 0.47393364928909953
- },
- "pilotos/verde-derrotado": {
-  "w": 220,
-  "h": 170,
-  "bytes": 17856,
-  "origem": [
-   893,
-   501,
-   450,
-   348
-  ],
-  "baseX": 0.4818181818181818
- },
- "pilotos/azul-feliz": {
-  "w": 178,
-  "h": 210,
-  "bytes": 17234,
-  "origem": [
-   61,
-   456,
-   344,
-   406
-  ],
-  "baseX": 0.5028089887640449
- },
- "pilotos/rosa-feliz": {
-  "w": 182,
-  "h": 210,
-  "bytes": 20378,
-  "origem": [
-   48,
-   457,
-   355,
-   409
-  ],
-  "baseX": 0.5412087912087912
- },
- "pilotos/laranja-feliz": {
-  "w": 178,
-  "h": 210,
-  "bytes": 17142,
-  "origem": [
-   61,
-   456,
-   344,
-   406
-  ],
-  "baseX": 0.5028089887640449
- },
- "pilotos/verde-feliz": {
-  "w": 182,
-  "h": 210,
-  "bytes": 20838,
-  "origem": [
-   48,
-   457,
-   355,
-   409
-  ],
-  "baseX": 0.5412087912087912
- },
  "canos/azul": {
   "w": 150,
   "h": 86,
@@ -1118,385 +734,865 @@
  "pilotos/macaco-azul-parado": {
   "w": 157,
   "h": 200,
-  "bytes": 13596,
+  "bytes": 13514,
   "origem": [
    38,
    14,
    326,
    416
   ],
-  "baseX": 0.3343558282208589
+  "baseX": 0.5636942675159236
  },
  "pilotos/macaco-azul-anda-0": {
   "w": 159,
   "h": 200,
-  "bytes": 14284,
+  "bytes": 14168,
   "origem": [
    475,
    14,
    332,
    417
   ],
-  "baseX": 0.8313253012048193
+  "baseX": 0.5660377358490566
  },
  "pilotos/macaco-azul-anda-1": {
   "w": 158,
   "h": 200,
-  "bytes": 14444,
+  "bytes": 14398,
   "origem": [
    920,
    14,
    329,
    416
   ],
-  "baseX": 0.8343465045592705
+  "baseX": 0.5632911392405063
  },
  "pilotos/macaco-azul-anda-2": {
   "w": 160,
   "h": 200,
-  "bytes": 14012,
+  "bytes": 13548,
   "origem": [
    1365,
    16,
    332,
    415
   ],
-  "baseX": 0.8042168674698795
+  "baseX": 0.5375
  },
  "pilotos/macaco-azul-feliz": {
   "w": 184,
   "h": 210,
-  "bytes": 16990,
+  "bytes": 16714,
   "origem": [
    33,
    459,
    362,
    414
   ],
-  "baseX": 0.7638121546961326
+  "baseX": 0.5217391304347826
  },
  "pilotos/macaco-azul-dano": {
   "w": 166,
   "h": 210,
-  "bytes": 16318,
+  "bytes": 16166,
   "origem": [
    468,
    445,
    339,
    429
   ],
-  "baseX": 0.8303834808259587
+  "baseX": 0.5692771084337349
  },
  "pilotos/macaco-azul-derrotado": {
   "w": 208,
   "h": 170,
-  "bytes": 13730,
+  "bytes": 13556,
   "origem": [
    858,
    483,
    456,
    373
   ],
-  "baseX": 0.5986842105263158
+  "baseX": 0.42788461538461536
  },
  "pilotos/macaco-azul-anda-3": {
   "w": 161,
   "h": 200,
-  "bytes": 13932,
+  "bytes": 13674,
   "origem": [
    1366,
    460,
    334,
    415
   ],
-  "baseX": 0.8323353293413174
+  "baseX": 0.5652173913043478
  },
  "pilotos/macaco-laranja-parado": {
   "w": 157,
   "h": 200,
-  "bytes": 13322,
+  "bytes": 13244,
   "origem": [
    38,
    14,
    326,
    416
   ],
-  "baseX": 0.3343558282208589
+  "baseX": 0.5636942675159236
  },
  "pilotos/macaco-laranja-anda-0": {
   "w": 159,
   "h": 200,
-  "bytes": 13990,
+  "bytes": 13706,
   "origem": [
    475,
    14,
    332,
    417
   ],
-  "baseX": 0.8313253012048193
+  "baseX": 0.5660377358490566
  },
  "pilotos/macaco-laranja-anda-1": {
   "w": 158,
   "h": 200,
-  "bytes": 14048,
+  "bytes": 14006,
   "origem": [
    920,
    14,
    329,
    416
   ],
-  "baseX": 0.8343465045592705
+  "baseX": 0.5632911392405063
  },
  "pilotos/macaco-laranja-anda-2": {
   "w": 160,
   "h": 200,
-  "bytes": 13690,
+  "bytes": 13254,
   "origem": [
    1365,
    16,
    332,
    415
   ],
-  "baseX": 0.8042168674698795
+  "baseX": 0.5375
  },
  "pilotos/macaco-laranja-feliz": {
   "w": 184,
   "h": 210,
-  "bytes": 16588,
+  "bytes": 16302,
   "origem": [
    33,
    459,
    362,
    414
   ],
-  "baseX": 0.7638121546961326
+  "baseX": 0.5217391304347826
  },
  "pilotos/macaco-laranja-dano": {
   "w": 166,
   "h": 210,
-  "bytes": 16076,
+  "bytes": 15944,
   "origem": [
    468,
    445,
    339,
    429
   ],
-  "baseX": 0.8303834808259587
+  "baseX": 0.5692771084337349
  },
  "pilotos/macaco-laranja-derrotado": {
   "w": 208,
   "h": 170,
-  "bytes": 13690,
+  "bytes": 13458,
   "origem": [
    858,
    483,
    456,
    373
   ],
-  "baseX": 0.5986842105263158
+  "baseX": 0.42788461538461536
  },
  "pilotos/macaco-laranja-anda-3": {
   "w": 161,
   "h": 200,
-  "bytes": 13664,
+  "bytes": 13434,
   "origem": [
    1366,
    460,
    334,
    415
   ],
-  "baseX": 0.8323353293413174
+  "baseX": 0.5652173913043478
  },
  "pilotos/macaco-rosa-parado": {
   "w": 157,
   "h": 200,
-  "bytes": 13386,
+  "bytes": 13306,
   "origem": [
    38,
    14,
    326,
    416
   ],
-  "baseX": 0.3343558282208589
+  "baseX": 0.5636942675159236
  },
  "pilotos/macaco-rosa-anda-0": {
   "w": 159,
   "h": 200,
-  "bytes": 13808,
+  "bytes": 13980,
   "origem": [
    475,
    14,
    332,
    417
   ],
-  "baseX": 0.8313253012048193
+  "baseX": 0.5660377358490566
  },
  "pilotos/macaco-rosa-anda-1": {
   "w": 158,
   "h": 200,
-  "bytes": 14210,
+  "bytes": 14160,
   "origem": [
    920,
    14,
    329,
    416
   ],
-  "baseX": 0.8343465045592705
+  "baseX": 0.5632911392405063
  },
  "pilotos/macaco-rosa-anda-2": {
   "w": 160,
   "h": 200,
-  "bytes": 13796,
+  "bytes": 13348,
   "origem": [
    1365,
    16,
    332,
    415
   ],
-  "baseX": 0.8042168674698795
+  "baseX": 0.5375
  },
  "pilotos/macaco-rosa-feliz": {
   "w": 184,
   "h": 210,
-  "bytes": 16556,
+  "bytes": 16230,
   "origem": [
    33,
    459,
    362,
    414
   ],
-  "baseX": 0.7638121546961326
+  "baseX": 0.5217391304347826
  },
  "pilotos/macaco-rosa-dano": {
   "w": 166,
   "h": 210,
-  "bytes": 16070,
+  "bytes": 15940,
   "origem": [
    468,
    445,
    339,
    429
   ],
-  "baseX": 0.8303834808259587
+  "baseX": 0.5692771084337349
  },
  "pilotos/macaco-rosa-derrotado": {
   "w": 208,
   "h": 170,
-  "bytes": 13618,
+  "bytes": 13534,
   "origem": [
    858,
    483,
    456,
    373
   ],
-  "baseX": 0.5986842105263158
+  "baseX": 0.42788461538461536
  },
  "pilotos/macaco-rosa-anda-3": {
   "w": 161,
   "h": 200,
-  "bytes": 13732,
+  "bytes": 13482,
   "origem": [
    1366,
    460,
    334,
    415
   ],
-  "baseX": 0.8323353293413174
+  "baseX": 0.5652173913043478
  },
  "pilotos/macaco-verde-parado": {
   "w": 157,
   "h": 200,
-  "bytes": 13558,
+  "bytes": 13478,
   "origem": [
    38,
    14,
    326,
    416
   ],
-  "baseX": 0.3343558282208589
+  "baseX": 0.5636942675159236
  },
  "pilotos/macaco-verde-anda-0": {
   "w": 159,
   "h": 200,
-  "bytes": 14204,
+  "bytes": 14098,
   "origem": [
    475,
    14,
    332,
    417
   ],
-  "baseX": 0.8313253012048193
+  "baseX": 0.5660377358490566
  },
  "pilotos/macaco-verde-anda-1": {
   "w": 158,
   "h": 200,
-  "bytes": 14358,
+  "bytes": 14310,
   "origem": [
    920,
    14,
    329,
    416
   ],
-  "baseX": 0.8343465045592705
+  "baseX": 0.5632911392405063
  },
  "pilotos/macaco-verde-anda-2": {
   "w": 160,
   "h": 200,
-  "bytes": 13978,
+  "bytes": 13526,
   "origem": [
    1365,
    16,
    332,
    415
   ],
-  "baseX": 0.8042168674698795
+  "baseX": 0.5375
  },
  "pilotos/macaco-verde-feliz": {
   "w": 184,
   "h": 210,
-  "bytes": 17000,
+  "bytes": 16602,
   "origem": [
    33,
    459,
    362,
    414
   ],
-  "baseX": 0.7638121546961326
+  "baseX": 0.5217391304347826
  },
  "pilotos/macaco-verde-dano": {
   "w": 166,
   "h": 210,
-  "bytes": 16272,
+  "bytes": 16120,
   "origem": [
    468,
    445,
    339,
    429
   ],
-  "baseX": 0.8303834808259587
+  "baseX": 0.5692771084337349
  },
  "pilotos/macaco-verde-derrotado": {
   "w": 208,
   "h": 170,
-  "bytes": 13760,
+  "bytes": 13574,
   "origem": [
    858,
    483,
    456,
    373
   ],
-  "baseX": 0.5986842105263158
+  "baseX": 0.42788461538461536
  },
  "pilotos/macaco-verde-anda-3": {
   "w": 161,
   "h": 200,
-  "bytes": 13910,
+  "bytes": 13610,
   "origem": [
    1366,
    460,
    334,
    415
   ],
-  "baseX": 0.8323353293413174
+  "baseX": 0.5652173913043478
+ },
+ "pilotos/raposa-azul-parado": {
+  "w": 241,
+  "h": 326,
+  "bytes": 32584,
+  "origem": [
+   0,
+   0,
+   241,
+   326
+  ],
+  "baseX": 0.5229
+ },
+ "pilotos/raposa-azul-anda-0": {
+  "w": 260,
+  "h": 317,
+  "bytes": 25752,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-azul-anda-1": {
+  "w": 260,
+  "h": 317,
+  "bytes": 25752,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-azul-anda-2": {
+  "w": 260,
+  "h": 317,
+  "bytes": 25752,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-azul-anda-3": {
+  "w": 260,
+  "h": 317,
+  "bytes": 25752,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-azul-dano": {
+  "w": 238,
+  "h": 338,
+  "bytes": 24960,
+  "origem": [
+   0,
+   0,
+   238,
+   338
+  ],
+  "baseX": 0.5052
+ },
+ "pilotos/raposa-azul-feliz": {
+  "w": 239,
+  "h": 344,
+  "bytes": 26644,
+  "origem": [
+   0,
+   0,
+   239,
+   344
+  ],
+  "baseX": 0.5244
+ },
+ "pilotos/raposa-azul-atira": {
+  "w": 250,
+  "h": 299,
+  "bytes": 23180,
+  "origem": [
+   0,
+   0,
+   250,
+   299
+  ],
+  "baseX": 0.4883
+ },
+ "pilotos/raposa-azul-derrotado": {
+  "w": 234,
+  "h": 308,
+  "bytes": 22280,
+  "origem": [
+   0,
+   0,
+   234,
+   308
+  ],
+  "baseX": 0.5915
+ },
+ "pilotos/raposa-rosa-parado": {
+  "w": 241,
+  "h": 326,
+  "bytes": 33018,
+  "origem": [
+   0,
+   0,
+   241,
+   326
+  ],
+  "baseX": 0.5229
+ },
+ "pilotos/raposa-rosa-anda-0": {
+  "w": 260,
+  "h": 317,
+  "bytes": 26386,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-rosa-anda-1": {
+  "w": 260,
+  "h": 317,
+  "bytes": 26386,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-rosa-anda-2": {
+  "w": 260,
+  "h": 317,
+  "bytes": 26386,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-rosa-anda-3": {
+  "w": 260,
+  "h": 317,
+  "bytes": 26386,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-rosa-dano": {
+  "w": 238,
+  "h": 338,
+  "bytes": 25672,
+  "origem": [
+   0,
+   0,
+   238,
+   338
+  ],
+  "baseX": 0.5052
+ },
+ "pilotos/raposa-rosa-feliz": {
+  "w": 239,
+  "h": 344,
+  "bytes": 27374,
+  "origem": [
+   0,
+   0,
+   239,
+   344
+  ],
+  "baseX": 0.5244
+ },
+ "pilotos/raposa-rosa-atira": {
+  "w": 250,
+  "h": 299,
+  "bytes": 23972,
+  "origem": [
+   0,
+   0,
+   250,
+   299
+  ],
+  "baseX": 0.4883
+ },
+ "pilotos/raposa-rosa-derrotado": {
+  "w": 234,
+  "h": 308,
+  "bytes": 22672,
+  "origem": [
+   0,
+   0,
+   234,
+   308
+  ],
+  "baseX": 0.5915
+ },
+ "pilotos/raposa-laranja-parado": {
+  "w": 241,
+  "h": 326,
+  "bytes": 32928,
+  "origem": [
+   0,
+   0,
+   241,
+   326
+  ],
+  "baseX": 0.5229
+ },
+ "pilotos/raposa-laranja-anda-0": {
+  "w": 260,
+  "h": 317,
+  "bytes": 26380,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-laranja-anda-1": {
+  "w": 260,
+  "h": 317,
+  "bytes": 26380,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-laranja-anda-2": {
+  "w": 260,
+  "h": 317,
+  "bytes": 26380,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-laranja-anda-3": {
+  "w": 260,
+  "h": 317,
+  "bytes": 26380,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-laranja-dano": {
+  "w": 238,
+  "h": 338,
+  "bytes": 25552,
+  "origem": [
+   0,
+   0,
+   238,
+   338
+  ],
+  "baseX": 0.5052
+ },
+ "pilotos/raposa-laranja-feliz": {
+  "w": 239,
+  "h": 344,
+  "bytes": 27238,
+  "origem": [
+   0,
+   0,
+   239,
+   344
+  ],
+  "baseX": 0.5244
+ },
+ "pilotos/raposa-laranja-atira": {
+  "w": 250,
+  "h": 299,
+  "bytes": 23694,
+  "origem": [
+   0,
+   0,
+   250,
+   299
+  ],
+  "baseX": 0.4883
+ },
+ "pilotos/raposa-laranja-derrotado": {
+  "w": 234,
+  "h": 308,
+  "bytes": 22526,
+  "origem": [
+   0,
+   0,
+   234,
+   308
+  ],
+  "baseX": 0.5915
+ },
+ "pilotos/raposa-verde-parado": {
+  "w": 241,
+  "h": 326,
+  "bytes": 33702,
+  "origem": [
+   0,
+   0,
+   241,
+   326
+  ],
+  "baseX": 0.5229
+ },
+ "pilotos/raposa-verde-anda-0": {
+  "w": 260,
+  "h": 317,
+  "bytes": 27122,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-verde-anda-1": {
+  "w": 260,
+  "h": 317,
+  "bytes": 27122,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-verde-anda-2": {
+  "w": 260,
+  "h": 317,
+  "bytes": 27122,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-verde-anda-3": {
+  "w": 260,
+  "h": 317,
+  "bytes": 27122,
+  "origem": [
+   0,
+   0,
+   260,
+   317
+  ],
+  "baseX": 0.4902
+ },
+ "pilotos/raposa-verde-dano": {
+  "w": 238,
+  "h": 338,
+  "bytes": 26340,
+  "origem": [
+   0,
+   0,
+   238,
+   338
+  ],
+  "baseX": 0.5052
+ },
+ "pilotos/raposa-verde-feliz": {
+  "w": 239,
+  "h": 344,
+  "bytes": 28566,
+  "origem": [
+   0,
+   0,
+   239,
+   344
+  ],
+  "baseX": 0.5244
+ },
+ "pilotos/raposa-verde-atira": {
+  "w": 250,
+  "h": 299,
+  "bytes": 24472,
+  "origem": [
+   0,
+   0,
+   250,
+   299
+  ],
+  "baseX": 0.4883
+ },
+ "pilotos/raposa-verde-derrotado": {
+  "w": 234,
+  "h": 308,
+  "bytes": 23402,
+  "origem": [
+   0,
+   0,
+   234,
+   308
+  ],
+  "baseX": 0.5915
+ },
+ "canos/raposa-azul": {
+  "w": 300,
+  "h": 138,
+  "bytes": 16922,
+  "origem": [
+   0,
+   0,
+   300,
+   138
+  ],
+  "baseX": 0.14
+ },
+ "canos/raposa-rosa": {
+  "w": 300,
+  "h": 138,
+  "bytes": 17364,
+  "origem": [
+   0,
+   0,
+   300,
+   138
+  ],
+  "baseX": 0.14
+ },
+ "canos/raposa-laranja": {
+  "w": 300,
+  "h": 138,
+  "bytes": 17160,
+  "origem": [
+   0,
+   0,
+   300,
+   138
+  ],
+  "baseX": 0.14
+ },
+ "canos/raposa-verde": {
+  "w": 300,
+  "h": 138,
+  "bytes": 17812,
+  "origem": [
+   0,
+   0,
+   300,
+   138
+  ],
+  "baseX": 0.14
  }
 }
