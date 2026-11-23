@@ -1,0 +1,35 @@
+/* Loja > "Oferta da semana" (23/11): sem a pedrinha de raridade; o card ganha o fundo colorido da loja
+   (comum, incomum, raro, épico, lendário) e a moldura fica do tamanho do ícone ao lado.
+   Nomes internos de raridade: comum / raro (Incomum) / epico (Raro) / muitoraro (Épico) / lendario (Lendário). */
+.oferta-arte .cristal-raridade { display: none !important; }
+
+.oferta-item {
+  background: url("/mesa/arte/loja/cards/fundo-comum-selo-v2.webp") 50% 50% / 100% 100% no-repeat;
+  border: 0;
+  border-radius: 17% / 14%;
+  box-shadow: none;
+  color: #0f2340;
+  width: 100%;
+  max-width: 200px;
+  justify-self: center;
+}
+.oferta-item:has(.cristal-raridade.raro) {
+  background-image: url("/mesa/arte/loja/cards/fundo-incomum-suave-v2.webp");
+  box-shadow: 0 6px 14px -9px #1fbf7aaa;
+}
+.oferta-item:has(.cristal-raridade.epico) {
+  background-image: url("/mesa/arte/loja/cards/fundo-raro-v3.webp");
+  box-shadow: 0 0 0 1px #6fb1ff66, 0 6px 16px -8px #2a7bffcc;
+}
+.oferta-item:has(.cristal-raridade.muitoraro) {
+  background-image: url("/mesa/arte/loja/cards/fundo-muito-raro-v3.webp");
+}
+.oferta-item:has(.cristal-raridade.lendario) {
+  background-image: url("/mesa/arte/loja/cards/fundo-lendario-v3.webp");
+  box-shadow: 0 0 0 1px #f2b63088, 0 6px 18px -7px #f29a00dd;
+}
+.oferta-item strong { color: #0f2340; text-shadow: none; }
+
+/* moldura: a foto vazia vira 40% do quadro e a moldura (2,5x a foto) ocupa o mesmo espaço do ícone */
+.oferta-arte .loja-cartao-img.moldura { width: 100% !important; height: auto !important; aspect-ratio: 1; display: grid; place-items: center; }
+.oferta-arte .loja-cartao-img.moldura .foto { width: 40% !important; height: auto !important; aspect-ratio: 1; }
