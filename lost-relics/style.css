@@ -372,6 +372,8 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .ui-kit .modal { display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding-block: 28px; }
 .ui-kit .modal .card { margin: auto 0; flex: none; }
 .ui-kit .btn:focus-visible { outline: none; filter: drop-shadow(0 0 12px rgba(63,216,204,.9)) drop-shadow(0 8px 14px rgba(0,0,0,.6)); }
+/* 23/11 (testador): texto escuro na pedra cinza fazia o COMPARTILHAR parecer desativado; letra clara como nos botões escuros */
+.ui-kit .btn#mShare { color: #fff1c4; text-shadow: 0 0 10px rgba(63,216,204,.45), 0 2px 0 #000, 0 0 4px #000; }
 .ui-kit .shop-item { grid-template-columns: 40px minmax(0, 1fr); gap: 8px 10px; padding: 10px; }
 .ui-kit .shop-item > img { width: 40px; height: 40px; grid-row: span 2; }
 .ui-kit .shop-item .buy { grid-column: 2; justify-self: start; min-height: 44px; min-width: 120px; }

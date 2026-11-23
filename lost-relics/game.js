@@ -2496,8 +2496,10 @@
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 3400);
   }
+  let preOpen = null; // última janela de fase aberta (pra voltar nela se o Android recarregar o app)
   function openPre(id, hard) {
     const hardOpen = !!save.stars[id], hardMode = !!hard && hardOpen;
+    preOpen = { id, hard: hardMode };
     const L = levelMode(id, hardMode);
     const tutKey = tutKeyOf(L);
     prePuzzle = !!L.puzzle;
@@ -2626,13 +2628,14 @@
       Sound.play('click');
       const n = state.score.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
       try {
-        await ShareCard.share({
+        const r = await ShareCard.share({
           kind: 'hard', level: id, score: n,
           title: T('records.shareTitle', { n: id }), subtitle: T('records.shareSubtitle'),
           scoreLabel: T('records.points'), call: T('records.shareCall'),
-          text: T('records.shareText', { level: id, score: n }),
+          text: T('records.shareText', { level: id, score: n }), copyHint: T('share.copyHint'),
         });
-        track('share_result', { mode: 'hard', level: id, result: 'ok', score: state.score });
+        shareDone(share, r);
+        track('share_result', { mode: 'hard', level: id, result: r === 'shared' ? 'ok' : r, score: state.score });
       } catch (e) { track('share_result', { mode: 'hard', level: id, result: 'cancel' }); }
     };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
@@ -2913,6 +2916,13 @@
     await afterMove();
   }
 
+  // 23/11: sem folha de compartilhar (WebView do app sem plugin Share) o texto é copiado; o botão avisa por 2 s em vez de ficar mudo
+  function shareDone(btn, r) {
+    if (r !== 'copied' || !btn) return;
+    const label = btn.textContent; btn.textContent = T('daily.copied');
+    setTimeout(() => { btn.textContent = label; }, 2000);
+  }
+
   // ---------- Jogada do Dia (18/10) ----------
   // Tabuleiro fixo pela data (semente = AAAAMMDD) com 2 joias especiais, 1 movimento só. O jogo calcula a melhor jogada possível
   // (testa todas) e compara: 100% = achou. Dá estrelas, 20 moedas na 1ª vez do dia e um texto pra compartilhar (TikTok/WhatsApp).
@@ -2978,15 +2988,17 @@
       '<div class="btns"><button class="btn" id="mShare" type="button">' + T('daily.shareBtn') + '</button>' +
       '<button class="btn dark small" id="mRetry" type="button">' + T('daily.retry') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('menu.back') + '</button></div>');
-    card.querySelector('#mShare').onclick = async () => {
+    const shareBtn = card.querySelector('#mShare');
+    shareBtn.onclick = async () => {
       Sound.play('click');
       const txt = T('daily.share', { d: dd, n: n(sc), p });
       try {
-        await ShareCard.share({
+        const r = await ShareCard.share({
           kind: 'daily', score: n(sc), title: T('daily.title'), subtitle: dd + ' · ' + T('daily.pct', { p }),
-          scoreLabel: T('records.points'), call: T('records.shareCall'), text: txt,
+          scoreLabel: T('records.points'), call: T('records.shareCall'), text: txt, copyHint: T('share.copyHint'),
         });
-        track('share_result', { mode: 'daily', result: 'ok', score: sc, value: p });
+        shareDone(shareBtn, r);
+        track('share_result', { mode: 'daily', result: r === 'shared' ? 'ok' : r, score: sc, value: p });
       } catch (e) { track('share_result', { mode: 'daily', result: 'cancel' }); }
     };
     card.querySelector('#mRetry').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel('daily')); };
@@ -3825,8 +3837,29 @@
   }
 
   window.addEventListener('resize', () => { layout(); if (scene === 'map') buildMap(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { Sound.pause(); scheduleNotes(); cloudPush(true); } else { cloudPush(true); Sound.resume(); if (scene === 'map') paintEnergy(); } syncMapAttention(); });
-  window.addEventListener('pagehide', () => { if (scene === 'play' && !runEnded) abandonRun('pagehide'); });
+  // 23/11 (testador no Android): saiu do app na janela da Fase 4 pra mandar print e voltou no menu. O jogo não muda de tela
+  // ao esconder; quem zera é o Android, que encerra o app em segundo plano e ao voltar a página recarrega do zero (boot abre
+  // o menu). Agora guarda onde o jogador estava ao sair e o boot volta pro mapa / janela da fase se foi há menos de 30 min.
+  const RESUME_KEY = 'lr.resumeAt', RESUME_MAX = 30 * 60e3;
+  function saveResume() {
+    let at = null;
+    const pre = modalOpen() && $('modalCard').classList.contains('pre') && preOpen;
+    if (pre) at = { pre: preOpen.id, hard: preOpen.hard };
+    else if (scene === 'map') at = {};
+    else if (scene === 'play' && level && Number.isInteger(level.id) && !level.run && !level.daily) at = { pre: level.id, hard: !!level.hard };
+    if (at) { at.t = Date.now(); lsSet(RESUME_KEY, JSON.stringify(at)); } else lsSet(RESUME_KEY, '');
+  }
+  function takeResume() {
+    let at = null;
+    try { at = JSON.parse(lsGet(RESUME_KEY) || 'null'); } catch (e) {}
+    lsSet(RESUME_KEY, '');
+    if (!at || !(Date.now() - at.t < RESUME_MAX) || (at.pre != null && !(Number.isInteger(at.pre) && at.pre >= 1 && at.pre <= Math.min(save.unlocked, LEVELS.length)))) return false;
+    openMap(); if (at.pre != null) openPre(at.pre, at.hard);
+    return true;
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { saveResume(); Sound.pause(); scheduleNotes(); cloudPush(true); } else { lsSet(RESUME_KEY, ''); cloudPush(true); Sound.resume(); if (scene === 'map') paintEnergy(); } syncMapAttention(); });
+  document.addEventListener('pause', saveResume); // evento do Capacitor quando o app vai pro segundo plano
+  window.addEventListener('pagehide', () => { saveResume(); if (scene === 'play' && !runEnded) abandonRun('pagehide'); });
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (modalOpen() && $('modalCard').querySelector('#mResume')) closeModal(); else openPause(); } });
   Ads.setHooks({ pause: () => Sound.pause(), resume: () => Sound.resume() });
 
@@ -3929,7 +3962,7 @@
     else if (location.hash === '#derrotademo') { startLevel(1); setTimeout(() => { showLose(); const x = document.getElementById('mExtra'); if (x) x.hidden = false; }, 900); }
     else if (location.hash === '#pontosdemo') { startLevel(1); setTimeout(() => { state.score = 1290; renderHUD(); floats.push({ x: cellX(3), y: cellY(4), text: '+90', num: 90, color: '#ffe08a', t: 0, hold: true }); }, 900); }
     else if (location.hash === '#vitoriademo') { startLevel(1); setTimeout(() => { state.score = 16900; showWin(); }, 1200); setTimeout(() => document.querySelectorAll('.stars-big img').forEach((im, i) => { if (i < 2) { im.src = ART.nodeImg('vstar') || im.src; im.classList.add('on'); } }), 2600); }
-    else { if (MESA_ACCOUNT && MESA_ACCOUNT.data) applyCloud(MESA_ACCOUNT.data); openMenu(); iapInit(); if (cloud) cloudPush(true); if (APP && CLOUD_ON && !MESA_ACCOUNT && !cloud && !lsGet('lr.loginAsked')) { lsSet('lr.loginAsked', '1'); setTimeout(() => { if (!modalOpen()) openAccount(); }, 600); } }
+    else { if (MESA_ACCOUNT && MESA_ACCOUNT.data) applyCloud(MESA_ACCOUNT.data); openMenu(); takeResume(); iapInit(); if (cloud) cloudPush(true); if (APP && CLOUD_ON && !MESA_ACCOUNT && !cloud && !lsGet('lr.loginAsked')) { lsSet('lr.loginAsked', '1'); setTimeout(() => { if (!modalOpen()) openAccount(); }, 600); } }
     requestAnimationFrame(frame);
   }
   $('loadingTxt').textContent = T('loading');

@@ -32,17 +32,51 @@
     if (!isCrazy()) { x.fillStyle = '#aeb8b1'; x.font = '32px system-ui'; x.fillText('oddloomgames.com/lost-relics', 540, 1220); }
     return new Promise((resolve) => c.toBlob(resolve, 'image/png', .92));
   }
+  // 23/11 (testador no Android): o WebView do app não tem navigator.share e o link de download não faz nada, então o
+  // botão ficava mudo. Agora: plugin nativo Share do Capacitor (se instalado) > Web Share > copia o texto e avisa.
+  const plugin = (name) => (root.Capacitor && root.Capacitor.Plugins && root.Capacitor.Plugins[name]) || null;
+  const canceled = (e) => !!e && (e.name === 'AbortError' || /cancel/i.test(String(e.message || e)));
+  const blobBase64 = (blob) => new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result).split(',')[1]); r.onerror = reject; r.readAsDataURL(blob); });
+  async function shareNative(blob, name, data) {
+    const S = plugin('Share'), FS = plugin('Filesystem');
+    if (!S || !S.share) return false;
+    if (S.canShare) { try { const r = await S.canShare(); if (r && r.value === false) return false; } catch (e) { return false; } }
+    const opts = Object.assign({ dialogTitle: 'Lost Relics' }, data);
+    // imagem só se o plugin Filesystem também existir (o Share nativo recebe arquivo pelo caminho, não Blob)
+    if (FS && FS.writeFile && blob) {
+      try {
+        const w = await FS.writeFile({ path: name, data: await blobBase64(blob), directory: 'CACHE' });
+        await S.share(Object.assign({ files: [w.uri] }, opts)); return true;
+      } catch (e) { if (canceled(e)) throw e; }
+    }
+    await S.share(opts); return true;
+  }
+  async function copyText(text) {
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; } } catch (e) {}
+    try {
+      const t = document.createElement('textarea'); t.value = text; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok;
+    } catch (e) { return false; }
+  }
   async function share(options) {
     const blob = await make(options), url = shareUrl(options.kind, options.level), text = url ? options.text + ' ' + url : options.text;
-    const file = new File([blob], 'lost-relics-' + options.kind + '.png', { type: 'image/png' });
+    const name = 'lost-relics-' + options.kind + '.png';
     const data = url ? { title: 'Lost Relics', text, url } : { title: 'Lost Relics', text };
-    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-      await navigator.share(Object.assign({ files: [file] }, data)); return 'shared';
+    try { if (await shareNative(blob, name, data)) return 'shared'; } catch (e) { if (canceled(e)) throw e; }
+    if (navigator.share) {
+      try {
+        const file = blob && typeof File === 'function' ? new File([blob], name, { type: 'image/png' }) : null;
+        if (file && (!navigator.canShare || navigator.canShare({ files: [file] }))) { await navigator.share(Object.assign({ files: [file] }, data)); return 'shared'; }
+      } catch (e) { if (canceled(e)) throw e; }
+      try { await navigator.share(data); return 'shared'; } catch (e) { if (canceled(e)) throw e; }
     }
-    if (navigator.share) { await navigator.share(data); return 'shared'; }
-    if (navigator.clipboard) await navigator.clipboard.writeText(text);
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    return 'downloaded';
+    // sem compartilhamento: copia o texto (o jogo mostra "Texto copiado!"); no navegador também baixa a imagem
+    const copied = await copyText(text);
+    if (!isApp() && blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+    if (copied) return 'copied';
+    // último recurso: mostra o texto selecionável pra copiar na mão
+    try { root.prompt(options.copyHint || 'Lost Relics', text); } catch (e) {}
+    return 'manual';
   }
   root.ShareCard = { share, make, shareUrl };
 })(window);
