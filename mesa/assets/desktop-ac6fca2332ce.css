@@ -1,0 +1,76 @@
+/* Versão de computador: usa a tela toda (sem faixas pretas laterais).
+   Só vale em janela larga com mouse; celular e tablet continuam como estavam. */
+@media (min-width: 900px) and (hover: hover) and (pointer: fine) {
+  .tela {
+    max-width: none;
+  }
+
+  /* Vídeos: feed vertical, mantém a coluna central com bordas pretas (decisão do Moa, 22/11) */
+  .tela.tela-videos {
+    max-width: 560px;
+  }
+
+  /* ---- Menus (Jogos, Salas, Amigos, Perfil...): ocupam a largura toda ---- */
+  .tela .mh-rolagem,
+  .tela .rolagem {
+    padding-inline: clamp(24px, 4vw, 80px) !important; /* .mh-rolagem já usa !important */
+  }
+
+  /* Loja: cards com o tamanho de leitura do celular (a grade proporcional ao card), em várias colunas; antes viravam 370 px de largura */
+  :root .tela.inicio.loja.loja-colecao .loja-grade-itens {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 168px));
+    justify-content: start;
+    gap: 14px;
+  }
+
+  /* Loja → Faixa: barras em colunas de ~400 px em vez de uma por linha na largura inteira */
+  :root .tela.inicio.loja .loja-grade {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 400px));
+    justify-content: start;
+    gap: 12px;
+  }
+
+  /* Amigos e Perfil são telas de leitura: coluna centralizada de ~960px, fundo continua na janela toda */
+  .abas-sociais .mh-rolagem,
+  .abas-sociais .rolagem {
+    padding-inline: max(24px, calc((100vw - 960px) / 2)) !important;
+  }
+
+  /* Jogos: mais colunas conforme a largura */
+  .jogos-colorido .mj-grade {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  /* Salas: duas ou mais colunas em vez de uma faixa esticada */
+  .lista-salas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+    gap: 28px 14px;
+    align-items: center; /* centro dos dois cards na mesma altura */
+    padding-top: 18px; /* espaço da coroa do card VIP */
+  }
+
+  /* o card VIP tem margem de 16px no topo só para a coroa; aqui o espaço vem da grade */
+  .lista-salas > .sala-card.sala-card-vip {
+    margin-top: 0;
+  }
+
+  /* Barra inferior: continua flutuante e centralizada, sem esticar na janela inteira */
+  .barra {
+    left: 0;
+    right: 0;
+    margin-inline: auto;
+    width: min(640px, calc(100% - 24px));
+  }
+
+  /* ---- Partidas: o fundo (madeira, feltro...) preenche a janela e o jogo fica numa coluna
+     centralizada, com largura que cresce junto com a altura da janela para o tabuleiro caber. ---- */
+  /* Jogos de cartas, dominó e truco definem a própria largura (coluna estreita); aqui a tela vira a janela toda
+     (width: 100%) e a coluna do jogo vem do padding, calculado sobre a própria tela (100%, não 100vw). */
+  :root:root:root:root:root body .tela:not(.inicio):not(.tela-sinuca-site):not(.tela-videos) {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: max(0px, calc((100% - max(560px, 62dvh)) / 2));
+  }
+}
