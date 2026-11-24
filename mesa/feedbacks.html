@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Feedbacks da Mesa</title>
+<style>
+  body{margin:0;font-family:system-ui,sans-serif;background:#eef3fb;color:#15305c}
+  header{position:sticky;top:0;background:#fff;border-bottom:1px solid #d5e0f2;padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;z-index:2}
+  h1{font-size:18px;margin:0 8px 0 0}
+  main{max-width:820px;margin:0 auto;padding:12px 14px 60px}
+  button,input,select{font:inherit}
+  button{border:0;border-radius:10px;padding:7px 12px;background:#2f7cf6;color:#fff;font-weight:700;cursor:pointer}
+  button.sec{background:#dde8fa;color:#15305c}
+  .chip{background:#dde8fa;color:#15305c}.chip[aria-pressed=true]{background:#2f7cf6;color:#fff}
+  #chave{padding:7px 10px;border:1px solid #b9d0f5;border-radius:10px;min-width:210px}
+  .item{background:#fff;border-radius:14px;padding:12px 14px;margin:10px 0;box-shadow:0 2px 8px #0a214518;border-left:6px solid #2f7cf6}
+  .item.lido{opacity:.55}.item.bug{border-color:#d93a2f}.item.naogostei{border-color:#e8912b}.item.ideia{border-color:#d8a800}.item.gostei{border-color:#1d9b4a}
+  .topo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+  .tipo{font-weight:800}.txt{white-space:pre-wrap;margin:8px 0;font-size:15px}.meta{font-size:12px;opacity:.7;word-break:break-word}
+  .acoes{display:flex;gap:6px;margin-top:6px}
+  #estado{padding:10px;font-weight:700}.erro{color:#c4271d}
+</style>
+</head>
+<body>
+<header>
+  <h1>💬 Feedbacks</h1>
+  <input id="chave" type="password" placeholder="Chave de acesso" autocomplete="off">
+  <button id="entrar">Entrar</button>
+  <span id="filtros" hidden>
+    <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
+    <button class="chip" data-f="bug" aria-pressed="false">🐞 Bugs</button>
+    <button class="chip" data-f="ideia" aria-pressed="false">💡 Ideias</button>
+    <button class="chip" data-f="naogostei" aria-pressed="false">👎 Não gostei</button>
+    <button class="chip" data-f="gostei" aria-pressed="false">👍 Gostei</button>
+    <button class="chip" data-f="naolidos" aria-pressed="false">Não lidos</button>
+  </span>
+</header>
+<main><div id="estado">Digite a chave para ver os feedbacks.</div><div id="lista"></div></main>
+<script>
+(function () {
+  var API = 'https://mesas-domino.officialoddloom.workers.dev';
+  var ROT = { gostei: '👍 Gostei', naogostei: '👎 Não gostei', ideia: '💡 Ideia', bug: '🐞 Bug' };
+  var dados = [], filtro = 'todos';
+  var $ = function (i) { return document.getElementById(i); };
+  function chave() { return sessionStorage.getItem('fb-chave') || ''; }
+  function chama(rota, corpo) {
+    var o = { headers: { Authorization: 'Bearer ' + chave() } };
+    if (corpo) { o.method = 'POST'; o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(corpo); }
+    return fetch(API + rota, o);
+  }
+  function carrega() {
+    $('estado').className = ''; $('estado').textContent = 'Carregando…';
+    chama('/admin/feedbacks').then(function (r) {
+      if (r.status === 401) { sessionStorage.removeItem('fb-chave'); throw new Error('Chave incorreta.'); }
+      return r.json();
+    }).then(function (j) {
+      dados = j.feedbacks || []; $('filtros').hidden = false; $('estado').textContent = ''; desenha();
+    }).catch(function (e) { $('estado').className = 'erro'; $('estado').textContent = e.message || 'Falha ao carregar.'; });
+  }
+  function desenha() {
+    var L = $('lista'); L.textContent = '';
+    var v = dados.filter(function (d) { return filtro === 'todos' ? true : filtro === 'naolidos' ? !d.lido : d.tipo === filtro; });
+    $('estado').textContent = v.length ? v.length + ' de ' + dados.length + ' feedbacks' : 'Nenhum feedback neste filtro.';
+    v.forEach(function (d) {
+      var it = document.createElement('div'); it.className = 'item ' + d.tipo + (d.lido ? ' lido' : '');
+      var topo = document.createElement('div'); topo.className = 'topo';
+      var tp = document.createElement('span'); tp.className = 'tipo'; tp.textContent = ROT[d.tipo] || d.tipo;
+      var dt = document.createElement('span'); dt.textContent = new Date(d.em).toLocaleString('pt-BR');
+      var q = document.createElement('span'); q.textContent = (d.nome || '?') + (d.usuario ? ' @' + d.usuario : '') + (d.visitante ? ' (visitante)' : '');
+      topo.appendChild(tp); topo.appendChild(dt); topo.appendChild(q);
+      if (d.nota) { var n = document.createElement('span'); n.textContent = '★'.repeat(d.nota) + ' ' + d.nota + '/5'; topo.appendChild(n); }
+      var tx = document.createElement('div'); tx.className = 'txt'; tx.textContent = d.texto;
+      var c = d.ctx || {}, meta = document.createElement('div'); meta.className = 'meta';
+      meta.textContent = ['origem: ' + (c.origem || '-'), 'versão: ' + (c.versao || '-'), 'tela: ' + (c.tela || '-'), 'idioma: ' + (c.lang || '-'), d.piloto ? 'piloto: ' + d.piloto : '', 'código: ' + d.code, c.ua || ''].filter(Boolean).join(' · ');
+      var ac = document.createElement('div'); ac.className = 'acoes';
+      var b1 = document.createElement('button'); b1.className = 'sec'; b1.textContent = d.lido ? 'Marcar como não lido' : 'Marcar como lido';
+      b1.onclick = function () { chama('/admin/acao', { acao: 'feedback-lido', id: d.id, lido: !d.lido }).then(function () { d.lido = !d.lido; desenha(); }); };
+      var b2 = document.createElement('button'); b2.className = 'sec'; b2.textContent = 'Apagar';
+      b2.onclick = function () { if (!confirm('Apagar este feedback?')) return; chama('/admin/acao', { acao: 'feedback-apagar', id: d.id }).then(function () { dados = dados.filter(function (x) { return x.id !== d.id; }); desenha(); }); };
+      ac.appendChild(b1); ac.appendChild(b2);
+      it.appendChild(topo); it.appendChild(tx); it.appendChild(meta); it.appendChild(ac); L.appendChild(it);
+    });
+  }
+  $('entrar').onclick = function () { sessionStorage.setItem('fb-chave', $('chave').value.trim()); $('chave').value = ''; carrega(); };
+  $('chave').onkeydown = function (e) { if (e.key === 'Enter') $('entrar').click(); };
+  [].forEach.call(document.querySelectorAll('.chip'), function (b) {
+    b.onclick = function () { filtro = b.dataset.f; [].forEach.call(document.querySelectorAll('.chip'), function (x) { x.setAttribute('aria-pressed', String(x === b)); }); desenha(); };
+  });
+  if (chave()) carrega();
+})();
+</script>
+</body>
+</html>
