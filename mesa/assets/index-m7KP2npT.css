@@ -50,3 +50,44 @@
 :root dialog.aparencia>h2:first-child::before{content:"";flex:none;width:.86em;height:.86em;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.400 15a1.700 1.700 0 0 0 .3 1.800l.1.1a2 2 0 1 1-2.800 2.800l-.1-.1a1.700 1.700 0 0 0-1.800-.3 1.700 1.700 0 0 0-1 1.500V21a2 2 0 1 1-4 0v-.1a1.700 1.700 0 0 0-1.100-1.500 1.700 1.700 0 0 0-1.800.3l-.1.1a2 2 0 1 1-2.800-2.800l.1-.1a1.700 1.700 0 0 0 .3-1.800 1.700 1.700 0 0 0-1.500-1H3a2 2 0 1 1 0-4h.1a1.700 1.700 0 0 0 1.500-1.100 1.700 1.700 0 0 0-.3-1.800l-.1-.1a2 2 0 1 1 2.800-2.800l.1.1a1.700 1.700 0 0 0 1.800.3H9a1.700 1.700 0 0 0 1-1.500V3a2 2 0 1 1 4 0v.1a1.700 1.700 0 0 0 1 1.500 1.700 1.700 0 0 0 1.800-.3l.1-.1a2 2 0 1 1 2.800 2.800l-.1.1a1.700 1.700 0 0 0-.3 1.800V9a1.700 1.700 0 0 0 1.500 1H21a2 2 0 1 1 0 4h-.1a1.700 1.700 0 0 0-1.500 1z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.400 15a1.700 1.700 0 0 0 .3 1.800l.1.1a2 2 0 1 1-2.800 2.800l-.1-.1a1.700 1.700 0 0 0-1.800-.3 1.700 1.700 0 0 0-1 1.500V21a2 2 0 1 1-4 0v-.1a1.700 1.700 0 0 0-1.100-1.500 1.700 1.700 0 0 0-1.800.3l-.1.1a2 2 0 1 1-2.800-2.800l.1-.1a1.700 1.700 0 0 0 .3-1.800 1.700 1.700 0 0 0-1.500-1H3a2 2 0 1 1 0-4h.1a1.700 1.700 0 0 0 1.500-1.100 1.700 1.700 0 0 0-.3-1.800l-.1-.1a2 2 0 1 1 2.800-2.800l.1.1a1.700 1.700 0 0 0 1.800.3H9a1.700 1.700 0 0 0 1-1.500V3a2 2 0 1 1 4 0v.1a1.700 1.700 0 0 0 1 1.500 1.700 1.700 0 0 0 1.800-.3l.1-.1a2 2 0 1 1 2.800 2.800l-.1.1a1.700 1.700 0 0 0-.3 1.800V9a1.700 1.700 0 0 0 1.500 1H21a2 2 0 1 1 0 4h-.1a1.700 1.700 0 0 0-1.500 1z'/%3E%3C/svg%3E") center/contain no-repeat}
 /* engrenagem depois do texto: "Configurações ⚙" */
 :root dialog.aparencia>h2:first-child::before{order:2}
+
+/* Missões 2026-11-24: mesmo visual claro da Recompensa diária (Lumi à esquerda, cartões claros, botões azuis) */
+:root dialog.bn-janela.bn-missoes{--bn-ink:#19283c;--bn-muted:#65778d;--ui-panel:#f7faff;color:#19283c;color-scheme:light;background:linear-gradient(150deg,#fffffff7,#f4f8fdf0) !important;border:1px solid #fffffff0 !important;border-image:none !important;border-radius:28px;box-shadow:0 24px 70px #132a4a42,inset 0 1px #fff !important;-webkit-backdrop-filter:blur(24px) saturate(140%);backdrop-filter:blur(24px) saturate(140%);width:calc(100vw - 16px);max-width:440px}
+:root[data-grafico=leve] dialog.bn-janela.bn-missoes{-webkit-backdrop-filter:none;backdrop-filter:none;background:#f7faff !important}
+:root dialog.bn-janela.bn-missoes::before,:root dialog.bn-janela.bn-missoes::after{display:none !important}
+:root dialog.bn-janela.bn-missoes .bn-corpo{gap:10px !important;padding:18px 16px 16px !important;background:none !important}
+:root dialog.bn-janela.bn-missoes .bn-fechar{color:#475b73;text-shadow:none;background:#eaf0f6b8;border:1px solid #fff;box-shadow:none;width:40px;height:40px;font-size:27px;font-weight:400;line-height:1;top:10px;right:10px}
+:root dialog.bn-janela.bn-missoes .bn-cabecalho{text-align:left;grid-template-columns:112px 1fr;align-items:center;gap:0 10px;padding:0 44px 0 0}
+:root dialog.bn-janela.bn-missoes .bn-cabecalho .bn-bau{content:url(/mesa/arte/nubo/lumi-missoes-busto.webp?v=1);object-fit:contain;filter:drop-shadow(0 4px 8px #3a5d8a30);width:112px;height:112px;margin:-12px 0 -8px -8px;transform:none}
+:root dialog.bn-janela.bn-missoes .bn-cabecalho h2{justify-self:start;color:#19283c;text-shadow:none;text-align:left;letter-spacing:-.035em;font-size:26px !important;line-height:1.08;margin:0}
+:root dialog.bn-janela.bn-missoes .bn-abas{background:#eaf0f6;border:1px solid #e2eaf3;border-radius:14px;gap:4px;padding:3px}
+:root dialog.bn-janela.bn-missoes .bn-abas button{color:#65778d;background:0 0;border:0;border-radius:11px;min-height:40px;box-shadow:none}
+:root dialog.bn-janela.bn-missoes .bn-abas .ativo{color:#fff;background:#1687e8;box-shadow:0 3px 10px #1687e82a}
+:root dialog.bn-janela.bn-missoes .bn-nota{color:#718097;font-size:11px;text-shadow:none}
+:root dialog.bn-janela.bn-missoes .bn-missoes{gap:9px}
+:root dialog.bn-janela.bn-missoes .bn-missao{color:#19283c;background:#ffffffc7;border:1px solid #e2eaf3;border-radius:18px;gap:10px;padding:12px 12px 12px 14px;box-shadow:inset 0 1px #fff,0 3px 10px #304f6e0d}
+:root dialog.bn-janela.bn-missoes .bn-missao h3{color:#19283c;font-size:14px;text-shadow:none}
+:root dialog.bn-janela.bn-missoes .bn-progresso{color:#65778d}
+:root dialog.bn-janela.bn-missoes .bn-progresso progress{accent-color:#1687e8;background:#e3ebf4;border:0;border-radius:5px;height:8px;overflow:hidden}
+:root dialog.bn-janela.bn-missoes progress::-webkit-progress-bar{background:#e3ebf4;border-radius:5px}
+:root dialog.bn-janela.bn-missoes progress::-webkit-progress-value{background:linear-gradient(#3fb7ff,#1687e8);border-radius:5px}
+:root dialog.bn-janela.bn-missoes progress::-moz-progress-bar{background:#1687e8;border-radius:5px}
+:root dialog.bn-janela.bn-missoes .bn-valor{color:#19283c;justify-content:start;font-size:15px}
+:root dialog.bn-janela.bn-missoes .bn-missao .bn-acao{color:#fff;text-shadow:none;background:#1687e8;border:0;border-radius:14px;min-width:80px;min-height:42px;padding:8px 12px;font-size:13px;font-weight:900;box-shadow:0 4px 12px #1687e82a}
+:root dialog.bn-janela.bn-missoes .bn-missao .bn-acao.secundaria{color:#1471c4;background:#e6f2ff;border:1px solid #bfdcf7;box-shadow:none}
+:root dialog.bn-janela.bn-missoes .bn-missao .bn-acao:disabled{opacity:.6;filter:none;box-shadow:none}
+:root dialog.bn-janela.bn-missoes :focus-visible{outline-offset:3px;outline:3px solid #006fd8}
+
+/* Missões 2026-11-24: atalho de pergaminho abaixo do sininho no início */
+.mh-sino-col{position:relative;display:inline-flex;flex:none}
+.mh-sino-col>.mh-missoes{position:absolute;top:calc(100% + 10px);left:0;z-index:3}
+.tela.inicio .topo-inicio .mh-atalhos .mh-missoes{box-shadow:0 4px 12px #30507a1f}
+/* Missões v2: pergaminho 3D flutuante (sem moldura de botão) */
+.mh-sino-col>.mh-missoes{left:50%;margin-left:-27px;top:calc(100% + 4px)}
+:root .tela.inicio .topo-inicio .mh-atalhos .mh-missoes,:root .mh-sino-col>.mh-missoes{width:54px;height:54px;min-width:54px;padding:0;border:0;border-radius:14px;background:transparent;box-shadow:none;outline-offset:2px}
+:root .mh-sino-col>.mh-missoes>svg{display:none}
+:root .mh-sino-col>.mh-missoes::before{content:"";position:absolute;inset:0;background:url(/mesa/arte/mesa-ui/pergaminho-missoes.webp?v=2) center/contain no-repeat;filter:drop-shadow(0 5px 5px #2a3f6a40);animation:mhFlutua 3.6s ease-in-out infinite;will-change:transform}
+:root .mh-sino-col>.mh-missoes:active::before{transform:scale(.92);animation-play-state:paused}
+@keyframes mhFlutua{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-4px) rotate(2deg)}}
+@media (prefers-reduced-motion:reduce){:root .mh-sino-col>.mh-missoes::before{animation:none}}
+:root .mh-sino-col>.mh-missoes.mh-missoes{background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
