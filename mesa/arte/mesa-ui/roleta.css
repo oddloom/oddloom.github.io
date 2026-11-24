@@ -1,0 +1,297 @@
+/* Roleta da Mesa: roda desenhada em CSS (aro dourado com lâmpadas, ponteiro fixo, fatias coloridas), no mesmo vidro azul e Nunito do app. */
+
+/* ---------- atalho na home ---------- */
+.mh-sino-col>.mh-roleta,
+.mh-icones-jogos>.mh-roleta{
+  position:relative;z-index:3;width:54px;height:54px;min-width:54px;padding:0;margin:0;
+  border:0;border-radius:14px;background:transparent;box-shadow:none;outline-offset:2px;cursor:pointer;
+  pointer-events:auto;
+}
+.mh-sino-col>.mh-roleta{position:absolute;left:50%;top:calc(100% + 4px);margin-left:-86px}
+.mh-sino-col>.mh-roleta::before,
+.mh-icones-jogos>.mh-roleta::before{
+  content:"";position:absolute;inset:0;
+  background:url(./roleta.webp?v=1) center/contain no-repeat;
+  filter:drop-shadow(0 5px 5px #2a3f6a40);
+  animation:mhFlutua 3.8s ease-in-out .4s infinite;will-change:transform;
+}
+.mh-sino-col>.mh-roleta:active::before,
+.mh-icones-jogos>.mh-roleta:active::before{transform:scale(.92);animation-play-state:paused}
+:root .mh-sino-col>.mh-roleta,
+:root .mh-icones-jogos>.mh-roleta{
+  background:none!important;border:0!important;box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+
+/* ---------- janela ---------- */
+dialog.bn-janela.bn-roleta{
+  --bn-ink:#112b4e;--bn-muted:#53729c;--ui-panel:#e9f4ff;
+  --r-moedas:#d98a00;--r-incomum:#1e8a5a;--r-raro:#1670c8;--r-epico:#7a3ad8;--r-lendario:#c48412;
+  --ouro-1:#fff0a8;--ouro-2:#ffc93c;--ouro-3:#e8960c;--ouro-4:#a85f00;
+  border:2px solid #fff;border-image:none;border-radius:30px;
+  background:
+    radial-gradient(circle at 12% 8%,#ffe9a655 0 9%,transparent 10%),
+    radial-gradient(circle at 92% 18%,#c9a8ff55 0 7%,transparent 8%),
+    radial-gradient(circle at 8% 78%,#9fe3ff66 0 8%,transparent 9%),
+    radial-gradient(circle at 95% 88%,#ffd0e255 0 9%,transparent 10%),
+    linear-gradient(160deg,#f7fdff 0%,#d9ecff 52%,#efe4ff 100%);
+  color:var(--bn-ink);font-family:Nunito,Inter,system-ui,sans-serif;
+  width:min(420px,calc(100vw - 20px));max-height:min(94vh,780px);padding:0;overflow:hidden auto;
+  box-shadow:0 26px 64px #16315a66,inset 0 0 0 1px #ffffffaa;
+}
+dialog.bn-janela.bn-roleta::backdrop{background:radial-gradient(circle at 50% 40%,#2b3f8c99,#0b1a2ec4);backdrop-filter:blur(6px)}
+dialog.bn-janela.bn-roleta .bn-fechar{
+  position:absolute;top:8px;right:10px;z-index:3;width:44px;height:44px;
+  border:0;border-radius:50%;background:#ffffffb8;color:var(--bn-ink);
+  font-size:26px;line-height:1;cursor:pointer;box-shadow:0 2px 8px #2a3f6a2e;
+}
+dialog.bn-janela.bn-roleta .bn-corpo{
+  display:grid;justify-items:stretch;gap:12px;padding:16px 16px 16px;text-align:center;
+}
+
+/* título em faixa dourada */
+dialog.bn-janela.bn-roleta .ro-titulo{
+  justify-self:center;margin:2px 0 0;padding:6px 26px 7px;border-radius:999px;
+  font-size:24px;font-weight:900;letter-spacing:.01em;color:#6b3a00;
+  background:linear-gradient(#fff3b8,#ffc93c 55%,#f3a30f);
+  box-shadow:0 4px 0 #b86a00,0 8px 14px #b86a0040,inset 0 2px 0 #fffbe0;
+  text-shadow:0 1px 0 #fff6c8;
+}
+dialog.bn-janela.bn-roleta .ro-sub{margin:0;color:var(--bn-muted);font-size:13px;line-height:1.4}
+
+/* abas Girar / Chances */
+dialog.bn-janela.bn-roleta .ro-abas{
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:16px;
+  background:#ffffff99;box-shadow:inset 0 1px 3px #2a3f6a22;
+}
+dialog.bn-janela.bn-roleta .ro-aba{
+  min-height:40px;border:0;border-radius:12px;background:transparent;color:var(--bn-muted);
+  font:inherit;font-weight:800;font-size:14px;cursor:pointer;
+}
+dialog.bn-janela.bn-roleta .ro-aba[aria-selected="true"]{
+  color:#fff;background:linear-gradient(#4aaeff,#1687e8);box-shadow:0 3px 0 #0f5fae,0 6px 10px #1687e84d;
+}
+
+/* saldo */
+dialog.bn-janela.bn-roleta .ro-saldo{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+dialog.bn-janela.bn-roleta .ro-saldo .bn-valor{
+  padding:5px 14px 5px 8px;border-radius:999px;background:#ffffffd9;border:1px solid #dbe8f6;
+  box-shadow:0 2px 6px #2a3f6a1f;font-size:16px;
+}
+dialog.bn-janela.bn-roleta .bn-valor{display:inline-flex;align-items:center;gap:6px;font-weight:900}
+dialog.bn-janela.bn-roleta .bn-valor .moeda-icone,
+dialog.bn-janela.bn-roleta .bn-acao .moeda-icone{display:inline-flex;width:22px;height:22px}
+dialog.bn-janela.bn-roleta .bn-valor img,
+dialog.bn-janela.bn-roleta .bn-acao img{width:100%;height:100%;object-fit:contain}
+
+/* ---------- a roda ---------- */
+dialog.bn-janela.bn-roleta .ro-palco{
+  --d:min(280px,74vw);
+  position:relative;width:var(--d);height:var(--d);justify-self:center;margin:6px 0 14px;
+}
+dialog.bn-janela.bn-roleta .ro-palco::after{ /* sombra no chão */
+  content:"";position:absolute;left:12%;right:12%;bottom:-12px;height:16px;border-radius:50%;
+  background:radial-gradient(#1d3a6a55,transparent 70%);
+}
+dialog.bn-janela.bn-roleta .ro-aro{
+  position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 20deg,var(--ouro-1),var(--ouro-2),var(--ouro-3),var(--ouro-2),var(--ouro-1),var(--ouro-2),var(--ouro-3),var(--ouro-2),var(--ouro-1));
+  box-shadow:0 10px 18px #1d3a6a40,inset 0 0 0 3px #fff3b0,inset 0 -5px 0 #b86a0066;
+}
+dialog.bn-janela.bn-roleta .ro-aro::after{ /* borda interna do aro */
+  content:"";position:absolute;inset:8.5%;border-radius:50%;
+  background:linear-gradient(#a85f00,#e8960c);box-shadow:inset 0 3px 5px #6b3a0099;
+}
+dialog.bn-janela.bn-roleta .ro-luz{
+  position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px;border-radius:50%;z-index:1;
+  background:radial-gradient(circle at 35% 30%,#fff,#fff3a0 45%,#ffc93c);
+  box-shadow:0 0 6px 1px #fff3a0cc;
+  transform:rotate(calc(var(--i)*22.5deg)) translateY(calc(var(--d) * -.4575));
+  animation:roPisca 1.6s ease-in-out infinite;
+}
+dialog.bn-janela.bn-roleta .ro-luz:nth-child(even){animation-delay:.8s}
+@keyframes roPisca{0%,100%{opacity:1;filter:brightness(1.15)}50%{opacity:.35;filter:brightness(.8)}}
+dialog.bn-janela.bn-roleta .ro-palco.girando .ro-luz,
+dialog.bn-janela.bn-roleta .ro-palco.esperando .ro-luz{animation-duration:.35s}
+dialog.bn-janela.bn-roleta .ro-palco.girando .ro-luz:nth-child(even),
+dialog.bn-janela.bn-roleta .ro-palco.esperando .ro-luz:nth-child(even){animation-delay:.175s}
+dialog.bn-janela.bn-roleta .ro-palco.esperando .ro-roda{transform:rotate(-8deg);transition:transform .25s ease-out}
+
+dialog.bn-janela.bn-roleta .ro-roda{
+  position:absolute;inset:11%;border-radius:50%;overflow:hidden;
+  background:conic-gradient(from -22.5deg,
+    #fff1b8 0 45deg,#52d394 45deg 90deg,#ffb35c 90deg 135deg,#4aa3ff 135deg 180deg,
+    #ff7a62 180deg 225deg,#a46cf7 225deg 270deg,#3fd2ea 270deg 315deg,#ffc42e 315deg 360deg);
+  box-shadow:inset 0 0 0 3px #ffffffb3,inset 0 0 22px #1d3a6a40;
+  will-change:transform;
+}
+dialog.bn-janela.bn-roleta .ro-roda::before{ /* divisórias brancas */
+  content:"";position:absolute;inset:0;
+  background:repeating-conic-gradient(from -23.4deg,#fff 0 1.8deg,transparent 1.8deg 45deg);opacity:.9;
+}
+dialog.bn-janela.bn-roleta .ro-brilho{ /* brilho de vidro fixo, não gira */
+  position:absolute;inset:11%;border-radius:50%;z-index:2;pointer-events:none;
+  background:radial-gradient(ellipse 70% 45% at 35% 22%,#ffffff55,transparent 70%);
+}
+dialog.bn-janela.bn-roleta .ro-fatia{position:absolute;inset:0;transform:rotate(calc(var(--k)*45deg));z-index:1}
+dialog.bn-janela.bn-roleta .ro-fatia>span{
+  position:absolute;left:50%;top:7%;width:64px;margin-left:-32px;
+  display:grid;justify-items:center;gap:1px;font-size:10px;font-weight:900;line-height:1.05;letter-spacing:-.01em;white-space:nowrap;
+  color:#10284a;text-shadow:0 1px 0 #ffffff99;
+}
+dialog.bn-janela.bn-roleta .ro-fatia img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 2px 2px #1d3a6a44)}
+dialog.bn-janela.bn-roleta .ro-fatia.c-lenda>span,
+dialog.bn-janela.bn-roleta .ro-fatia.c-epico>span,
+dialog.bn-janela.bn-roleta .ro-fatia.c-raro>span,
+dialog.bn-janela.bn-roleta .ro-fatia.c-coral>span{color:#fff;text-shadow:0 1px 2px #1d3a6a88}
+dialog.bn-janela.bn-roleta .ro-estrela{font-size:20px;line-height:24px;filter:drop-shadow(0 2px 2px #1d3a6a55)}
+
+dialog.bn-janela.bn-roleta .ro-centro{
+  position:absolute;left:50%;top:50%;width:21%;height:21%;transform:translate(-50%,-50%);z-index:3;border-radius:50%;
+  background:radial-gradient(circle at 35% 28%,#fffbe0,#ffc93c 55%,#d98a00);
+  box-shadow:0 0 0 4px #fff3b0,0 5px 10px #1d3a6a66,inset 0 -4px 0 #b86a0066;
+  display:grid;place-items:center;
+}
+dialog.bn-janela.bn-roleta .ro-centro img{width:62%;height:62%;object-fit:contain;filter:drop-shadow(0 2px 2px #1d3a6a55)}
+dialog.bn-janela.bn-roleta .ro-ponteiro{
+  position:absolute;left:50%;top:-9px;width:34px;height:42px;margin-left:-17px;z-index:4;
+  background:linear-gradient(#ff7a8f,#e8294d 60%,#b3122f);
+  clip-path:polygon(50% 100%,0 12%,10% 0,90% 0,100% 12%);
+  transform-origin:50% 20%;
+}
+dialog.bn-janela.bn-roleta .ro-ponteiro::after{
+  content:"";position:absolute;left:50%;top:8px;width:11px;height:11px;margin-left:-5.5px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff,#ffd27a);
+}
+dialog.bn-janela.bn-roleta .ro-palco.girando .ro-roda{animation:roGira 2.4s cubic-bezier(.15,.7,.12,1) both}
+dialog.bn-janela.bn-roleta .ro-palco.girando .ro-ponteiro{animation:roTic .16s ease-in-out 14 alternate}
+dialog.bn-janela.bn-roleta .ro-palco.esperando .ro-ponteiro{animation:roTic .16s ease-in-out infinite alternate}
+@keyframes roGira{from{transform:rotate(0deg)}to{transform:rotate(var(--ro-giro,1080deg))}}
+@keyframes roTic{from{transform:rotate(-7deg)}to{transform:rotate(5deg)}}
+
+/* ---------- garantia (pity) ---------- */
+dialog.bn-janela.bn-roleta .ro-pity{display:grid;gap:8px;text-align:left}
+dialog.bn-janela.bn-roleta .ro-garantia{
+  display:grid;gap:5px;padding:8px 12px 10px;border-radius:16px;background:#ffffffc7;border:1px solid #dfe9f5;
+  font-size:12px;color:var(--bn-muted);
+}
+dialog.bn-janela.bn-roleta .ro-garantia strong{color:var(--bn-ink);font-size:13px}
+dialog.bn-janela.bn-roleta .ro-garantia .ro-chip{
+  justify-self:start;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#fff;
+}
+dialog.bn-janela.bn-roleta .ro-garantia.g-epico .ro-chip{background:linear-gradient(#b98dff,#7a3ad8)}
+dialog.bn-janela.bn-roleta .ro-garantia.g-lenda .ro-chip{background:linear-gradient(#e8a92a,#b86a00)}
+dialog.bn-janela.bn-roleta .ro-garantia progress{
+  -webkit-appearance:none;appearance:none;width:100%;height:12px;border:0;border-radius:999px;background:#e3ebf4;overflow:hidden;
+  box-shadow:inset 0 1px 3px #2a3f6a33;
+}
+dialog.bn-janela.bn-roleta .ro-garantia progress::-webkit-progress-bar{background:#e3ebf4;border-radius:999px}
+dialog.bn-janela.bn-roleta .ro-garantia.g-epico progress::-webkit-progress-value{background:linear-gradient(#c9a5ff,#7a3ad8);border-radius:999px}
+dialog.bn-janela.bn-roleta .ro-garantia.g-lenda progress::-webkit-progress-value{background:linear-gradient(#ffe27a,#e8960c);border-radius:999px}
+dialog.bn-janela.bn-roleta .ro-garantia.g-epico progress::-moz-progress-bar{background:#7a3ad8;border-radius:999px}
+dialog.bn-janela.bn-roleta .ro-garantia.g-lenda progress::-moz-progress-bar{background:#e8960c;border-radius:999px}
+
+/* ---------- botões ---------- */
+dialog.bn-janela.bn-roleta .ro-acoes{display:grid;grid-template-columns:1.25fr 1fr;gap:10px}
+dialog.bn-janela.bn-roleta .bn-acao{
+  min-height:54px;border:0;border-radius:18px;font:inherit;font-weight:900;font-size:15px;cursor:pointer;
+  color:#fff;background:linear-gradient(#4aaeff,#1687e8);box-shadow:0 4px 0 #0f5fae,0 8px 14px #1687e855;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 10px;
+  transition:transform .08s,box-shadow .08s;
+}
+dialog.bn-janela.bn-roleta .ro-acoes .bn-acao:first-child{
+  color:#6b3a00;font-size:17px;background:linear-gradient(#fff0a0,#ffc93c 55%,#f3a30f);
+  box-shadow:0 4px 0 #b86a00,0 9px 16px #e8960c55,inset 0 2px 0 #fffbe0;
+}
+dialog.bn-janela.bn-roleta .bn-acao:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #0f5fae}
+dialog.bn-janela.bn-roleta .ro-acoes .bn-acao:first-child:active:not(:disabled){box-shadow:0 1px 0 #b86a00}
+dialog.bn-janela.bn-roleta .bn-acao:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.45);box-shadow:0 3px 0 #8da4bf}
+dialog.bn-janela.bn-roleta .bn-acao:focus-visible,
+dialog.bn-janela.bn-roleta .ro-aba:focus-visible,
+dialog.bn-janela.bn-roleta .bn-fechar:focus-visible{outline:3px solid #7a3ad8;outline-offset:2px}
+dialog.bn-janela.bn-roleta .bn-status{margin:0;min-height:1.2em;font-size:12px;font-weight:700;color:var(--bn-muted)}
+
+/* ---------- tabela de chances ---------- */
+dialog.bn-janela.bn-roleta .ro-chances{display:grid;gap:8px;text-align:left}
+dialog.bn-janela.bn-roleta .ro-chances ol{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+dialog.bn-janela.bn-roleta .ro-chances li{
+  --cor:var(--r-moedas);
+  position:relative;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;
+  padding:8px 12px 10px;border-radius:14px;background:#ffffffd9;border:1px solid #e0eaf5;
+  border-left:6px solid var(--cor);font-size:13px;font-weight:700;overflow:hidden;
+}
+dialog.bn-janela.bn-roleta .ro-chances li::after{ /* barra de chance */
+  content:"";position:absolute;left:0;bottom:0;height:3px;width:var(--p,0%);background:var(--cor);opacity:.55;border-radius:0 3px 3px 0;
+}
+dialog.bn-janela.bn-roleta .ro-chances li.c-incomum{--cor:var(--r-incomum)}
+dialog.bn-janela.bn-roleta .ro-chances li.c-raro{--cor:var(--r-raro)}
+dialog.bn-janela.bn-roleta .ro-chances li.c-epico{--cor:var(--r-epico)}
+dialog.bn-janela.bn-roleta .ro-chances li.c-lendario{--cor:var(--r-lendario)}
+dialog.bn-janela.bn-roleta .ro-chances li.c-diamante{--cor:#0f8fb0}
+dialog.bn-janela.bn-roleta .ro-chances .ro-pct{font-weight:900;font-size:15px;font-variant-numeric:tabular-nums;color:var(--cor)}
+dialog.bn-janela.bn-roleta .ro-chances .ro-atual{font-size:11px;font-weight:700;color:var(--bn-muted);grid-column:1/-1}
+dialog.bn-janela.bn-roleta .bn-nota{margin:0;color:var(--bn-muted);font-size:11px;line-height:1.5;text-align:left}
+
+/* ---------- resultado ---------- */
+dialog.bn-janela.bn-roleta .ro-resultado{display:grid;justify-items:center;gap:8px;padding:4px 4px 0;position:relative}
+dialog.bn-janela.bn-roleta .ro-vitrine{
+  position:relative;width:150px;height:150px;display:grid;place-items:center;margin:2px 0;
+}
+dialog.bn-janela.bn-roleta .ro-vitrine::before{ /* raios girando */
+  content:"";position:absolute;inset:-14px;border-radius:50%;
+  background:repeating-conic-gradient(var(--brilho,#ffd25a99) 0 8deg,transparent 8deg 24deg);
+  -webkit-mask:radial-gradient(circle,#000 28%,transparent 70%);mask:radial-gradient(circle,#000 28%,transparent 70%);
+  animation:roRaios 14s linear infinite;
+}
+dialog.bn-janela.bn-roleta .ro-vitrine>.ro-medalha{
+  position:relative;width:104px;height:104px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 28%,#fff,var(--medalha,#ffe27a) 60%);
+  box-shadow:0 0 0 5px #fff,0 10px 22px #1d3a6a44;animation:roPop .55s cubic-bezier(.2,1.6,.4,1) both;
+}
+dialog.bn-janela.bn-roleta .ro-medalha img{width:64%;height:64%;object-fit:contain;filter:drop-shadow(0 3px 3px #1d3a6a55)}
+dialog.bn-janela.bn-roleta .ro-medalha .ro-estrela{font-size:52px;line-height:1;color:#fff;text-shadow:0 3px 6px #1d3a6a66}
+dialog.bn-janela.bn-roleta .ro-vitrine.r-raro{--medalha:#52d394;--brilho:#52d39477}
+dialog.bn-janela.bn-roleta .ro-vitrine.r-epico{--medalha:#4aa3ff;--brilho:#4aa3ff77}
+dialog.bn-janela.bn-roleta .ro-vitrine.r-muitoraro{--medalha:#a46cf7;--brilho:#a46cf777}
+dialog.bn-janela.bn-roleta .ro-vitrine.r-lendario{--medalha:#ffc42e;--brilho:#ffd25aaa}
+dialog.bn-janela.bn-roleta .ro-selo{
+  display:inline-block;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;
+}
+dialog.bn-janela.bn-roleta .ro-selo.r-raro{background:#e8fff4;color:var(--r-incomum)}
+dialog.bn-janela.bn-roleta .ro-selo.r-epico{background:#e6f2ff;color:var(--r-raro)}
+dialog.bn-janela.bn-roleta .ro-selo.r-muitoraro{background:#efe2ff;color:var(--r-epico)}
+dialog.bn-janela.bn-roleta .ro-selo.r-lendario{background:#fff3d4;color:var(--r-lendario)}
+dialog.bn-janela.bn-roleta .ro-selo.r-moedas{background:#fff3d4;color:#b86a00}
+dialog.bn-janela.bn-roleta .ro-premio{font-size:23px;font-weight:900;margin:0;color:var(--bn-ink);animation:roPop .5s .15s cubic-bezier(.2,1.6,.4,1) both}
+dialog.bn-janela.bn-roleta .ro-premio.r-lendario{color:var(--r-lendario)}
+dialog.bn-janela.bn-roleta .ro-premio.r-muitoraro{color:var(--r-epico)}
+dialog.bn-janela.bn-roleta .ro-premio.r-epico{color:var(--r-raro)}
+dialog.bn-janela.bn-roleta .ro-premio.r-raro{color:var(--r-incomum)}
+dialog.bn-janela.bn-roleta .ro-lista{list-style:none;margin:0;padding:0;display:grid;gap:6px;width:100%;text-align:left;font-size:13px;font-weight:700}
+dialog.bn-janela.bn-roleta .ro-lista li{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:#ffffffd9;border:1px solid #e2eaf3;
+}
+dialog.bn-janela.bn-roleta .ro-confete{position:absolute;left:50%;top:80px;width:0;height:0;pointer-events:none}
+dialog.bn-janela.bn-roleta .ro-confete i{
+  position:absolute;width:9px;height:14px;border-radius:2px;background:var(--c);
+  animation:roConfete 1.3s cubic-bezier(.1,.7,.3,1) both;animation-delay:var(--a);
+}
+@keyframes roConfete{
+  0%{transform:translate(0,0) rotate(0);opacity:1}
+  100%{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}
+}
+@keyframes roPop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes roRaios{to{transform:rotate(360deg)}}
+
+@media (prefers-reduced-motion:reduce){
+  dialog.bn-janela.bn-roleta .ro-palco.girando .ro-roda,
+  dialog.bn-janela.bn-roleta .ro-palco.girando .ro-ponteiro,
+  dialog.bn-janela.bn-roleta .ro-luz,
+  dialog.bn-janela.bn-roleta .ro-vitrine::before,
+  dialog.bn-janela.bn-roleta .ro-medalha,
+  dialog.bn-janela.bn-roleta .ro-premio,
+  dialog.bn-janela.bn-roleta .ro-confete i,
+  .mh-sino-col>.mh-roleta::before,
+  .mh-icones-jogos>.mh-roleta::before{animation:none}
+  dialog.bn-janela.bn-roleta .ro-confete{display:none}
+}
