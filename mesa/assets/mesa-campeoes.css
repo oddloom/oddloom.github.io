@@ -71,10 +71,10 @@ dialog.cp-pagina {
   box-sizing: border-box;
   inset: 0;
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
   min-width: 0;
   height: 100%;
-  max-height: 100dvh;
+  max-height: 100%;
   margin: 0;
   padding: 0;
   border: 0;
@@ -90,6 +90,39 @@ dialog.cp-pagina {
 }
 dialog.cp-pagina::backdrop { background: #0a0614f0; }
 dialog.cp-pagina:focus { outline: none; }
+
+dialog.cp-pagina {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+@media (max-width: 719px) {
+  dialog.cp-pagina {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    transform: none !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+  .cp-topo, .cp-corpo, .cp-hero, .cp-hero-arte, .cp-temporada, .cp-convite, .cp-conta, .cp-topo h2 {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .cp-topo h2, .cp-temporada, .cp-convite {
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+  }
+}
 
 .cp-topo {
   position: sticky;
@@ -175,21 +208,18 @@ dialog.cp-pagina:focus { outline: none; }
 }
 .cp-hero img {
   display: block;
-  width: auto;
-  height: min(40vh, 168px);
-  max-height: 40vh;
-  max-width: min(72vw, 180px);
+  width: 168px !important;
+  max-width: 70% !important;
+  height: auto !important;
+  max-height: 36vh !important;
   object-fit: contain;
   object-position: center bottom;
   background: transparent !important;
   box-shadow: none;
   border: 0;
   filter: none;
-  animation: cpLumi 3.8s ease-in-out infinite;
-}
-@keyframes cpLumi {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  animation: none !important;
+  transform: none !important;
 }
 .cp-hero h1 {
   margin: 4px 0 0;
@@ -521,7 +551,7 @@ dialog.cp-pagina:focus { outline: none; }
     box-shadow: 0 24px 80px #000a;
   }
   dialog.cp-pagina::backdrop { background: #0a0614cc; backdrop-filter: blur(8px); }
-  .cp-hero img { height: min(40vh, 200px); max-width: min(72vw, 200px); }
+  .cp-hero img { width: 200px !important; max-width: 70% !important; height: auto !important; max-height: 36vh !important; animation: none !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .cp-hero img, .cp-lugar.p1 { animation: none; }

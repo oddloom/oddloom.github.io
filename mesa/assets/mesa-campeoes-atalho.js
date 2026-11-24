@@ -2,7 +2,7 @@
 (function(){
 // Campeões da Season no bundle da MesaApp (www). Lê o ranking mensal real do servidor.
 const CORES = ["#f4212e", "#1d9bf0", "#ff7a00", "#7856ff"]
-const LUMI = "/mesa/arte/nubo/lumi-campeoes.png?v=2"
+const LUMI = "/mesa/arte/nubo/lumi-campeoes.png?v=4"
 const SERVIDOR = "https://mesas-domino.officialoddloom.workers.dev"
 const EXEMPLOS = [
   { code: "EXEMPLO1", nome: "Exemplo 1", avatar: null, moldura: null, pontos: 120, v: 18, p: 24, posicao: 1 },
@@ -101,6 +101,16 @@ function aplicarSafeArea(j) {
   d.remove()
 }
 
+
+function travarDialog(j) {
+  aplicarSafeArea(j)
+  if (window.innerWidth < 720) {
+    const s = ["position","fixed","top","0px","right","0px","bottom","0px","left","0px","width","100%","max-width","100%","min-width","0","height","100%","max-height","100%","margin","0","overflow-x","hidden","box-sizing","border-box","transform","none"]
+    for (let i = 0; i < s.length; i += 2) j.style.setProperty(s[i], s[i+1], "important")
+    document.documentElement.style.overflowX = "hidden"
+  }
+}
+
 function garantirAtalho() {
   document.querySelectorAll(".tela.inicio .mh-sino-col").forEach((col) => {
     if (col.querySelector(".mh-trofeu")) return
@@ -119,9 +129,10 @@ function abrir() {
     clearInterval(timer)
     j.remove()
     if (janela === j) janela = null
+    document.documentElement.style.overflowX = ""
   })
   document.body.append(j)
-  aplicarSafeArea(j)
+  travarDialog(j)
   j.append(el("p", { className: "cp-vazio", text: "Carregando os campeões…" }))
   j.showModal()
   void carregar()
@@ -153,7 +164,7 @@ function pintarLista() {
   clearInterval(timer)
   timer = setInterval(atualizar, 30000)
   const hero = el("div", { className: "cp-hero" },
-    el("div", { className: "cp-hero-arte" }, el("img", { src: LUMI, alt: "Lumi comemorando os campeões", decoding: "async", draggable: "false" })),
+    el("div", { className: "cp-hero-arte" }, el("img", { src: LUMI, alt: "Lumi comemorando os campeões", decoding: "async", draggable: "false", width: "168", height: "204" })),
     el("p", { className: "cp-temporada", text: nomeTemporada(dados.temporada) }),
     contaEl,
     el("p", { className: "cp-convite", text: "O pódio é de quem mais pontua nesta season. Entre para a lista e mostre do que você é capaz." }),
