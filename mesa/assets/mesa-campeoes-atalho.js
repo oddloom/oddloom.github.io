@@ -1,4 +1,4 @@
-/* Mesa 2026-11-24: atalho Campeões + dado inerte + Missões só na rolagem de Jogos. */
+/* Mesa 2026-11-24: atalho e página Campeões da Season (sem a roleta/dado). */
 (function(){
 // Campeões da Season no bundle da MesaApp (www). Lê o ranking mensal real do servidor.
 const CORES = ["#f4212e", "#1d9bf0", "#ff7a00", "#7856ff"]
@@ -111,60 +111,14 @@ function travarDialog(j) {
   }
 }
 
-function abrirMissoes() {
-  const m = document.querySelector(".tela.inicio .bn-menu-lista") || document.querySelector(".bn-menu-lista")
-  const b = m && m.children[1]
-  if (b) b.click()
-}
-
-function limparIconesDoCabecalho() {
-  document.querySelectorAll(".mh-cabecalho .mh-trofeu, .mh-cabecalho .mh-dado, .mh-cabecalho .mh-missoes, .mh-sino-col > .mh-trofeu, .mh-sino-col > .mh-dado, .mh-sino-col > .mh-missoes").forEach((n) => n.remove())
-}
-
-function faixaJogos() {
-  const tela = document.querySelector(".tela.inicio.jogos-colorido")
-  if (!tela) return null
-  const rolagem = tela.querySelector(".mh-rolagem") || tela.querySelector(".rolagem")
-  if (!rolagem) return null
-  let faixa = rolagem.querySelector(":scope > .mh-icones-jogos")
-  if (!faixa) {
-    faixa = el("div", { className: "mh-icones-jogos" })
-    rolagem.insertBefore(faixa, rolagem.firstChild)
-  }
-  return faixa
-}
-
 function garantirAtalho() {
-  limparIconesDoCabecalho()
-  const faixa = faixaJogos()
-  if (!faixa) return
-  if (!faixa.querySelector(".mh-trofeu")) {
+  document.querySelectorAll(".tela.inicio .mh-sino-col").forEach((col) => {
+    if (col.querySelector(".mh-trofeu")) return
     const b = el("button", { className: "mh-trofeu", type: "button", title: "Campeões da Season" })
     b.setAttribute("aria-label", "Campeões da Season")
     b.addEventListener("click", abrir)
-    faixa.append(b)
-  }
-  if (!faixa.querySelector(".mh-dado")) {
-    const d = el("button", { className: "mh-dado", type: "button", title: "Dado" })
-    d.setAttribute("aria-label", "Dado")
-    d.addEventListener("click", (ev) => {
-      ev.preventDefault()
-      ev.stopPropagation()
-    })
-    d.setAttribute("aria-disabled", "true")
-    faixa.append(d)
-  }
-  if (!faixa.querySelector(".mh-missoes")) {
-    const m = el("button", { className: "mh-missoes", type: "button", title: "Missões" })
-    m.setAttribute("aria-label", "Missões")
-    m.addEventListener("click", abrirMissoes)
-    faixa.append(m)
-  }
-  // Keep visual order: trophy, die, scroll
-  const t = faixa.querySelector(".mh-trofeu")
-  const d = faixa.querySelector(".mh-dado")
-  const m = faixa.querySelector(".mh-missoes")
-  if (t && d && m) faixa.append(t, d, m)
+    col.append(b)
+  })
 }
 
 function abrir() {
