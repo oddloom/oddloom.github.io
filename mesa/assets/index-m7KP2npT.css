@@ -12,7 +12,16 @@
 :root .loja-oferta:not(.loja-oferta-vazia) .oferta-barraca{display:none}
 
 /* Lumi 2026-11-24: Convide amigos (aba Amigos) com a arte ocupando a caixa inteira */
-:root .cv-atalho{position:relative;overflow:hidden;min-height:136px;padding:16px 44% 16px 18px;border:0;border-radius:24px;color:#fff;background:linear-gradient(90deg,#0d2a66f2 0%,#0d2a66cc 34%,#0d2a6600 64%),url(/mesa/arte/convites/convide-amigos-fundo.webp) 100% 50%/cover no-repeat,#2f6fd8;box-shadow:0 8px 20px #1b3f8a40}
+:root .cv-atalho{position:relative;overflow:hidden;min-height:136px;padding:16px 44% 16px 18px;border:0;border-radius:24px;color:#fff;background:linear-gradient(90deg,#0d2a66f2 0%,#0d2a66cc 34%,#0d2a6600 64%),url(/mesa/arte/convites/convide-amigos-fundo.webp?v=2) 100% 50%/cover no-repeat,#2f6fd8;box-shadow:0 8px 20px #1b3f8a40}
 :root .cv-atalho img{display:none}
 :root .cv-atalho strong{color:#fff;font-size:20px;text-shadow:0 2px 6px #0a1c4699}
 :root .cv-atalho small{color:#e3edff;font-size:13px;text-shadow:0 1px 4px #0a1c4699}
+
+/* Lumi 2026-11-24: brilhos do rosto do Lumi no cabeçalho piscam de leve (2 camadas alinhadas à imagem, ciclos lentos e defasados) */
+.mj-nubo-boas-vindas::before,.mj-nubo-boas-vindas::after{content:"";position:absolute;z-index:1;width:310px;height:310px;bottom:-132px;right:-15px;background:url(/mesa/arte/nubo/lumi-brilhos-a.webp) 0 0/100% 100% no-repeat;pointer-events:none;opacity:0;will-change:opacity;animation:lumi-brilho 5.2s ease-in-out infinite}
+.mj-nubo-boas-vindas::after{background-image:url(/mesa/arte/nubo/lumi-brilhos-b.webp);animation-duration:6.6s;animation-delay:-3.1s}
+@keyframes lumi-brilho{0%,30%,100%{opacity:0}55%{opacity:.7}70%{opacity:.45}}
+@media (width<=350px){.mj-nubo-boas-vindas::before,.mj-nubo-boas-vindas::after{width:245px;height:245px;bottom:-104px;right:-20px}}
+@media (width>=600px){.mj-nubo-boas-vindas::before,.mj-nubo-boas-vindas::after{width:360px;height:360px;bottom:-152px;right:0}}
+@media (prefers-reduced-motion:reduce){.mj-nubo-boas-vindas::before,.mj-nubo-boas-vindas::after{animation:none;display:none}}
+:root[data-grafico=leve] .mj-nubo-boas-vindas::before,:root[data-grafico=leve] .mj-nubo-boas-vindas::after{animation:none;display:none}
