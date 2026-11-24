@@ -1,0 +1,24 @@
+/* Card roxo da sala BTS (comum, sem VIP). Sem JavaScript e sem MutationObserver.
+   O app ao vivo ja expoe data-codigo no card; sala-card-roxo cobre o fonte novo. */
+.sala-card-comum.sala-card-roxo,
+.sala-card-comum[data-codigo="BTSCLIPS"] { color: #3a1a68; filter: drop-shadow(0 6px 12px #6b3fd133); }
+.sala-card-comum.sala-card-roxo .sc-arte,
+.sala-card-comum[data-codigo="BTSCLIPS"] .sc-arte { filter: hue-rotate(50deg) saturate(1.35) brightness(.96); }
+.sala-card-comum.sala-card-roxo .sc-tipo,
+.sala-card-comum[data-codigo="BTSCLIPS"] .sc-tipo { color: #6a3aa8; }
+.sala-card-comum.sala-card-roxo .sc-online,
+.sala-card-comum[data-codigo="BTSCLIPS"] .sc-online { background: linear-gradient(180deg, #efe2ff, #dcc8ff); border-color: #b99af5; color: #3a1a68; }
+:root[data-tema-ui="classico"] .sala-card-comum.sala-card-roxo,
+:root[data-tema-ui="classico"] .sala-card-comum[data-codigo="BTSCLIPS"] { color: #f6edff; }
+:root[data-tema-ui="classico"] .sala-card-comum.sala-card-roxo .sc-arte,
+:root[data-tema-ui="classico"] .sala-card-comum[data-codigo="BTSCLIPS"] .sc-arte { filter: invert(1) hue-rotate(230deg) brightness(.86) saturate(1.35); }
+:root[data-tema-ui="classico"] .sala-card-comum.sala-card-roxo .sc-tipo,
+:root[data-tema-ui="classico"] .sala-card-comum[data-codigo="BTSCLIPS"] .sc-tipo { color: #d5b8ff; }
+:root[data-tema-ui="classico"] .sala-card-comum.sala-card-roxo .sc-online,
+:root[data-tema-ui="classico"] .sala-card-comum[data-codigo="BTSCLIPS"] .sc-online { color: #f6edff; background: linear-gradient(180deg, #4a2a78, #321c54); border-color: #8a5cff; }
+:root[data-tema-ui="rosa"] .sala-card-comum.sala-card-roxo,
+:root[data-tema-ui="rosa"] .sala-card-comum[data-codigo="BTSCLIPS"] { color: #4a1a58; }
+:root[data-tema-ui="rosa"] .sala-card-comum.sala-card-roxo .sc-arte,
+:root[data-tema-ui="rosa"] .sala-card-comum[data-codigo="BTSCLIPS"] .sc-arte { filter: hue-rotate(40deg) saturate(1.25) brightness(.98); }
+:root[data-tema-ui="rosa"] .sala-card-comum.sala-card-roxo .sc-tipo,
+:root[data-tema-ui="rosa"] .sala-card-comum[data-codigo="BTSCLIPS"] .sc-tipo { color: #7a3a8a; }
