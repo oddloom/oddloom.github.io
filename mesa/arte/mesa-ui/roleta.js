@@ -57,28 +57,24 @@ function patchWs() {
   window.WebSocket = Wrap
 }
 
-function diamantesVisiveis() {
-  return !!document.querySelector(".saldo-moedas .diamante-icone")
-}
-
+// A Roleta abre ao tocar no dado vermelho da home Jogos (não tem ícone próprio).
+// O dado é criado por outro script; aqui só o rotulamos e escutamos o toque.
 function garantirAtalho() {
-  // preferência: a faixa de ícones da home Jogos (ao lado do troféu e do pergaminho); senão, a coluna do sino
-  const alvos = document.querySelectorAll(".tela.inicio .mh-icones-jogos, .tela.inicio:not(.jogos-colorido) .mh-sino-col")
-  alvos.forEach((col) => {
-    const existente = col.querySelector(":scope > .mh-roleta")
-    if (existente) { existente.hidden = !diamantesVisiveis(); return }
-    if (!diamantesVisiveis()) return
-    const b = document.createElement("button")
-    b.className = "mh-roleta"
-    b.type = "button"
-    b.title = "Roleta"
-    b.setAttribute("aria-label", "Roleta")
-    b.addEventListener("click", abrir)
-    const missoes = col.querySelector(":scope > .mh-missoes")
-    if (missoes) col.insertBefore(b, missoes)
-    else col.append(b)
+  document.querySelectorAll(".mh-roleta").forEach((n) => n.remove()) // versão antiga com ícone próprio
+  document.querySelectorAll(".mh-dado").forEach((d) => {
+    if (d.getAttribute("aria-label") !== "Roleta") {
+      d.setAttribute("aria-label", "Roleta")
+      d.title = "Roleta"
+    }
   })
 }
+document.addEventListener("click", (ev) => {
+  const d = ev.target instanceof Element ? ev.target.closest(".mh-dado") : null
+  if (!d) return
+  ev.preventDefault()
+  ev.stopPropagation()
+  abrir()
+}, true)
 
 function visao() {
   if (estado?.roleta?.chances) return estado.roleta

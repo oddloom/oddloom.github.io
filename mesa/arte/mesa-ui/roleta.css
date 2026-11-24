@@ -1,27 +1,8 @@
 /* Roleta da Mesa: roda desenhada em CSS (aro dourado com lâmpadas, ponteiro fixo, fatias coloridas), no mesmo vidro azul e Nunito do app. */
 
-/* ---------- atalho na home ---------- */
-.mh-sino-col>.mh-roleta,
-.mh-icones-jogos>.mh-roleta{
-  position:relative;z-index:3;width:54px;height:54px;min-width:54px;padding:0;margin:0;
-  border:0;border-radius:14px;background:transparent;box-shadow:none;outline-offset:2px;cursor:pointer;
-  pointer-events:auto;
-}
-.mh-sino-col>.mh-roleta{position:absolute;left:50%;top:calc(100% + 4px);margin-left:-86px}
-.mh-sino-col>.mh-roleta::before,
-.mh-icones-jogos>.mh-roleta::before{
-  content:"";position:absolute;inset:0;
-  background:url(./roleta.webp?v=1) center/contain no-repeat;
-  filter:drop-shadow(0 5px 5px #2a3f6a40);
-  animation:mhFlutua 3.8s ease-in-out .4s infinite;will-change:transform;
-}
-.mh-sino-col>.mh-roleta:active::before,
-.mh-icones-jogos>.mh-roleta:active::before{transform:scale(.92);animation-play-state:paused}
-:root .mh-sino-col>.mh-roleta,
-:root .mh-icones-jogos>.mh-roleta{
-  background:none!important;border:0!important;box-shadow:none!important;
-  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-}
+/* ---------- atalho na home: o dado vermelho abre a Roleta ---------- */
+.mh-icones-jogos>button.mh-dado{cursor:pointer}
+.mh-icones-jogos>button.mh-dado:active img{transform:scale(.92)}
 
 /* ---------- janela ---------- */
 dialog.bn-janela.bn-roleta{
@@ -290,8 +271,6 @@ dialog.bn-janela.bn-roleta .ro-confete i{
   dialog.bn-janela.bn-roleta .ro-vitrine::before,
   dialog.bn-janela.bn-roleta .ro-medalha,
   dialog.bn-janela.bn-roleta .ro-premio,
-  dialog.bn-janela.bn-roleta .ro-confete i,
-  .mh-sino-col>.mh-roleta::before,
-  .mh-icones-jogos>.mh-roleta::before{animation:none}
+  dialog.bn-janela.bn-roleta .ro-confete i{animation:none}
   dialog.bn-janela.bn-roleta .ro-confete{display:none}
 }
