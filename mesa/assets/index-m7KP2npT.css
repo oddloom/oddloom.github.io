@@ -35,6 +35,8 @@
 :root .bn-janela.bn-diaria .bn-cabecalho:has(.bn-mascote){grid-template-columns:132px 1fr;gap:0 10px}
 :root .bn-janela.bn-diaria .bn-cabecalho .bn-bau.bn-mascote{content:url(/mesa/arte/nubo/lumi-moeda-busto.webp?v=1);object-fit:contain;width:132px;height:132px;margin:-16px 0 -8px -12px}
 @media (height<=680px){:root .bn-janela.bn-diaria .bn-cabecalho:has(.bn-mascote){grid-template-columns:100px 1fr}:root .bn-janela.bn-diaria .bn-cabecalho .bn-bau.bn-mascote{width:100px;height:100px;margin:-10px 0 -6px -8px}}
+/* Dia 7: baú lacrado com cadeado (o prêmio fica travado até abrir) */
+:root .bn-janela.bn-diaria .bn-dia.final>.bn-premio-arte{content:url(/mesa/arte/beneficios-v2/bau-lacrado.webp?v=1);object-fit:contain;width:76px;height:70px;filter:drop-shadow(0 3px 6px #1d4f9a33) drop-shadow(0 0 8px #ffd86a55)}
 
 /* 2026-11-24: engrenagem do perfil ao lado do título Configurações */
 :root dialog.aparencia>h2:first-child{display:flex;align-items:center;gap:10px}
