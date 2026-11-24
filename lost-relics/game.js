@@ -1604,20 +1604,55 @@
     await wait(0.35);
   }
 
-  // ---------- transição entre telas: cortina circular que fecha, troca a tela e abre ----------
+  // ---------- transição entre telas (24/11) ----------
+  // View Transitions API (a tela nova entra com zoom suave por cima da antiga) + brilho dourado cruzando a tela.
+  // Entrar (menu > mapa > fase) = zoom pra frente; voltar = zoom pra trás; mesma tela (trocar de mundo) = troca suave.
+  // Sem suporte (WebView/navegador antigo): fade escuro rápido. Só opacity/transform, nada de clip-path (pesado no celular).
   let wiping = false;
+  const SCENE_RANK = { menu: 0, map: 1, play: 2 };
   function wipe(fn) {
     const el = $('wipe');
-    if (REDUCED || !el.animate || wiping) { fn(); return; }
+    const reduced = REDUCED || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (reduced || !el.animate || wiping) { fn(); return; }
+    if (!el.firstChild) el.innerHTML = '<i class="wv"></i><i class="ws"></i>';
+    const veil = el.querySelector('.wv'), glint = el.querySelector('.ws'), root = document.documentElement;
+    const from = SCENE_RANK[scene] != null ? SCENE_RANK[scene] : 1;
+    const dirNow = () => { const to = SCENE_RANK[scene] != null ? SCENE_RANK[scene] : from; return to > from ? 'in' : to < from ? 'out' : 'swap'; };
+    const shine = (dir) => {
+      const back = dir === 'out';
+      glint.animate([
+        { transform: 'translateX(' + (back ? 380 : -120) + '%) skewX(-16deg)', opacity: 0 },
+        { opacity: 1, offset: .4 },
+        { transform: 'translateX(' + (back ? -120 : 380) + '%) skewX(-16deg)', opacity: 0 },
+      ], { duration: 640, easing: 'cubic-bezier(.4,0,.2,1)' });
+    };
     wiping = true;
-    const big = Math.ceil(Math.hypot(W, H)) + 'px';
-    el.style.pointerEvents = 'auto';
     Sound.play('swap');
-    const a = el.animate([{ clipPath: 'circle(0px at 50% 55%)' }, { clipPath: 'circle(' + big + ' at 50% 55%)' }], { duration: 360, easing: 'cubic-bezier(.6,0,.3,1)', fill: 'forwards' });
+    // passo 1 (resposta imediata ao toque): a tela atual escurece em 130 ms. Montar o mapa/fase pesa no celular, e esse
+    // trabalho acontece escondido atrás do escuro, sem a imagem "congelar" à vista.
+    el.style.pointerEvents = 'auto';
+    const a = veil.animate([{ opacity: 0 }, { opacity: .94 }], { duration: 130, easing: 'ease-out', fill: 'forwards' });
     a.onfinish = () => {
-      fn();
-      const b = el.animate([{ clipPath: 'circle(' + big + ' at 50% 50%)' }, { clipPath: 'circle(0px at 50% 50%)' }], { duration: 560, delay: 80, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'forwards' });
-      b.onfinish = () => { el.style.pointerEvents = 'none'; wiping = false; };
+      // passo 2: troca a tela. Com View Transitions a tela nova entra com zoom suave + brilho; sem suporte, o escuro só clareia.
+      const finish = () => { veil.getAnimations().forEach((x) => x.cancel()); el.style.pointerEvents = 'none'; wiping = false; };
+      if (document.startViewTransition) {
+        let vt = null;
+        try {
+          vt = document.startViewTransition(() => {
+            fn(); // não espera a fase terminar de montar: só a parte síncrona vai pra foto da tela nova
+            veil.getAnimations().forEach((x) => x.cancel()); // a tela nova nasce sem o escuro; o escuro fica só na foto da antiga
+            const dir = dirNow(); root.dataset.vt = dir; shine(dir);
+          });
+        } catch (e) { vt = null; }
+        if (vt) {
+          vt.updateCallbackDone.catch((e) => { try { console.error(e); } catch (x) {} });
+          vt.finished.catch(() => {}).then(() => { delete root.dataset.vt; finish(); });
+          return;
+        }
+      }
+      try { fn(); } catch (e) { finish(); throw e; }
+      shine(dirNow());
+      veil.animate([{ opacity: .94 }, { opacity: 0 }], { duration: 320, delay: 60, easing: 'ease-in', fill: 'forwards' }).onfinish = finish;
     };
   }
   // vibração curta no celular (segue a chave de SOM)
@@ -2461,7 +2496,38 @@
     if (first) setTimeout(() => first.focus({ preventScroll: true }), 50);
     return card;
   }
-  function closeModal() { $('modal').hidden = true; syncMapAttention(); }
+  // 24/11: ao fechar, uma cópia sem toque da janela some em 170 ms (escala .98 + fade, estilo transitions.dev "Modal").
+  // Se outra janela abre logo em seguida, ela nasce por cima e a antiga some por baixo (troca suave). A lógica do jogo não espera a cópia.
+  function closeModal() {
+    const m = $('modal');
+    if (!m.hidden && m.animate && !(REDUCED || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches))) {
+      try {
+        const g = m.cloneNode(true);
+        g.removeAttribute('id'); g.querySelectorAll('[id]').forEach((e) => e.removeAttribute('id'));
+        g.classList.add('modal-ghost'); g.setAttribute('aria-hidden', 'true'); g.inert = true; g.hidden = false;
+        document.body.appendChild(g);
+        const a = g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 170, easing: 'ease-out', fill: 'forwards' });
+        g.querySelector('.card').animate([{ transform: 'scale(1)' }, { transform: 'scale(.97) translateY(6px)' }], { duration: 170, easing: 'ease-out', fill: 'forwards' });
+        a.onfinish = () => g.remove();
+        setTimeout(() => g.remove(), 400);
+      } catch (e) {}
+    }
+    m.hidden = true; syncMapAttention();
+  }
+  // festa da vitória: gemas coloridas estouram e caem (só transform/opacity, some sozinho em ~2 s)
+  function winBurst(n) {
+    if (REDUCED || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    const host = document.createElement('div');
+    host.className = 'confetti'; host.setAttribute('aria-hidden', 'true');
+    const cols = ['#e0463c', '#2fbf71', '#3a7bd5', '#f3d27a', '#a95bd6', '#ffffff'];
+    for (let i = 0; i < n; i++) {
+      const p = document.createElement('i'), a = (Math.random() - .5) * Math.PI * 1.1, v = 90 + Math.random() * 190, s = 8 + Math.random() * 9;
+      p.style.cssText = '--c:' + cols[i % cols.length] + ';--s:' + s.toFixed(1) + 'px;--dx:' + (Math.sin(a) * v).toFixed(0) + ';--dy:' + (-Math.cos(a) * v * .8 - 30).toFixed(0) + ';--rot:' + (Math.random() * 540 - 270).toFixed(0) + 'deg;--dl:' + (Math.random() * .18).toFixed(2) + 's';
+      host.appendChild(p);
+    }
+    document.body.appendChild(host);
+    setTimeout(() => host.remove(), 2400);
+  }
   const goalText = (g, L) => {
     if (g.type === 'collect') return T('goal.collect', { n: g.target }) + ' ' + I18N.gem(g.color);
     if (g.type === 'make') return T('goal.make.' + g.special, { n: g.target });
@@ -2602,6 +2668,7 @@
       '<div class="btns">' + (last || hardMode ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
       (hardMode ? '<button class="btn" id="mShare" type="button">' + T('records.share') + '</button>' : '') +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
+    winBurst(hardMode ? 14 : 10 + stars * 6);
     const imgs = card.querySelectorAll('.stars-big img');
     // estrelas pintadas: começa no encaixe de pedra vazio e troca pela estrela Solar ao acender
     const vOn = ART.nodeImg('vstar'), vOff = ART.nodeImg('vstar0');
@@ -2643,7 +2710,7 @@
       // envio ao ranking com aviso do resultado: ✓ no ranking, ou "não enviado" com botão de tentar de novo
       const runWeek = level.week, replay = weeklyReplay.slice(), score = state.score;
       const statusEl = document.createElement('div');
-      statusEl.className = 'rank-status';
+      statusEl.className = 'rank-status'; statusEl.setAttribute('role', 'status'); // leitor de tela anuncia "No ranking" / "Não enviado"
       card.querySelector('.weekly-list').after(statusEl);
       const send = () => {
         statusEl.className = 'rank-status'; statusEl.textContent = T('rank.sending');
@@ -2681,6 +2748,7 @@
       '<button class="btn stack" id="mExtra" type="button" hidden>' + T('lose.extra') + '<span class="sub">' + T('lose.extraAd') + '</span></button>' +
       '<button class="btn' + (usedExtra ? '' : ' stone') + '" id="mRetry" type="button">' + T('retry') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
+    card.classList.add('lose-card');
     // perdeu e desistiu (tentar de novo ou mapa) = trilha zera; se pegar +5 movimentos e vencer, mantém
     card.querySelector('#mRetry').onclick = () => { Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); breakStreak(); const hd = !!level.hard; payEnergy(id, hd, (c) => { closeModal(); wipe(() => startLevel(id, {}, hd, c)); }, () => wipe(openMap)); };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); breakStreak(); closeModal(); wipe(openMap); };
@@ -3027,12 +3095,24 @@
     return L;
   }
   const weeklyDate = (key) => { const p = key.split('-'); return p[2] + '/' + p[1]; };
+  // ---------- ranking (24/11): medalhas nos 3 primeiros, tag VOCÊ, liga embaixo do nome e linhas que entram em sequência ----------
+  const isMeRow = (r, me) => !!(r.me || String(r.name || '').toLocaleLowerCase() === me);
+  function rankRowHTML(i, r, me, val, sub) {
+    const mine = isMeRow(r, me);
+    return '<div class="rk-row' + (i < 3 ? ' top t' + (i + 1) : '') + (mine ? ' me' : '') + (sub ? ' has-sub' : '') + '" style="--i:' + Math.min(i, 9) + '"><i class="rk-pos">' + (i + 1) + '</i>' +
+      '<span class="rk-name"><b>' + esc(r.name) + '</b>' + (mine ? '<em class="rk-you">' + T('rank.you') + '</em>' : '') + '</span>' + (sub || '') + '<strong class="rk-val">' + val + '</strong></div>';
+  }
+  // mostra os 20 primeiros; se o jogador estiver mais abaixo, a linha dele aparece no fim, depois de um separador
+  function rankBoardHTML(rows, valOf, subOf) {
+    const me = Records.getName().toLocaleLowerCase(), cap = 20;
+    let html = rows.slice(0, cap).map((r, i) => rankRowHTML(i, r, me, valOf(r), subOf && subOf(r))).join('');
+    const mi = rows.findIndex((r, i) => i >= cap && isMeRow(r, me));
+    if (mi >= 0) html += '<div class="rk-gap" aria-hidden="true"></div>' + rankRowHTML(mi, rows[mi], me, valOf(rows[mi]), subOf && subOf(rows[mi]));
+    return '<div class="weekly-board rk-board">' + html + '</div>';
+  }
   function weeklyRowsHTML(rows, emptyKey) {
     if (!rows || !rows.length) return '<div class="weekly-status">' + T(emptyKey || 'weekly.empty') + '</div>';
-    const me = Records.getName().toLocaleLowerCase();
-    return '<div class="weekly-board">' + rows.slice(0, 20).map((r, i) =>
-      '<div class="weekly-row' + (r.me || String(r.name || '').toLocaleLowerCase() === me ? ' me' : '') + '"><i>' + (i + 1) + '</i><b>' + esc(r.name) + '</b><strong>' + (+r.score || 0).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') + '</strong></div>'
-    ).join('') + '</div>';
+    return rankBoardHTML(rows, (r) => nf(r.score));
   }
   function loadWeeklyRows(card, promise) {
     const box = card.querySelector('.weekly-list');
@@ -3045,15 +3125,26 @@
     const rows = { week: null, all: null };
     let tab = 'week';
     const fmt = (n) => (+n || 0).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
+    // abas montadas uma vez só: o brilho (pill) desliza até a aba ativa só com CSS (idea: transitions.dev "Tabs sliding"),
+    // e só a lista troca. Assim a chegada do ranking Total não refaz a animação da lista Semanal.
+    box.innerHTML = '<div class="rank-tabs" data-on="week" role="tablist"><span class="rk-pill" aria-hidden="true"></span>' +
+      '<button type="button" role="tab" data-t="week" class="on" aria-selected="true">' + T('records.tabWeek') + '</button>' +
+      '<button type="button" role="tab" data-t="all" aria-selected="false">' + T('records.tabAll') + '</button></div><div class="rk-body"></div>';
+    const tabsEl = box.querySelector('.rank-tabs'), body = box.querySelector('.rk-body');
+    let shown = '';
     const render = () => {
       if (!box.isConnected) return;
-      const r = rows[tab];
-      const holder = tab === 'all' && r && r.length ? '<div class="rank-holder">' + T('records.holder') + ': <b>' + esc(r[0].name) + '</b> · ' + fmt(r[0].score) + '</div>' : '';
-      box.innerHTML = '<div class="rank-tabs"><button type="button" data-t="week"' + (tab === 'week' ? ' class="on"' : '') + '>' + T('records.tabWeek') + '</button>' +
-        '<button type="button" data-t="all"' + (tab === 'all' ? ' class="on"' : '') + '>' + T('records.tabAll') + '</button></div>' +
-        (r ? holder + weeklyRowsHTML(r, tab === 'all' ? 'records.allEmpty' : 'weekly.empty') : '<div class="weekly-status">' + T('weekly.loading') + '</div>');
-      box.querySelectorAll('.rank-tabs button').forEach((b) => { b.onclick = () => { if (tab === b.dataset.t) return; Sound.play('click'); tab = b.dataset.t; render(); }; });
+      const r = rows[tab], key = tab + ':' + (r ? r.length : 'x');
+      tabsEl.dataset.on = tab;
+      tabsEl.querySelectorAll('button').forEach((b) => { const on = b.dataset.t === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+      if (key === shown) return;
+      shown = key;
+      // 24/11: a linha "Recordista da fase" saiu; o 1º lugar agora já é a linha dourada com medalha, no topo da lista
+      const holder = '';
+      body.scrollTop = 0;
+      body.innerHTML = r ? holder + weeklyRowsHTML(r, tab === 'all' ? 'records.allEmpty' : 'weekly.empty') : '<div class="weekly-status">' + T('weekly.loading') + '</div>';
     };
+    tabsEl.querySelectorAll('button').forEach((b) => { b.onclick = () => { if (tab === b.dataset.t) return; Sound.play('click'); tab = b.dataset.t; render(); }; });
     render();
     // o total só é buscado depois do semanal, para já incluir o placar que acabou de ser enviado
     weeklyPromise.catch(() => []).then((r) => { rows.week = r || []; render(); return Records.listLevelAll(id); })
@@ -3105,12 +3196,15 @@
     const featured = Records.featured(LEVELS.map((L) => L.id).filter((id) => id <= 21), week, 3);
     const ordered = featured.concat(ids.filter((id) => !featured.includes(id)));
     // 25/10: placa com o título, faixa da temporada e as fases (destaque = borda verde + ★, sem texto)
-    const rows = ordered.map((id) => {
+    const tile = (id) => {
       const locked = !save.stars[id];
       return '<button type="button" class="record-level' + (featured.includes(id) ? ' featured' : '') + (locked ? ' locked' : '') + '" data-level="' + id + '"' + (locked ? ' disabled' : '') +
         ' aria-label="' + T('level') + ' ' + id + (featured.includes(id) ? ' · ' + T('records.featured') : '') + '"><span>' + T('level') + ' ' + id + '</span><strong>' +
         (locked ? T('records.lockedFeat', { n: id }) : scores[id] ? nf(scores[id]) : '—') + '</strong></button>';
-    }).join('');
+    };
+    // dois grupos com título: os 3 destaques da semana e as demais fases já vencidas
+    const rows = '<div class="rk-label">' + T('records.featTitle') + '</div>' + featured.map(tile).join('') +
+      (ordered.length > featured.length ? '<div class="rk-label">' + T('records.yourLevels') + '</div>' + ordered.slice(featured.length).map(tile).join('') : '');
     track('leaderboard_open', { mode: 'hard', value: ids.length });
     const card = openModal(
       '<h2 class="plaque-title">' + T('records.short') + '</h2>' +
@@ -3162,12 +3256,10 @@
       if (!card.isConnected) return;
       card.querySelector('.season-title').textContent = seasonName(s.season);
       card.querySelector('.season-left').textContent = T('season.ends', { n: seasonDaysLeft(s) });
-      const me = Records.getName().toLocaleLowerCase();
-      const list = s.rows.length ? '<div class="weekly-board">' + s.rows.map((r, i) =>
-        '<div class="weekly-row season-row' + (r.me || String(r.name || '').toLocaleLowerCase() === me ? ' me' : '') + '"><i>' + (i + 1) + '</i><b>' + esc(r.name) + '</b>' + tierHTML(r.tier) + '<strong>' + nf(r.points) + '</strong></div>').join('') + '</div>'
+      const list = s.rows.length ? rankBoardHTML(s.rows, (r) => nf(r.points), (r) => (r.tier ? '<small class="rk-sub">' + tierHTML(r.tier) + '</small>' : ''))
         : '<div class="weekly-status">' + T('season.none') + '</div>';
       const champs = past.length ? past.map((p) => '<div class="champ"><span>' + seasonName(p.season) + '</span>' +
-        p.top.map((r, i) => '<b class="podium p' + (i + 1) + '">' + (i + 1) + 'º ' + esc(r.name) + ' · ' + nf(r.points) + '</b>').join('') + '</div>').join('')
+        p.top.map((r, i) => '<b class="podium p' + (i + 1) + '"><i class="rk-pos">' + (i + 1) + '</i><span>' + esc(r.name) + '</span><u>' + nf(r.points) + '</u></b>').join('') + '</div>').join('')
         : '<div class="weekly-status">' + T('season.noChamps') + '</div>';
       // sem servidor só aparece a própria linha (a liga depende dos outros); nada de aviso técnico na tela
       card.querySelector('.season-body').innerHTML =
