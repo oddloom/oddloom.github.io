@@ -7,9 +7,14 @@
   :root:root:root:root:root:root:root:root:root:root body .bomb-tela .bomb-som { position: relative; z-index: 51; pointer-events: auto; }
 }
 
-/* Lumi 2026-11-24: fundo novo da Oferta da semana (substitui a barraquinha e o fundo verde) */
+/* Lumi 2026-11-24: fundo novo da Oferta da semana; a lojinha continua na frente */
 :root .loja-oferta:not(.loja-oferta-vazia){background:linear-gradient(90deg,#1b2f7ae6 0%,#1b2f7ab3 38%,#1b2f7a00 62%),url(/mesa/arte/loja/oferta-semana-fundo.webp) 75% 42%/cover no-repeat,#3f6cf0 !important}
-:root .loja-oferta:not(.loja-oferta-vazia) .oferta-barraca{display:none}
+/* textos legíveis sobre o fundo azul: título e subtítulo brancos ("semana" continua amarelo) */
+:root .loja-oferta:not(.loja-oferta-vazia) .oferta-h{color:#fff;text-shadow:0 2px 6px #0a1c46b3}
+:root .loja-oferta:not(.loja-oferta-vazia) .oferta-h b{color:#ffd45c;text-shadow:0 2px 6px #0a1c46b3}
+:root .loja-oferta:not(.loja-oferta-vazia) .oferta-sub{color:#fff;text-shadow:0 1px 4px #0a1c46b3}
+/* aviso "Última chance • Termina em" fixo, sem pulsar */
+:root .oferta-tempo{animation:none !important}
 
 /* Lumi 2026-11-24: Convide amigos (aba Amigos) com a arte ocupando a caixa inteira */
 :root .cv-atalho{position:relative;overflow:hidden;min-height:136px;padding:16px 44% 16px 18px;border:0;border-radius:24px;color:#fff;background:linear-gradient(90deg,#0d2a66f2 0%,#0d2a66cc 34%,#0d2a6600 64%),url(/mesa/arte/convites/convide-amigos-fundo.webp?v=2) 100% 50%/cover no-repeat,#2f6fd8;box-shadow:0 8px 20px #1b3f8a40}
