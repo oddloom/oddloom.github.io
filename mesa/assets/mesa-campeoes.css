@@ -1,15 +1,35 @@
-/* Campeões da Season: troféu flutuante ao lado do pergaminho, e a página dos melhores. */
+/* Ícones do início Jogos: troféu, dado e pergaminho na rolagem (somem ao descer). */
 
-.mh-sino-col > .mh-trofeu {
-  position: absolute;
+.mh-icones-jogos {
+  display: none;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 2px 10px 0;
+  flex: none;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+.tela.inicio.jogos-colorido .mh-rolagem > .mh-icones-jogos {
+  display: flex;
+}
+.mh-icones-jogos > .mh-trofeu,
+.mh-icones-jogos > .mh-dado,
+.mh-icones-jogos > .mh-missoes {
+  pointer-events: auto;
+  position: relative;
+  left: auto;
+  top: auto;
   z-index: 3;
-  left: 50%;
-  top: calc(100% + 4px);
   width: 54px;
   height: 54px;
   min-width: 54px;
   padding: 0;
-  margin-left: -86px;
+  margin: 0;
   border: 0;
   border-radius: 14px;
   background: transparent;
@@ -17,42 +37,107 @@
   outline-offset: 2px;
   cursor: pointer;
 }
-.mh-sino-col > .mh-trofeu::before {
+.mh-icones-jogos > .mh-dado {
+  cursor: default;
+}
+.mh-icones-jogos > .mh-trofeu::before,
+.mh-icones-jogos > .mh-dado::before,
+.mh-icones-jogos > .mh-missoes::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: url(/mesa/arte/mesa-ui/trofeu-campeoes.webp?v=1) center/contain no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
   filter: drop-shadow(0 5px 5px #2a3f6a40);
   animation: mhFlutua 3.7s ease-in-out .2s infinite;
   will-change: transform;
 }
-.mh-sino-col > .mh-trofeu:active::before { transform: scale(.92); animation-play-state: paused; }
-@media (prefers-reduced-motion: reduce) {
-  .mh-sino-col > .mh-trofeu::before { animation: none; }
+.mh-icones-jogos > .mh-trofeu::before {
+  background-image: url(/mesa/arte/mesa-ui/trofeu-campeoes.webp?v=1);
 }
-:root .mh-sino-col > .mh-trofeu {
+.mh-icones-jogos > .mh-dado::before {
+  background-image: url(/mesa/arte/mesa-ui/dado-vermelho.webp?v=1);
+}
+.mh-icones-jogos > .mh-missoes::before {
+  background-image: url(/mesa/arte/mesa-ui/pergaminho-missoes.webp?v=2);
+}
+.mh-icones-jogos > .mh-trofeu img,
+.mh-icones-jogos > .mh-dado img,
+.mh-icones-jogos > .mh-missoes img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 5px 5px #2a3f6a40);
+  animation: mhFlutua 3.7s ease-in-out .2s infinite;
+  will-change: transform;
+}
+.mh-icones-jogos > .mh-trofeu:active img,
+.mh-icones-jogos > .mh-missoes:active img {
+  transform: scale(.92);
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mh-icones-jogos > .mh-trofeu img,
+  .mh-icones-jogos > .mh-dado img,
+  .mh-icones-jogos > .mh-missoes img { animation: none; }
+}
+
+.mh-icones-jogos > .mh-trofeu:active::before,
+.mh-icones-jogos > .mh-missoes:active::before {
+  transform: scale(.92);
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mh-icones-jogos > .mh-trofeu::before,
+  .mh-icones-jogos > .mh-dado::before,
+  .mh-icones-jogos > .mh-missoes::before { animation: none; }
+}
+:root .mh-icones-jogos > .mh-trofeu,
+:root .mh-icones-jogos > .mh-dado,
+:root .mh-icones-jogos > .mh-missoes,
+:root .mh-sino-col > .mh-trofeu,
+:root .mh-sino-col > .mh-missoes,
+:root .mh-sino-col > .mh-roleta,
+:root .mh-sino-col > .mh-dado {
   background: none !important;
   border: 0 !important;
   box-shadow: none !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
+/* Fora da página Jogos, ou no cabeçalho compartilhado, os ícones não aparecem. */
+.mh-cabecalho .mh-trofeu,
+.mh-cabecalho .mh-dado,
+.mh-cabecalho .mh-missoes,
+.mh-cabecalho .mh-roleta,
+.mh-sino-col > .mh-trofeu,
+.mh-sino-col > .mh-dado,
+.mh-sino-col > .mh-missoes,
+.mh-sino-col > .mh-roleta,
+.mh-salas .mh-trofeu,
+.mh-salas .mh-dado,
+.mh-salas .mh-missoes,
+.tela:not(.jogos-colorido) .mh-icones-jogos,
+.tela:not(.jogos-colorido) .mh-trofeu,
+.tela:not(.jogos-colorido) .mh-dado,
+.tela:not(.jogos-colorido) .mh-missoes {
+  display: none !important;
+}
 
-/* Ícones (troféu, dado, pergaminho) ficam fixos no topo, com faixa reservada para não cobrir os jogos. */
+.mh-icones-jogos > .mh-trofeu:has(img)::before,
+.mh-icones-jogos > .mh-dado:has(img)::before,
+.mh-icones-jogos > .mh-missoes:has(img)::before {
+  content: none;
+  display: none;
+}
+
 .tela.inicio {
   overflow-x: hidden;
-}
-.tela.inicio .mh-cabecalho {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  padding-bottom: 62px;
-  box-sizing: border-box;
-}
-.tela.inicio .mh-sino-col > .mh-missoes,
-.tela.inicio .mh-sino-col > .mh-roleta,
-.tela.inicio .mh-sino-col > .mh-trofeu {
-  z-index: 31;
 }
 
 dialog.cp-pagina {

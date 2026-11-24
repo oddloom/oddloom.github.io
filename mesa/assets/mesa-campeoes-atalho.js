@@ -1,4 +1,4 @@
-/* Mesa 2026-11-24: atalho e página Campeões da Season (sem a roleta/dado). */
+/* Mesa 2026-11-24: atalho e página Campeões da Season. Ícones só na rolagem da home Jogos; dado inerte. Observer sem loop. */
 (function(){
 // Campeões da Season no bundle da MesaApp (www). Lê o ranking mensal real do servidor.
 const CORES = ["#f4212e", "#1d9bf0", "#ff7a00", "#7856ff"]
@@ -111,14 +111,57 @@ function travarDialog(j) {
   }
 }
 
+function abrirMissoes() {
+  const m = document.querySelector(".tela.inicio .bn-menu-lista") || document.querySelector(".bn-menu-lista")
+  const b = m && m.children[1]
+  if (b) b.click()
+}
+
+function limparIconesDoCabecalho() {
+  const nos = document.querySelectorAll(".mh-cabecalho .mh-trofeu, .mh-cabecalho .mh-dado, .mh-cabecalho .mh-missoes, .mh-sino-col > .mh-trofeu, .mh-sino-col > .mh-dado, .mh-sino-col > .mh-missoes, .mh-sino-col > .mh-roleta")
+  nos.forEach((n) => n.remove())
+}
+
 function garantirAtalho() {
-  document.querySelectorAll(".tela.inicio .mh-sino-col").forEach((col) => {
-    if (col.querySelector(".mh-trofeu")) return
-    const b = el("button", { className: "mh-trofeu", type: "button", title: "Campeões da Season" })
-    b.setAttribute("aria-label", "Campeões da Season")
-    b.addEventListener("click", abrir)
-    col.append(b)
-  })
+  limparIconesDoCabecalho()
+  const tela = document.querySelector(".tela.inicio.jogos-colorido")
+  if (!tela) return
+  const rolagem = tela.querySelector(".mh-rolagem") || tela.querySelector(".rolagem")
+  if (!rolagem) return
+  let faixa = rolagem.querySelector(":scope > .mh-icones-jogos")
+  if (!faixa) {
+    faixa = el("div", { className: "mh-icones-jogos" })
+    rolagem.insertBefore(faixa, rolagem.firstChild)
+  } else if (rolagem.firstElementChild !== faixa) {
+    rolagem.insertBefore(faixa, rolagem.firstChild)
+  }
+  let t = faixa.querySelector(":scope > .mh-trofeu")
+  if (!t) {
+    t = el("button", { className: "mh-trofeu", type: "button", title: "Campeões da Season" })
+    t.setAttribute("aria-label", "Campeões da Season")
+    t.append(el("img", { src: "/mesa/arte/mesa-ui/trofeu-campeoes.webp?v=1", alt: "", draggable: "false" }))
+    t.addEventListener("click", abrir)
+  }
+  let d = faixa.querySelector(":scope > .mh-dado")
+  if (!d) {
+    d = el("button", { className: "mh-dado", type: "button", title: "Dado" })
+    d.setAttribute("aria-label", "Dado")
+    d.setAttribute("aria-disabled", "true")
+    d.append(el("img", { src: "/mesa/arte/mesa-ui/dado-vermelho.webp?v=1", alt: "", draggable: "false" }))
+    d.addEventListener("click", (ev) => { ev.preventDefault(); ev.stopPropagation() })
+  }
+  let m = faixa.querySelector(":scope > .mh-missoes")
+  if (!m) {
+    m = el("button", { className: "mh-missoes", type: "button", title: "Missões" })
+    m.setAttribute("aria-label", "Missões")
+    m.append(el("img", { src: "/mesa/arte/mesa-ui/pergaminho-missoes.webp?v=2", alt: "", draggable: "false" }))
+    m.addEventListener("click", abrirMissoes)
+  }
+  if (t && !t.querySelector("img")) t.append(el("img", { src: "/mesa/arte/mesa-ui/trofeu-campeoes.webp?v=1", alt: "", draggable: "false" }))
+  if (d && !d.querySelector("img")) d.append(el("img", { src: "/mesa/arte/mesa-ui/dado-vermelho.webp?v=1", alt: "", draggable: "false" }))
+  if (m && !m.querySelector("img")) m.append(el("img", { src: "/mesa/arte/mesa-ui/pergaminho-missoes.webp?v=2", alt: "", draggable: "false" }))
+  const certo = faixa.children.length === 3 && faixa.children[0] === t && faixa.children[1] === d && faixa.children[2] === m
+  if (!certo) faixa.append(t, d, m)
 }
 
 function abrir() {
@@ -277,8 +320,59 @@ function pintarPerfil(l) {
 }
 
 patchWs()
-new MutationObserver(garantirAtalho).observe(document.documentElement, { childList: true, subtree: true })
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", garantirAtalho)
-else garantirAtalho()
+
+function observarSeguro(fn) {
+  const MAX_POR_SEGUNDO = 8
+  const GREVES_PARA_PARAR = 3
+  let obs = null
+  let raf = 0
+  let ocupado = false
+  let stamps = []
+  let greves = 0
+  let parado = false
+  let lento = 0
+
+  function rodar() {
+    raf = 0
+    if (ocupado) return
+    ocupado = true
+    if (obs) obs.disconnect()
+    try { fn() }
+    catch (err) { console.error("mesa-atalho", err) }
+    finally {
+      ocupado = false
+      if (obs && !parado) obs.observe(document.documentElement, { childList: true, subtree: true })
+    }
+  }
+
+  function agendar() {
+    if (ocupado || raf) return
+    const agora = performance.now()
+    stamps = stamps.filter((t) => agora - t < 1000)
+    if (stamps.length >= MAX_POR_SEGUNDO) {
+      greves += 1
+      if (greves >= GREVES_PARA_PARAR && !parado) {
+        parado = true
+        if (obs) { obs.disconnect(); obs = null }
+        if (!lento) lento = setInterval(() => { if (!ocupado) rodar() }, 1000)
+      }
+      return
+    }
+    if (parado) return
+    stamps.push(agora)
+    raf = requestAnimationFrame(rodar)
+  }
+
+  obs = new MutationObserver(agendar)
+  obs.observe(document.documentElement, { childList: true, subtree: true })
+  document.addEventListener("click", (ev) => {
+    const alvo = ev.target
+    if (alvo && alvo.closest && alvo.closest(".barra, .barra-moderna")) agendar()
+  }, true)
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", agendar)
+  else agendar()
+}
+
+observarSeguro(garantirAtalho)
 
 })();
