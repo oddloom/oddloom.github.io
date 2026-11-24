@@ -1,0 +1,368 @@
+/* Mesa — pacote visual 23/11/2026 (v2) */
+/* Loja > "Oferta da semana" v2 (23/11/2026)
+   - cards QUADRADOS com cantos bem arredondados (fundo em 9 fatias: os cantos nunca deformam)
+   - mesmo fundo, brilho e animação dos cards da loja (comum, incomum, raro, épico, lendário)
+   - sem a pedrinha de raridade; moldura do tamanho do ícone
+   A raridade vem do script loja-oferta-*.js (data-raridade copiado do card original). Nomes internos:
+   comum / raro (Incomum) / epico (Raro) / muitoraro (Épico) / lendario (Lendário). */
+.oferta-arte .cristal-raridade { display: none !important; }
+
+.oferta-itens { gap: 12px; align-items: start; }
+.oferta-item {
+  --r: 24px;
+  --fundo: url("/mesa/arte/loja/cards/fundo-comum-selo-v2.webp");
+  position: relative; isolation: isolate; overflow: visible; box-sizing: border-box;
+  aspect-ratio: 1 / 1; width: 100%; max-width: 210px; height: auto; justify-self: center;
+  display: grid; grid-template-rows: minmax(0, 1fr) auto auto; justify-items: center; align-items: center; gap: 3px;
+  padding: 13% 6% 8%;
+  background: none !important; border: 0 !important; border-radius: 22%; box-shadow: none !important;
+  color: #0f2340;
+}
+.oferta-item::before {
+  content: ""; position: absolute; inset: 0; z-index: -2; pointer-events: none; box-sizing: border-box;
+  border: var(--r) solid transparent; border-image: var(--fundo) 64 fill / var(--r) stretch;
+}
+.oferta-item:has(.cristal-raridade.raro) { --fundo: url("/mesa/arte/loja/cards/fundo-incomum-suave-v2.webp"); }
+.oferta-item:has(.cristal-raridade.epico) { --fundo: url("/mesa/arte/loja/cards/fundo-raro-v3.webp"); }
+.oferta-item:has(.cristal-raridade.lendario) { --fundo: url("/mesa/arte/loja/cards/fundo-lendario-v3.webp"); }
+.oferta-item[data-raridade="raro"] { --fundo: url("/mesa/arte/loja/cards/fundo-incomum-suave-v2.webp"); }
+.oferta-item[data-raridade="epico"] { --fundo: url("/mesa/arte/loja/cards/fundo-raro-v3.webp"); }
+.oferta-item[data-raridade="muitoraro"] { --fundo: url("/mesa/arte/loja/cards/fundo-muito-raro-v3.webp"); }
+.oferta-item[data-raridade="lendario"] { --fundo: url("/mesa/arte/loja/cards/fundo-lendario-v3.webp"); }
+
+/* conteúdo: a arte ocupa metade da largura do card (ícone e moldura no mesmo tamanho) */
+.oferta-arte { width: 52%; height: auto; aspect-ratio: 1 / 1; display: grid; place-items: center; overflow: visible; min-height: 0; }
+.oferta-arte .loja-cartao-img { width: 100% !important; height: 100% !important; zoom: 1 !important; transform: none !important; display: grid; place-items: center; }
+.oferta-arte .loja-cartao-img .foto, .oferta-arte .loja-cartao-img.avatar .foto { width: 100% !important; height: 100% !important; }
+.oferta-arte .loja-cartao-img.moldura .foto { width: 40% !important; height: auto !important; aspect-ratio: 1; }
+.oferta-arte img { max-width: 100%; max-height: 100%; }
+.oferta-item strong { color: #0f2340; text-shadow: none; text-align: center; font-size: 13px; line-height: 1.12; }
+.oferta-preco { padding: 4px 9px; font-size: 14px; gap: 5px; }
+.oferta-preco .moeda-icone, .oferta-preco .diamante-icone, .oferta-preco img { width: 16px; height: 16px; }
+.oferta-item .oferta-selo { z-index: 6 !important; }
+.oferta-item > .oferta-arte { z-index: 1 !important; }
+
+/* camadas de brilho clipadas no card arredondado */
+.oferta-item .cartao-brilho, .oferta-item .cartao-feixe, .oferta-item .cartao-luz { border-radius: 22%; }
+.oferta-item > :not(.cartao-brilho):not(.cartao-feixe):not(.cartao-estrela):not(.cartao-luz) { position: relative; z-index: 1; }
+.oferta-item > .oferta-selo { position: absolute; }
+
+/* celular: o texto fica em cima e os cards embaixo, grandes (o banner cresce em altura, a promoção não encolhe) */
+@media (max-width: 559.98px) {
+  .loja-oferta { grid-template-columns: 1fr !important; gap: 12px !important; min-height: 0 !important; padding: 14px 14px 16px !important; }
+  .oferta-itens { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; width: 100% !important; justify-self: stretch !important; }
+  .oferta-itens:has(> :only-child) { grid-template-columns: minmax(0, 1fr) !important; width: 56% !important; justify-self: center !important; }
+  .oferta-item { max-width: none; --r: 22px; }
+}
+@media (min-width: 560px) { .oferta-item { --r: 26px; } }
+
+/* molduras: a imagem tem margem transparente; a escala e o centro por moldura fazem o aro ficar do tamanho do ícone */
+.oferta-arte img.moldura[src*="/moldura/anjo."] { scale: 1.511; translate: 0.0% 3.0%; }
+.oferta-arte img.moldura[src*="/moldura/asas."] { scale: 1.281; translate: 0.0% 3.0%; }
+.oferta-arte img.moldura[src*="/moldura/asas2."] { scale: 1.349; translate: 0.3% 0.8%; }
+.oferta-arte img.moldura[src*="/moldura/chamas."] { scale: 1.258; translate: 0.3% 8.1%; }
+.oferta-arte img.moldura[src*="/moldura/coroa."] { scale: 1.204; translate: 0.0% 6.4%; }
+.oferta-arte img.moldura[src*="/moldura/cristal."] { scale: 1.393; translate: -0.2% 0.2%; }
+.oferta-arte img.moldura[src*="/moldura/dragao."] { scale: 1.175; translate: -0.6% 3.6%; }
+.oferta-arte img.moldura[src*="/moldura/dragao2."] { scale: 1.238; translate: 0.6% 4.4%; }
+.oferta-arte img.moldura[src*="/moldura/fenix."] { scale: 1.411; translate: -0.3% 0.6%; }
+.oferta-arte img.moldura[src*="/moldura/louros."] { scale: 1.511; translate: 0.3% -0.2%; }
+.oferta-arte img.moldura[src*="/moldura/ouro."] { scale: 1.582; translate: 0.2% 0.0%; }
+.oferta-arte img.moldura[src*="/moldura/realeza."] { scale: 1.483; translate: -0.2% 1.3%; }
+.oferta-arte .loja-cartao-img.moldura { overflow: visible; }
+
+/* ===== Banner "Oferta da semana" mais chamativo (23/11): raios de luz, borda dourada brilhando, contagem em destaque ===== */
+.loja-oferta { position: relative; isolation: isolate; overflow: hidden; box-shadow: 0 12px 26px -12px #0a4a5a77; }
+.loja-oferta > * { position: relative; z-index: 1; }
+/* arte própria do banner (gerada, não código): presentes, moedas e confetes à direita; só no tema verde da semana */
+.loja-oferta.tema-verde { background: url("/mesa/arte/loja/oferta-fundo-verde.webp") 100% 50% / cover no-repeat, linear-gradient(135deg, #17b5a3, #0f8f95) !important; }
+.oferta-h { text-shadow: 0 2px 0 #ffffff66, 0 4px 12px #0a2a4a66; }
+.oferta-h b { color: #ffe066; text-shadow: 0 2px 0 #b8650055, 0 0 14px #ffd45ccc; }
+.oferta-sub { font-weight: 800; }
+/* contagem regressiva em destaque: cápsula vermelha pulsando */
+.oferta-tempo { background: linear-gradient(180deg, #ff6a5c, #e02f3f) !important; color: #fff !important; border: 2px solid #ffffffcc; box-shadow: 0 4px 12px -2px #c01830aa, inset 0 1px 0 #ffffff88; text-shadow: 0 1px 2px #7a0a1a88; animation: oferta-urgente 1.6s ease-in-out infinite; }
+.oferta-tempo i { border-color: #fff !important; } .oferta-tempo i::before { background: #fff !important; }
+.oferta-tempo { white-space: nowrap; max-width: 100%; }
+.oferta-tempo-txt::before { content: none; }
+@media (max-width: 559.98px), (min-width: 1000px) { .oferta-tempo-txt::before { content: "Última chance • "; font-weight: 900; } }
+.oferta-preco { white-space: nowrap; }
+@keyframes oferta-urgente { 0%, 100% { transform: scale(1); box-shadow: 0 4px 12px -2px #c01830aa, inset 0 1px 0 #ffffff88; } 50% { transform: scale(1.045); box-shadow: 0 6px 18px -2px #ff2a44cc, 0 0 0 4px #ff6a5c44, inset 0 1px 0 #ffffff88; } }
+/* botão de chamada */
+.oferta-texto::after { content: "Ver ofertas  ›"; display: inline-block; justify-self: start; margin-top: 2px; padding: 7px 16px; border-radius: 999px; color: #5a2a00; font: 900 14px/1 Mesa Nunito, Nunito, system-ui, sans-serif; background: linear-gradient(180deg, #fff3a8, #ffc933 55%, #ffab16); border: 2px solid #fff; box-shadow: 0 4px 10px -3px #b86600bb, inset 0 1px 0 #fffc; }
+@media (max-width: 559.98px) { .loja-oferta.tema-verde { background: url("/mesa/arte/loja/oferta-fundo-verde.webp") 100% 100% / auto 50% no-repeat, linear-gradient(160deg, #17b5a3, #0f8f95) !important; } }
+@media (max-width: 559.98px) { .oferta-texto::after { font-size: 13px; padding: 6px 14px; } }
+@media (prefers-reduced-motion: reduce) { .oferta-tempo { animation: none !important; } }
+:root[data-grafico=leve] .oferta-tempo { animation: none !important; }
+
+/* ===== Loja > Pilotos do Gun Arena (23/11): sem o quadradinho de tabuleiro, personagem "vivo" (respira e pisca) ===== */
+.loja-cartao-img:has(.loja-piloto-img), .loja-cartao-img:has(.loja-piloto-vivo) { background: none !important; box-shadow: none !important; border: 0 !important; overflow: visible; }
+img.loja-piloto-img { border-radius: 0 !important; box-shadow: none !important; background: none !important; border: 0 !important; width: auto !important; height: 78px !important; max-width: 100%; object-fit: contain; filter: drop-shadow(0 4px 4px #0a214538); display: block; }
+.loja-piloto-vivo { position: relative; display: inline-block; line-height: 0; transform-origin: 50% 100%; animation: piloto-respira 3.6s ease-in-out infinite; animation-delay: var(--atraso, 0s); }
+.loja-piloto-vivo .loja-piloto-pisca { position: absolute; inset: 0; width: 100% !important; height: 100% !important; opacity: 0; animation: piloto-pisca 5.2s steps(1, end) infinite; animation-delay: var(--atraso, 0s); pointer-events: none; }
+@keyframes piloto-respira { 0%, 100% { transform: scale(1, 1) translateY(0); } 50% { transform: scale(0.99, 1.024) translateY(-1.2px); } }
+@keyframes piloto-pisca { 0%, 62% { opacity: 0; } 63%, 67% { opacity: 1; } 68%, 86% { opacity: 0; } 87%, 89% { opacity: 1; } 90%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .loja-piloto-vivo, .loja-piloto-vivo .loja-piloto-pisca { animation: none !important; } }
+:root[data-grafico=leve] .loja-piloto-vivo, :root[data-grafico=leve] .loja-piloto-vivo .loja-piloto-pisca { animation: none !important; }
+
+/* as regras .na-tela[data-raridade=...]:before/:after da loja (varredura, estrela) não valem aqui: o ::before é o fundo do card */
+:root .loja-colecao .oferta-item.na-tela[data-raridade]::before,
+:root:not([data-grafico=leve]) .loja-colecao .oferta-item.na-tela[data-raridade]::before { opacity: 1 !important; animation: none !important; background: none !important; width: auto !important; transform: none !important; inset: 0 !important; }
+:root .loja-colecao .oferta-item.na-tela[data-raridade]::after,
+:root:not([data-grafico=leve]) .loja-colecao .oferta-item.na-tela[data-raridade]::after { content: none !important; animation: none !important; }
+
+/* ---- camadas da loja (brilho, feixe, estrelas) copiadas do CSS publicado para .oferta-item ---- */
+.oferta-item .cartao-brilho,.oferta-item .cartao-feixe,.oferta-item .cartao-estrela{pointer-events:none;z-index:0;position:absolute}
+
+.oferta-item .cartao-brilho{opacity:.5;background:50%/100% 100% no-repeat;inset:0}
+
+.oferta-item[data-raridade=epico] .cartao-brilho{background-image:url(/mesa/arte/loja/cards/brilho-raro.webp)}
+
+.oferta-item[data-raridade=lendario] .cartao-brilho{opacity:.6;background-image:url(/mesa/arte/loja/cards/brilho-lendario.webp)}
+
+.oferta-item .cartao-feixe{opacity:0;background:linear-gradient(100deg,#0000,#fffc,#0000);width:32%;top:-10%;bottom:-10%;left:-45%;transform:skew(-16deg)}
+
+.oferta-item[data-raridade=lendario] .cartao-feixe{background:linear-gradient(100deg,#0000,#fff0a8e6,#0000);width:38%}
+
+.oferta-item .cartao-estrela{opacity:0;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);filter:drop-shadow(0 0 3px #fff);background:#fff;width:13px;height:13px}
+
+.oferta-item .cartao-estrela.e1{top:16%;left:12%}
+
+.oferta-item .cartao-estrela.e2{width:10px;height:10px;top:30%;right:10%}
+
+.oferta-item .cartao-estrela.e3{width:9px;height:9px;bottom:38%;left:8%}
+
+.oferta-item[data-raridade=lendario] .cartao-estrela{filter:drop-shadow(0 0 4px #ffd45c);background:#fff6c2}
+
+.oferta-item>:not(.cartao-brilho):not(.cartao-feixe):not(.cartao-estrela):not(.cartao-luz){z-index:1;position:relative}
+
+.oferta-item[data-raridade=lendario] .cartao-feixe{opacity:.95;border-radius:inherit;background:conic-gradient(from var(--ang), #0000 0 58%, #ffb62a 72%, #fff3a8 84%, #fff 88%, #ffb62a 94%, #0000 100%);-webkit-mask-composite:xor;width:auto;padding:3px;inset:0;transform:none;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor,source-over;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+
+.oferta-item[data-raridade=lendario] .cartao-estrela{width:15px;height:15px}
+
+.oferta-item[data-raridade=raro]{--ov:url(/mesa/arte/loja/cards/brilho-raro.webp)}
+
+.oferta-item[data-raridade=lendario]{--ov:url(/mesa/arte/loja/cards/brilho-lendario.webp)}
+
+:root .loja-colecao .oferta-item .cartao-brilho{opacity:.45;transform-origin:50%;background-image:var(--ov)!important}
+
+:root .loja-colecao .oferta-item .cartao-feixe{opacity:0;background:var(--ov) center / 100% 100% no-repeat;filter:brightness(1.8)saturate(1.15);-webkit-mask-composite:source-over;border-radius:0;width:auto;padding:0;inset:0;transform:none;-webkit-mask:linear-gradient(112deg,#0000 38%,#000 50%,#0000 62%) 130% 0/320% 100% no-repeat;mask:linear-gradient(112deg,#0000 38%,#000 50%,#0000 62%) 130% 0/320% 100% no-repeat}
+
+:root .loja-colecao .oferta-item[data-raridade=raro] .cartao-brilho{opacity:.32}
+
+:root .loja-colecao .oferta-item[data-raridade=raro] .cartao-feixe{filter:brightness(1.5)}
+
+.oferta-item[data-raridade=epico]{--ov:url(/mesa/arte/loja/cards/brilho-raro.webp)}
+
+.oferta-item .cartao-luz{aspect-ratio:1;pointer-events:none;z-index:0;opacity:.5;background:radial-gradient(circle,#bfe3ffcc 0%,#6fb6ff55 45%,#0000 70%);border-radius:50%;width:74%;margin:0;position:absolute;top:40%;left:50%;transform:translate(-50%,-50%)}
+
+.oferta-item[data-raridade=lendario] .cartao-luz{background:radial-gradient(circle,#fff3b8e6 0%,#ffcc4d66 45%,#0000 70%)}
+
+.oferta-item .cartao-estrela.e4{width:7px;height:7px;top:26%;left:22%}
+
+.oferta-item .cartao-estrela.e5{width:8px;height:8px;top:48%;right:16%}
+
+.oferta-item[data-raridade=epico] .cartao-estrela{filter:drop-shadow(0 0 3px #8fd0ff);background:#fff}
+
+.oferta-item>.cartao-luz{z-index:0!important;position:absolute!important}
+
+.oferta-item[data-raridade=muitoraro]{--ov:url(/mesa/arte/loja/cards/brilho-muito-raro.webp)}
+
+.oferta-item[data-raridade=muitoraro] .cartao-luz{background:radial-gradient(circle,#efe2ffcc 0%,#b48aff55 45%,#0000 70%)}
+
+.oferta-item[data-raridade=muitoraro] .cartao-estrela{filter:drop-shadow(0 0 3px #c8a4ff);background:#fff}
+
+/* Gun Arena > popup de fim de rodada / vencedor — "vidro líquido" do Mesa (23/11/2026)
+   Substitui a moldura dourada (hud/painel.webp) por vidro fino, reaproveitando as receitas que o app já usa:
+   - cartão: a mesma superfície da barra inferior (.barra-moderna): gradiente branco translúcido, aro de vidro (vidro/aro.webp),
+     backdrop blur + saturate, luz interna e sombra difusa; no tema escuro usa os tokens --vidro-* do app
+   - botão: o azul/vidro dos botões primários da Loja (.loja-aba.ativa), sem a borda dourada
+   Só CSS: o HTML do popup (src/artilharia-tela.ts, pintarFim) não muda. Especificidade acima das regras de artilharia.css. */
+
+.art-fim {
+  background: radial-gradient(ellipse 85% 75% at 50% 50%, #0a1a3330 0%, #0a1a3366 100%);
+  padding: 12px; box-sizing: border-box;
+}
+
+.art-fim .art-fim-cartao {
+  --aro-r: 32px;
+  --fim-ink: var(--ui-ink, #0f2340);
+  --fim-muted: var(--ui-muted, #4a6288);
+  --fim-acao-a: #5ab8ff; --fim-acao-b: #0a74df; --fim-acao-c: #2e97f5; --fim-acao-ink: #fff;
+  position: relative; isolation: isolate; box-sizing: border-box;
+  width: min(352px, 100%); height: auto; aspect-ratio: auto; max-height: 100%; overflow: auto; overscroll-behavior: contain;
+  padding: 20px 20px 18px;
+  display: grid; justify-items: center; align-content: start; gap: 0; text-align: center;
+  color: var(--fim-ink);
+  border: 1px solid #ffffff8c;
+  border-image: url(/mesa/arte/vidro/aro.webp) 96 / var(--aro-r) / 0 stretch;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #ffffff6b 0%, #ffffff30 42%, #ffffff26 60%, #ffffff55 100%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%); backdrop-filter: blur(14px) saturate(180%);
+  box-shadow: inset 0 0 16px 2px #ffffff55, 0 26px 52px -16px #12325f88, 0 3px 10px #12325f33;
+  animation: art-fim-entra .26s cubic-bezier(.22, 1, .36, 1) both;
+  scrollbar-width: none;
+}
+.art-fim .art-fim-cartao::-webkit-scrollbar { display: none; }
+/* reflexo suave no topo do vidro */
+.art-fim .art-fim-cartao::before {
+  content: ""; position: absolute; z-index: -1; pointer-events: none; left: 0; right: 0; top: 0; height: 58%;
+  border-radius: 30px 30px 50% 50% / 30px 30px 26% 26%;
+  background: radial-gradient(120% 95% at 50% -18%, #ffffffb8 0%, #ffffff4d 36%, #ffffff00 70%);
+}
+.art-fim .art-fim-cartao > * { position: relative; z-index: 1; }
+
+@keyframes art-fim-entra { from { opacity: 0; transform: translateY(12px) scale(.965); } to { opacity: 1; transform: none; } }
+
+/* ---- hierarquia ---- */
+.art-fim .art-fim-rodada {
+  margin: 0 0 3px; padding: 3px 11px; border-radius: 999px;
+  font: 800 10.5px/1 Mesa Nunito, Nunito, system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--fim-muted); opacity: 1;
+  background: #ffffff40; box-shadow: inset 0 0 0 1px #ffffff80;
+}
+.art-fim .art-fim-cartao h2 {
+  margin: 4px 0 10px; color: var(--fim-ink);
+  font: 900 28px/1.08 Mesa Nunito, Nunito, system-ui, sans-serif; letter-spacing: -.015em;
+  text-shadow: 0 1px 0 #ffffffb0, 0 4px 14px #ffffff80;
+  text-wrap: balance; overflow-wrap: anywhere;
+}
+
+/* troféu + piloto vencedor: protagonistas, com luz suave atrás */
+.art-fim .art-fim-vencedores { position: relative; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 4px 6px 0; }
+.art-fim .art-fim-vencedores::before {
+  content: ""; position: absolute; z-index: -1; inset: -6px -14px -2px; pointer-events: none; border-radius: 50%;
+  background: radial-gradient(closest-side, #ffffffa6, #ffffff00);
+}
+.art-fim .art-fim-trofeu { align-self: center; width: 50px; margin: 0 0 8px; filter: drop-shadow(0 5px 6px #12325f44) drop-shadow(0 0 10px #ffe38a99); }
+.art-fim .art-fim-vencedores figure { margin: 0; display: grid; justify-items: center; gap: 4px; }
+.art-fim .art-fim-piloto { height: 92px; width: auto; filter: drop-shadow(0 7px 8px #12325f4d); }
+.art-fim .art-fim-vencedores figcaption {
+  padding: 3px 12px; border-radius: 999px; font: 800 12.5px/1.2 Mesa Nunito, Nunito, system-ui, sans-serif; color: var(--fim-ink);
+  background: #ffffff59; box-shadow: inset 0 0 0 1px #ffffff99, 0 2px 6px #12325f1f;
+}
+
+/* placar: uma linha enxuta de cápsulas de vidro */
+.art-fim .art-fim-cartao ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 12px 0 0; padding: 0; list-style: none; }
+.art-fim .art-fim-cartao li {
+  display: flex; align-items: center; gap: 4px; padding: 2px 10px 2px 4px; border-radius: 999px;
+  font: 800 12px/1 Mesa Nunito, Nunito, system-ui, sans-serif; color: var(--fim-ink);
+  background: #ffffff3d; border: 1px solid color-mix(in srgb, var(--cor, #ffffff) 38%, #ffffff9c);
+  box-shadow: inset 0 1px 0 #ffffff80, 0 2px 6px #12325f14;
+}
+.art-fim .art-fim-mini { height: 24px; width: auto; }
+.art-fim .art-fim-cartao li strong { font-weight: 900; font-variant-numeric: tabular-nums; }
+
+/* botão: o azul/vidro dos botões primários do app (como a aba ativa da Loja), sem a borda dourada */
+.art-fim .art-fim-voltar {
+  margin-top: 14px; padding: 11px 28px; min-height: 42px; cursor: pointer; border-radius: 999px;
+  font: 900 15px/1 Mesa Nunito, Nunito, system-ui, sans-serif; letter-spacing: .01em; color: var(--fim-acao-ink); text-shadow: 0 1px 2px #05306e66;
+  background: linear-gradient(170deg, var(--fim-acao-a) 0%, var(--fim-acao-b) 62%, var(--fim-acao-c) 100%);
+  border: 1px solid #0000; border-image: url(/mesa/arte/vidro/aro.webp) 96 / 999px;
+  box-shadow: inset 0 0 8px 1px #ffffff66, 0 8px 16px -6px #0a74dfaa;
+  transition: transform .15s cubic-bezier(.22, 1, .36, 1), box-shadow .15s;
+}
+.art-fim .art-fim-voltar:active { transform: scale(.96); }
+.art-fim .art-fim-voltar:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; box-shadow: inset 0 0 8px 1px #ffffff66, 0 0 0 5px #0a5cc0; }
+.art-fim .art-fim-espera {
+  margin: 14px 0 0; padding: 7px 14px; border-radius: 999px; opacity: 1;
+  font: 800 12.5px/1.25 Mesa Nunito, Nunito, system-ui, sans-serif; color: var(--fim-muted);
+  background: #ffffff40; box-shadow: inset 0 0 0 1px #ffffff80;
+}
+
+/* ---- tema escuro do app (data-tema-ui=classico): usa os tokens de vidro --vidro-* ---- */
+:root[data-tema-ui=classico] .art-fim .art-fim-cartao {
+  --fim-ink: #edf4ef; --fim-muted: #c3d3cb;
+  --fim-acao-a: #8cebcf; --fim-acao-b: #36c2a0; --fim-acao-c: #51dcba; --fim-acao-ink: #10241b;
+  border-color: var(--vidro-borda, #ffffff2e);
+  background: var(--vidro-fundo, linear-gradient(135deg, #ffffff30, #ffffff0c 38%, #00000014 62%, #fff2)), #0f1d23a6;
+  -webkit-backdrop-filter: blur(14px) saturate(150%) brightness(1.05); backdrop-filter: blur(14px) saturate(150%) brightness(1.05);
+  box-shadow: inset 0 0 14px 1px #ffffff1f, 0 26px 52px -14px #000000b3, 0 3px 10px #00000055;
+}
+:root[data-tema-ui=classico] .art-fim .art-fim-cartao::before { background: radial-gradient(120% 95% at 50% -18%, #ffffff40 0%, #ffffff14 40%, #ffffff00 70%); }
+:root[data-tema-ui=classico] .art-fim .art-fim-cartao h2 { text-shadow: 0 2px 10px #00000099; }
+:root[data-tema-ui=classico] .art-fim .art-fim-vencedores::before { background: radial-gradient(closest-side, #ffffff30, #ffffff00); }
+:root[data-tema-ui=classico] .art-fim .art-fim-rodada, :root[data-tema-ui=classico] .art-fim .art-fim-espera,
+:root[data-tema-ui=classico] .art-fim .art-fim-vencedores figcaption, :root[data-tema-ui=classico] .art-fim .art-fim-cartao li { background: #ffffff1c; box-shadow: inset 0 0 0 1px #ffffff2e; }
+:root[data-tema-ui=classico] .art-fim .art-fim-cartao li { border-color: color-mix(in srgb, var(--cor, #ffffff) 40%, #ffffff30); }
+:root[data-tema-ui=classico] .art-fim .art-fim-voltar { text-shadow: none; box-shadow: inset 0 0 8px 1px #ffffff55, 0 8px 16px -6px #36c2a0aa; }
+
+/* ---- Gráfico Leve: sem desfoque (mais opaco para manter a leitura) ---- */
+:root[data-grafico=leve] .art-fim .art-fim-cartao { -webkit-backdrop-filter: none; backdrop-filter: none; background: linear-gradient(135deg, #f6faffe6, #e4eefbe0); }
+:root[data-grafico=leve][data-tema-ui=classico] .art-fim .art-fim-cartao { background: #17262cee; }
+
+/* ---- celular em paisagem / telas baixas: cartão mais compacto, nunca cobre o jogo inteiro ---- */
+@media (max-height: 470px) {
+  .art-fim { padding: 8px; }
+  .art-fim .art-fim-cartao { width: min(420px, 100%); padding: 12px 16px 12px; }
+  .art-fim .art-fim-cartao h2 { font-size: 21px; margin: 2px 0 4px; }
+  .art-fim .art-fim-trofeu { width: 38px; margin-bottom: 4px; }
+  .art-fim .art-fim-piloto { height: 62px; }
+  .art-fim .art-fim-vencedores { gap: 12px; padding-top: 0; }
+  .art-fim .art-fim-vencedores figcaption { font-size: 11.5px; padding: 2px 10px; }
+  .art-fim .art-fim-cartao ul { margin-top: 7px; gap: 5px; }
+  .art-fim .art-fim-mini { height: 20px; }
+  .art-fim .art-fim-voltar { margin-top: 8px; padding: 9px 24px; min-height: 36px; font-size: 14px; }
+  .art-fim .art-fim-espera { margin-top: 8px; padding: 5px 12px; }
+}
+@media (min-width: 900px) and (min-height: 600px) {
+  .art-fim .art-fim-cartao { width: 392px; padding: 24px 26px 22px; }
+  .art-fim .art-fim-cartao h2 { font-size: 31px; }
+  .art-fim .art-fim-piloto { height: 104px; }
+}
+
+/* ---- acessibilidade ---- */
+@media (prefers-reduced-motion: reduce) { .art-fim .art-fim-cartao { animation: none; } .art-fim .art-fim-voltar { transition: none; } }
+
+/* Loja > itens de Edição Limitada (Nubo, Nubo Gamer…): o reflexo que passa pelo card usava clip-path (recorta um RETÂNGULO de bordas
+   duras que desliza pelo card). Aqui vira uma varredura de luz diagonal com máscara em gradiente: bordas suaves, sem retângulo.
+   Mesmo tempo (13 s) e mesma intensidade do original. */
+.le-reflexo {
+  clip-path: none !important;
+  -webkit-mask: linear-gradient(104deg, #0000 38%, #000 50%, #0000 62%) 90% 0 / 300% 100% no-repeat;
+  mask: linear-gradient(104deg, #0000 38%, #000 50%, #0000 62%) 90% 0 / 300% 100% no-repeat;
+  animation: 13s ease-in-out infinite le-reflexo-suave !important;
+}
+@keyframes le-reflexo-suave {
+  0%, 74%, 100% { opacity: 0; -webkit-mask-position: 90% 0; mask-position: 90% 0; }
+  78% { opacity: .55; }
+  86% { opacity: .55; }
+  92% { opacity: 0; -webkit-mask-position: 10% 0; mask-position: 10% 0; }
+}
+@media (prefers-reduced-motion: reduce) { .le-reflexo { display: none; } }
+:root[data-grafico=leve] .le-reflexo { display: none; }
+/* Gun Arena: aviso "Partida encontrada / Prepare-se!" no início da partida e das rodadas (23/11/2026) */
+.art-tela .art-encontrada {
+  position: absolute; left: 50%; top: 24%; z-index: 12; translate: -50% 0; pointer-events: none;
+  display: grid; justify-items: center; gap: 4px; text-align: center; width: max-content; max-width: 92%;
+  animation: art-encontrada-anim 2.3s cubic-bezier(.22, 1, .36, 1) both;
+}
+.art-tela .art-encontrada small {
+  padding: 5px 16px; border-radius: 999px; color: #fff; border: 2px solid #ffffffd9;
+  font: 900 13px/1 Mesa Nunito, Nunito, system-ui, sans-serif; letter-spacing: .18em; text-transform: uppercase;
+  background: linear-gradient(170deg, #5ab8ff 0%, #0a74df 62%, #2e97f5 100%);
+  box-shadow: inset 0 0 8px 1px #ffffff66, 0 6px 16px -6px #0a74dfbb; text-shadow: 0 1px 2px #05306e66;
+}
+.art-tela .art-encontrada strong {
+  font: 900 46px/1.05 Mesa Nunito, Nunito, system-ui, sans-serif; letter-spacing: -.01em; color: #fff;
+  -webkit-text-stroke: 2px #0a4aa0; paint-order: stroke fill;
+  text-shadow: 0 4px 0 #0a4aa0, 0 10px 26px #0a4aa099;
+}
+@keyframes art-encontrada-anim {
+  0% { opacity: 0; transform: scale(.55) translateY(18px); }
+  14% { opacity: 1; transform: scale(1.1); }
+  22% { transform: scale(1); }
+  78% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: scale(1.06) translateY(-12px); }
+}
+@media (max-height: 470px) { .art-tela .art-encontrada strong { font-size: 32px; } .art-tela .art-encontrada small { font-size: 11px; } }
+@media (prefers-reduced-motion: reduce) { .art-tela .art-encontrada { animation: art-encontrada-fade 2.3s both; } @keyframes art-encontrada-fade { 0%, 100% { opacity: 0; } 12%, 80% { opacity: 1; } } }
+
+/* Vitrine: pilotos do Gun Arena animados com a folha de 8 quadros (parado respirando + piscada) */
+.loja-piloto-vivo.loja-piloto-folha { --h: 78px; --fw: calc(var(--h) * var(--ar)); display: inline-block; width: var(--fw); height: var(--h); background-repeat: no-repeat; background-size: calc(var(--fw) * 8) var(--h); background-position: 0 0; animation: piloto-folha 5s steps(1, end) infinite; animation-delay: var(--atraso, 0s); filter: drop-shadow(0 4px 4px #0a214538); }
+.loja-piloto-folha > img.loja-piloto-img { opacity: 0 !important; width: 100% !important; height: 100% !important; filter: none !important; }
+@keyframes piloto-folha { 0% { background-position: calc(var(--fw) * -0) 0; } 18% { background-position: calc(var(--fw) * -1) 0; } 36% { background-position: calc(var(--fw) * -2) 0; } 54% { background-position: calc(var(--fw) * -3) 0; } 72% { background-position: calc(var(--fw) * -4) 0; } 74% { background-position: calc(var(--fw) * -5) 0; } 77% { background-position: calc(var(--fw) * -6) 0; } 79% { background-position: calc(var(--fw) * -7) 0; } 100% { background-position: calc(var(--fw) * -7) 0; } }
+@media (prefers-reduced-motion: reduce) { .loja-piloto-folha { animation: none !important; } }
+:root[data-grafico=leve] .loja-piloto-folha { animation: none !important; }
+
+/* Tela de vitória: a Tartaruga (pose mais larga) com o mesmo tamanho de carrinho dos outros pilotos */
+.art-fim-piloto[src*="tartaruga-"] { height: 72px; }
