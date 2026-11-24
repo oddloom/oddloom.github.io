@@ -9,21 +9,21 @@
       nota: 'Sua nota (opcional)', enviar: 'Enviar', cancelar: 'Cancelar', enviando: 'Enviando…',
       ok: 'Obrigado! Recebemos sua opinião.', fechar: 'Fechar', aguarde: 'Espere um minuto para enviar outra.',
       limite: 'Você já enviou bastante hoje. Tente amanhã.', sessao: 'Entre na sua conta e tente de novo.',
-      falha: 'Não foi possível enviar. Tente de novo.', curto: 'Escreva pelo menos 3 letras.', cont: function (n) { return n + '/500'; } },
+      falha: 'Não foi possível enviar. Tente de novo.', espere: function (n) { return 'Espere ' + n + ' s para enviar outra.'; }, curto: 'Escreva pelo menos 3 letras.', cont: function (n) { return n + '/500'; } },
     es: { botao: 'Enviar sugerencia o reportar un problema', link: '¿Qué tal? Danos tu opinión', titulo: 'Tu opinión',
       sub: 'El equipo lo lee todo. No pedimos tu correo.', tipos: ['Me gustó', 'No me gustó', 'Idea', 'Error'],
       ph: ['¿Qué es lo que más te gusta?', '¿Qué no te gustó?', '¿Qué te gustaría que tuviera?', '¿Qué salió mal? ¿Dónde y cómo pasó?'],
       nota: 'Tu nota (opcional)', enviar: 'Enviar', cancelar: 'Cancelar', enviando: 'Enviando…',
       ok: '¡Gracias! Recibimos tu opinión.', fechar: 'Cerrar', aguarde: 'Espera un minuto para enviar otra.',
       limite: 'Ya enviaste bastante hoy. Prueba mañana.', sessao: 'Inicia sesión e inténtalo de nuevo.',
-      falha: 'No se pudo enviar. Inténtalo de nuevo.', curto: 'Escribe al menos 3 letras.', cont: function (n) { return n + '/500'; } },
+      falha: 'No se pudo enviar. Inténtalo de nuevo.', espere: function (n) { return 'Espera ' + n + ' s para enviar otra.'; }, curto: 'Escribe al menos 3 letras.', cont: function (n) { return n + '/500'; } },
     en: { botao: 'Send a suggestion or report a problem', link: 'How was it? Share your feedback', titulo: 'Your feedback',
       sub: 'The team reads everything. We do not ask for your email.', tipos: ['Liked', 'Disliked', 'Idea', 'Bug'],
       ph: ['What do you like most?', 'What did you not like?', 'What would you like to see?', 'What went wrong? Where and how?'],
       nota: 'Your rating (optional)', enviar: 'Send', cancelar: 'Cancel', enviando: 'Sending…',
       ok: 'Thank you! We got your feedback.', fechar: 'Close', aguarde: 'Wait a minute before sending another.',
       limite: 'You sent plenty today. Try tomorrow.', sessao: 'Sign in and try again.',
-      falha: 'Could not send. Try again.', curto: 'Write at least 3 letters.', cont: function (n) { return n + '/500'; } }
+      falha: 'Could not send. Try again.', espere: function (n) { return 'Wait ' + n + ' s to send another.'; }, curto: 'Write at least 3 letters.', cont: function (n) { return n + '/500'; } }
   };
   var ICONES = ['👍', '👎', '💡', '🐞'], CHAVES = ['gostei', 'naogostei', 'ideia', 'bug'];
   function t() { var l = (document.documentElement.lang || 'pt').slice(0, 2); return L[l] || L.en; }
@@ -53,7 +53,9 @@
     '.fb-janela textarea{min-height:52px;font-size:14px;padding:6px 8px}.fb-estrelas button{font-size:22px}.fb-acoes button{padding:8px 16px}.fb-msg{min-height:14px}}';
   document.head.appendChild(css);
 
-  var dlg = null, estado = { tipo: 0, nota: 0, origem: '' }, ultimoEnvio = 0;
+  var dlg = null, estado = { tipo: 0, nota: 0, origem: '' }, ultimoEnvio = 0, ESPERA = 60;
+  try { ultimoEnvio = +localStorage.getItem('mesa-fb-ultimo') || 0; } catch (e) {}
+  function restante() { return Math.max(0, Math.ceil(ESPERA - (Date.now() - ultimoEnvio) / 1000)); }
 
   function versao() {
     try {
@@ -106,7 +108,7 @@
       msg.className = 'fb-msg'; msg.textContent = '';
       var texto = ta.value.trim();
       if (texto.length < 3) { msg.className = 'fb-msg erro'; msg.textContent = s.curto; return; }
-      if (Date.now() - ultimoEnvio < 60000) { msg.className = 'fb-msg erro'; msg.textContent = s.aguarde; return; }
+      if (restante() > 0) { corre(); return; }
       var conta = window.__mesaConta, perfil = conta && conta.perfil();
       enviar.disabled = true; msg.textContent = s.enviando;
       var corpo = {
@@ -117,15 +119,24 @@
         .then(function (r) { return r.json().catch(function () { return {}; }); })
         .then(function (d) {
           if (d && d.ok) {
-            ultimoEnvio = Date.now(); ta.value = ''; estado.nota = 0; atualiza();
+            ultimoEnvio = Date.now(); try { localStorage.setItem('mesa-fb-ultimo', String(ultimoEnvio)); } catch (e) {} ta.value = ''; estado.nota = 0; atualiza();
             msg.className = 'fb-msg ok'; msg.textContent = s.ok; enviar.hidden = true; cancelar.textContent = s.fechar;
             setTimeout(function () { try { dlg.close(); } catch (e) {} }, 2200);
           } else {
-            msg.className = 'fb-msg erro'; msg.textContent = (d && s[d.motivo]) || s.falha; enviar.disabled = false;
+            if (d && d.motivo === 'aguarde' && d.faltam > 0) { ultimoEnvio = Date.now() - (ESPERA - d.faltam) * 1000; corre(); }
+            else { msg.className = 'fb-msg erro'; msg.textContent = (d && s[d.motivo]) || s.falha; enviar.disabled = false; }
           }
         })
         .catch(function () { msg.className = 'fb-msg erro'; msg.textContent = s.falha; enviar.disabled = false; });
     };
+    var timer = 0;
+    function corre() {
+      clearInterval(timer); enviar.disabled = true; msg.className = 'fb-msg erro';
+      var passo = function () { var n = restante(); if (n <= 0) { clearInterval(timer); msg.className = 'fb-msg'; msg.textContent = ''; enviar.disabled = false; return; } msg.textContent = s.espere(n); };
+      passo(); timer = setInterval(passo, 250);
+    }
+    dlg.addEventListener('close', function () { clearInterval(timer); });
+    dlg.__corre = corre;
     dlg.__reset = function () { estado.tipo = 0; estado.nota = 0; ta.value = ''; msg.textContent = ''; enviar.hidden = false; enviar.disabled = false; cancelar.textContent = s.cancelar; atualiza(); };
     dlg.__reset();
   }
@@ -134,6 +145,7 @@
     if (!dlg) monta();
     estado.origem = origem || ''; dlg.__reset();
     if (!dlg.open) dlg.showModal();
+    if (restante() > 0) dlg.__corre();
   }
   window.__mesaFeedback = {
     botao: function (origem) {
