@@ -3299,6 +3299,11 @@
     paintAccount();
     $('btnChallenges').textContent = T('chal.btn') + (relicPending().coins ? ' !' : '');
     $('btnFeedback').textContent = T('fb.btn') + (save.feedbackRewarded ? '' : ' +' + FEEDBACK_COINS);
+    const storeBtn = $('btnPlayStore');
+    if (storeBtn) {
+      storeBtn.hidden = APP;
+      if (!APP) storeBtn.setAttribute('aria-label', T('playstore.label'));
+    }
   }
   // ---------- coleção de relíquias + altar de estrelas (02/11) ----------
   // Motivo pra seguir fora das fases: cada chefe vencido no Normal guarda uma relíquia; juntar estrelas enche o altar.

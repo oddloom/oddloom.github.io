@@ -84,6 +84,26 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 4px; }
 .menu-toggles { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .menu-foot { font-family: var(--f-body); font-size: 11px; color: rgba(168,156,132,.6); letter-spacing: .35em; margin-top: 8px; }
 .menu-foot a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.play-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  box-sizing: border-box; height: 52px; padding: 0 16px 0 12px;
+  color: #fff; text-decoration: none;
+  background: #000;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.4);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.play-badge[hidden] { display: none !important; }
+.play-badge:hover { background: #111; }
+.play-badge:focus-visible { outline: 2px solid #f0be5a; outline-offset: 3px; }
+.play-badge-icon { width: 22px; height: 22px; flex: none; display: block; }
+.play-badge-text { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; line-height: 1.05; font-family: Arial, Helvetica, sans-serif; text-align: left; }
+.play-badge-text small { font-size: 9px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.86); }
+.play-badge-text strong { font-size: 16px; font-weight: 700; letter-spacing: .01em; color: #fff; }
+@media (prefers-reduced-motion: reduce) { .play-badge { box-shadow: none; } }
+
 
 /* mapa: medalhões hexagonais de joia subindo a pirâmide */
 #screen-map { background: #0a0907; }

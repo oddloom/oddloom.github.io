@@ -94,6 +94,7 @@
       'ad.tag': 'ANÚNCIO', 'ad.slot': 'Espaço do anúncio', 'ad.reward': 'recompensa: +5 movimentos', 'ad.next': 'entre fases',
       'ad.rewardIn': 'Recompensa em', 'ad.closeIn': 'Fechar em', 'ad.rewardOk': 'Recompensa liberada!', 'ad.skip': 'PULAR', 'ad.close': 'FECHAR',
       'loading': 'Abrindo o templo…',
+      'playstore.label': 'Disponível no Google Play', 'playstore.over': 'Disponível no', 'playstore.name': 'Google Play',
     },
     en: {
       'shop.info': 'About {item}',
@@ -188,6 +189,7 @@
       'ad.tag': 'AD', 'ad.slot': 'Ad space', 'ad.reward': 'reward: +5 moves', 'ad.next': 'between levels',
       'ad.rewardIn': 'Reward in', 'ad.closeIn': 'Close in', 'ad.rewardOk': 'Reward unlocked!', 'ad.skip': 'SKIP', 'ad.close': 'CLOSE',
       'loading': 'Opening the temple…',
+      'playstore.label': 'Get it on Google Play', 'playstore.over': 'Get it on', 'playstore.name': 'Google Play',
     },
   };
   const GEM_NAMES = {
