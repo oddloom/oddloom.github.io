@@ -1,0 +1,528 @@
+/* Campeões da Season: troféu flutuante ao lado do pergaminho, e a página dos melhores. */
+
+.mh-sino-col > .mh-trofeu {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: calc(100% + 4px);
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  padding: 0;
+  margin-left: -86px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  box-shadow: none;
+  outline-offset: 2px;
+  cursor: pointer;
+}
+.mh-sino-col > .mh-trofeu::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url(/mesa/arte/mesa-ui/trofeu-campeoes.webp?v=1) center/contain no-repeat;
+  filter: drop-shadow(0 5px 5px #2a3f6a40);
+  animation: mhFlutua 3.7s ease-in-out .2s infinite;
+  will-change: transform;
+}
+.mh-sino-col > .mh-trofeu:active::before { transform: scale(.92); animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .mh-sino-col > .mh-trofeu::before { animation: none; }
+}
+:root .mh-sino-col > .mh-trofeu {
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Ícones (troféu, dado, pergaminho) ficam fixos no topo, com faixa reservada para não cobrir os jogos. */
+.tela.inicio {
+  overflow-x: hidden;
+}
+.tela.inicio .mh-cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding-bottom: 62px;
+  box-sizing: border-box;
+}
+.tela.inicio .mh-sino-col > .mh-missoes,
+.tela.inicio .mh-sino-col > .mh-roleta,
+.tela.inicio .mh-sino-col > .mh-trofeu {
+  z-index: 31;
+}
+
+dialog.cp-pagina {
+  --cp-ink: #fff8e8;
+  --cp-muted: #d7c9a4;
+  --cp-gold: #ffd56a;
+  --cp-gold-deep: #c48412;
+  --cp-silver: #d5e3f5;
+  --cp-bronze: #e0a16a;
+  --cp-epic: #c9a6ff;
+  --cp-bg: #140d28;
+  --cp-sat: env(safe-area-inset-top, 0px);
+  --cp-sab: env(safe-area-inset-bottom, 0px);
+  --cp-sal: env(safe-area-inset-left, 0px);
+  --cp-sar: env(safe-area-inset-right, 0px);
+  box-sizing: border-box;
+  inset: 0;
+  width: 100%;
+  max-width: 100vw;
+  min-width: 0;
+  height: 100%;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--cp-ink);
+  background:
+    radial-gradient(120% 80% at 50% -10%, #5a3a16 0%, transparent 55%),
+    radial-gradient(90% 50% at 100% 0%, #3a1a6a88 0%, transparent 50%),
+    linear-gradient(180deg, #1b1236 0%, #120a22 42%, #0e0a1a 100%);
+  overflow-x: hidden;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+}
+dialog.cp-pagina::backdrop { background: #0a0614f0; }
+dialog.cp-pagina:focus { outline: none; }
+
+.cp-topo {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  padding: calc(8px + var(--cp-sat)) calc(12px + var(--cp-sar)) 8px calc(12px + var(--cp-sal));
+  background: linear-gradient(#1b1236f2, #1b1236cc 70%, transparent);
+}
+.cp-voltar, .cp-fechar, .cp-espaco {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff14;
+  color: var(--cp-ink);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  flex: none;
+}
+.cp-espaco {
+  visibility: hidden;
+  pointer-events: none;
+  background: transparent;
+}
+.cp-voltar { font-size: 22px; }
+.cp-topo h2 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  font: 800 clamp(14px, 4.6vw, 18px)/1.2 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  color: var(--cp-gold);
+  text-align: center;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+.cp-topo .cp-fechar { margin-left: 0; }
+
+.cp-corpo {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 0 calc(16px + var(--cp-sar)) calc(24px + var(--cp-sab)) calc(16px + var(--cp-sal));
+  -webkit-overflow-scrolling: touch;
+}
+
+.cp-hero {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 4px 0 18px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.cp-hero-arte {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 100%;
+  max-height: 40vh;
+  overflow: hidden;
+  background: transparent;
+}
+.cp-hero img {
+  display: block;
+  width: auto;
+  height: min(40vh, 168px);
+  max-height: 40vh;
+  max-width: min(72vw, 180px);
+  object-fit: contain;
+  object-position: center bottom;
+  background: transparent !important;
+  box-shadow: none;
+  border: 0;
+  filter: none;
+  animation: cpLumi 3.8s ease-in-out infinite;
+}
+@keyframes cpLumi {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.cp-hero h1 {
+  margin: 4px 0 0;
+  max-width: 100%;
+  font: 900 clamp(20px, 6.4vw, 28px)/1.15 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  letter-spacing: -0.03em;
+  background: linear-gradient(180deg, #fff6d2 0%, #ffd56a 55%, #e0a020 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+.cp-temporada {
+  margin: 0;
+  max-width: 100%;
+  padding: 0 8px;
+  box-sizing: border-box;
+  font: 800 clamp(13px, 4vw, 15px)/1.3 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  color: var(--cp-gold);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+.cp-conta {
+  margin: 0;
+  max-width: 100%;
+  font: 700 13px/1.3 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  color: var(--cp-muted);
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #ffffff12;
+  border: 1px solid #ffd56a33;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: center;
+}
+.cp-convite {
+  margin: 4px 0 0;
+  max-width: 28em;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 8px;
+  font: 600 13px/1.45 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  color: #efe3c4;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.cp-aviso {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #ffd56a22;
+  border: 1px solid #ffd56a55;
+  color: #ffe9a8;
+  font: 700 12.5px/1.4 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  text-align: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.cp-podio {
+  display: grid;
+  grid-template-columns: 1fr 1.18fr 1fr;
+  align-items: end;
+  gap: 8px;
+  margin: 6px 0 20px;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.cp-lugar {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px 8px 14px;
+  border: 1px solid #ffffff22;
+  border-radius: 22px 22px 16px 16px;
+  background: #ffffff0e;
+  cursor: pointer;
+  text-align: center;
+  color: inherit;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.cp-lugar .foto {
+  width: 56px;
+  height: 56px;
+  font-size: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  background: var(--cor, #7856ff);
+  color: #fff;
+  box-shadow: 0 0 0 3px #ffffff20;
+  overflow: hidden;
+}
+.cp-lugar .foto svg, .cp-lugar .foto img { width: 100%; height: 100%; object-fit: cover; }
+.cp-lugar strong {
+  display: block;
+  font-size: 13px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-lugar .cp-pts {
+  font: 800 12px/1 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  color: var(--cp-gold);
+  font-variant-numeric: tabular-nums;
+}
+.cp-corona {
+  width: 34px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px #0008);
+}
+.cp-medalha {
+  font-size: 22px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px #0008);
+}
+.cp-lugar.p1 {
+  padding-top: 18px;
+  padding-bottom: 28px;
+  background: linear-gradient(180deg, #ffd56a33, #ffb02014 40%, #ffffff0a);
+  border-color: #ffd56a88;
+  box-shadow: 0 0 28px #ffd56a55, inset 0 0 18px #ffd56a22;
+  animation: cpBrilho 2.8s ease-in-out infinite;
+  z-index: 1;
+}
+.cp-lugar.p1 .foto {
+  width: 72px;
+  height: 72px;
+  font-size: 28px;
+  box-shadow: 0 0 0 4px #ffd56a, 0 0 22px #ffd56acc;
+}
+.cp-lugar.p2 {
+  background: linear-gradient(180deg, #cfd9e666, #ffffff0a);
+  border-color: #c5d4e888;
+  box-shadow: 0 0 16px #9db4d044;
+}
+.cp-lugar.p2 .foto { box-shadow: 0 0 0 3px #d5e3f5, 0 0 12px #d5e3f588; }
+.cp-lugar.p3 {
+  background: linear-gradient(180deg, #e0a16a44, #ffffff0a);
+  border-color: #e0a16a88;
+  box-shadow: 0 0 16px #e0a16a44;
+}
+.cp-lugar.p3 .foto { box-shadow: 0 0 0 3px #e0a16a, 0 0 12px #e0a16a88; }
+.cp-lugar:active { transform: scale(.97); }
+@keyframes cpBrilho {
+  0%, 100% { box-shadow: 0 0 18px #ffd56a44, inset 0 0 14px #ffd56a18; }
+  50% { box-shadow: 0 0 34px #ffd56a88, inset 0 0 22px #ffd56a33; }
+}
+
+.cp-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.cp-linha {
+  display: grid;
+  grid-template-columns: 36px 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 16px;
+  border: 1px solid #ffffff18;
+  background: #ffffff0c;
+  color: inherit;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  cursor: pointer;
+  text-align: left;
+}
+.cp-linha:active { transform: scale(.99); background: #ffffff16; }
+.cp-linha .cp-pos {
+  text-align: center;
+  font: 900 14px/1 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  color: #ffffff99;
+  font-variant-numeric: tabular-nums;
+}
+.cp-linha .foto {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  background: var(--cor, #7856ff);
+  color: #fff;
+  overflow: hidden;
+}
+.cp-linha .foto svg, .cp-linha .foto img { width: 100%; height: 100%; object-fit: cover; }
+.cp-nome { display: grid; min-width: 0; }
+.cp-nome strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 14px;
+}
+.cp-nome span { color: #ffffff8a; font-size: 11px; }
+.cp-linha .cp-pts {
+  color: var(--cp-gold);
+  font: 800 14px/1 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.cp-linha.eu { border-color: #7fe0ff; background: #7fe0ff1c; }
+.cp-linha.r-epico { border-color: #c9a6ff55; }
+.cp-linha.r-raro { border-color: #6db6ff55; }
+
+.cp-eu {
+  position: sticky;
+  bottom: 0;
+  margin-top: 12px;
+  padding-top: 8px;
+  background: linear-gradient(transparent, #120a22 30%);
+}
+.cp-vazio {
+  margin: 20px 8px;
+  text-align: center;
+  color: var(--cp-muted);
+  font: 600 14px/1.45 "Mesa Nunito", Nunito, system-ui, sans-serif;
+}
+
+.cp-perfil {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 12px 8px 28px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+.cp-perfil .foto-grande { margin: 8px 0 4px; }
+.cp-perfil .foto-grande .foto {
+  width: 104px;
+  height: 104px;
+  font-size: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  background: var(--cor, #7856ff);
+  color: #fff;
+  box-shadow: 0 0 0 4px #ffd56a66, 0 8px 24px #0006;
+  overflow: hidden;
+}
+.cp-perfil .foto-grande .foto svg,
+.cp-perfil .foto-grande .foto img { width: 100%; height: 100%; object-fit: cover; }
+.cp-perfil h1 {
+  margin: 0;
+  max-width: 100%;
+  font: 800 clamp(20px, 6vw, 26px)/1.2 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+.cp-perfil .cp-posicao-grande {
+  margin: 0;
+  font: 800 14px/1.3 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  color: var(--cp-gold);
+}
+.cp-perfil .cp-stats {
+  margin: 0;
+  color: var(--cp-muted);
+  font: 600 13px/1.4 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  overflow-wrap: anywhere;
+}
+.cp-acoes {
+  display: grid;
+  gap: 10px;
+  width: min(320px, 100%);
+  margin-top: 12px;
+  box-sizing: border-box;
+}
+.cp-acoes button, .cp-acoes .cp-botao {
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  font: 800 15px "Mesa Nunito", Nunito, system-ui, sans-serif;
+  cursor: pointer;
+  color: #1a1208;
+  background: linear-gradient(180deg, #ffe08a, #f0b430);
+  box-shadow: 0 4px 14px #f0b43055;
+}
+.cp-acoes .secundario {
+  color: var(--cp-ink);
+  background: #ffffff18;
+  box-shadow: none;
+  border: 1px solid #ffffff28;
+}
+.cp-acoes button:disabled { opacity: .6; cursor: default; box-shadow: none; }
+.cp-status {
+  margin: 4px 0 0;
+  min-height: 1.2em;
+  font: 600 13px/1.4 "Mesa Nunito", Nunito, system-ui, sans-serif;
+  color: var(--cp-muted);
+}
+
+@media (min-width: 720px) {
+  dialog.cp-pagina {
+    inset: auto;
+    width: min(480px, 100vw);
+    max-width: min(480px, 100vw);
+    height: min(860px, 100dvh);
+    max-height: min(860px, 100dvh);
+    margin: auto;
+    border-radius: 28px;
+    box-shadow: 0 24px 80px #000a;
+  }
+  dialog.cp-pagina::backdrop { background: #0a0614cc; backdrop-filter: blur(8px); }
+  .cp-hero img { height: min(40vh, 200px); max-width: min(72vw, 200px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-hero img, .cp-lugar.p1 { animation: none; }
+}
