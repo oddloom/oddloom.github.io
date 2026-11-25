@@ -507,16 +507,24 @@
     track('review_prompt', {});
     setTimeout(() => { ir.requestReview().catch(() => {}); }, 1800);
   }
-  function openFeedback() {
+  function openFeedback(onBack) {
     const on = ART.nodeImg('vstar') || ART.icon('star', 64), off = ART.nodeImg('vstar0') || ART.icon('star0', 64);
-    let stars = 0;
+    let stars = 0, cat = 'improve';
+    const cats = [['idea', T('fb.cat.idea')], ['improve', T('fb.cat.improve')], ['bug', T('fb.cat.bug')]];
     const card = openModal('<h2 class="metal">' + T('fb.title') + '</h2><div class="orn"><i></i></div>' +
       '<p class="save-summary">' + T('fb.ask') + '</p>' +
+      '<div class="fb-cats">' + cats.map(([k, label]) => '<button type="button" class="fb-cat' + (k === cat ? ' on' : '') + '" data-cat="' + k + '">' + label + '</button>').join('') + '</div>' +
       '<div class="fb-stars">' + [1, 2, 3, 4, 5].map((n) => '<button type="button" data-n="' + n + '" aria-label="' + n + '"><img alt="" src="' + off + '"></button>').join('') + '</div>' +
-      '<textarea id="fbText" class="save-code fb-text" maxlength="500" placeholder="' + T('fb.placeholder') + '"></textarea>' +
+      '<textarea id="fbText" class="save-code fb-text" maxlength="460" placeholder="' + T('fb.placeholder') + '"></textarea>' +
       '<div class="btns"><button class="btn stack" id="mFbSend" type="button" disabled>' + T('fb.send') + (save.feedbackRewarded ? '' : '<span class="sub">' + T('fb.reward', { n: FEEDBACK_COINS }) + '</span>') + '</button>' +
       '<button class="btn dark small" id="mFbBack" type="button">' + T('menu.back') + '</button></div>');
     card.classList.add('energy-card');
+    card.querySelectorAll('.fb-cat').forEach((b) => {
+      b.onclick = () => {
+        Sound.play('click'); cat = b.dataset.cat;
+        card.querySelectorAll('.fb-cat').forEach((x) => x.classList.toggle('on', x === b));
+      };
+    });
     card.querySelectorAll('.fb-stars button').forEach((b) => {
       b.onclick = () => {
         Sound.play('click'); stars = +b.dataset.n;
@@ -524,13 +532,17 @@
         card.querySelector('#mFbSend').disabled = false;
       };
     });
-    card.querySelector('#mFbBack').onclick = () => { Sound.play('click'); closeModal(); };
+    card.querySelector('#mFbBack').onclick = () => { Sound.play('click'); closeModal(); if (onBack) onBack(); };
     card.querySelector('#mFbSend').onclick = async (ev) => {
       const b = ev.currentTarget; if (!stars) return;
       Sound.play('click'); b.disabled = true;
       try {
+        const tag = { idea: '[Sugestão]', improve: '[Melhorar]', bug: '[Bug]' }[cat] || '[Feedback]';
+        const curLvl = scene === 'play' && level && Number.isInteger(level.id) ? ' [Fase ' + level.id + ']' : '';
+        const rawText = card.querySelector('#fbText').value.trim();
+        const fullText = (tag + curLvl + (rawText ? ' ' + rawText : '')).slice(0, 500);
         const r = await fetch((window.LR_RECORDS_API || '') + '/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ stars, text: card.querySelector('#fbText').value.slice(0, 500), platform: APP ? 'android' : 'web', build: window.LR_BUILD || 'web', lang: I18N.lang, level: save.unlocked }) });
+          body: JSON.stringify({ stars, text: fullText, platform: APP ? 'android' : 'web', build: window.LR_BUILD || 'web', lang: I18N.lang, level: scene === 'play' && level && Number.isInteger(level.id) ? level.id : save.unlocked }) });
         if (!r.ok) throw new Error('http_' + r.status);
         track('feedback_send', { value: stars });
         let msg = T('fb.thanks');
@@ -2839,6 +2851,7 @@
       '<div class="btns"><button class="btn" id="mResume" type="button">' + T('resume') + '</button>' +
       '<button class="btn dark" id="mRestart" type="button">' + T('restart') + '</button>' +
       '<button class="btn dark" id="mMap" type="button">' + T('map') + '</button>' +
+      '<button class="btn dark small" id="mFb" type="button">' + T('fb.btn') + '</button>' +
       '<button class="btn dark small" id="mGfx" type="button"></button></div>' +
       '<div class="toggle-row icons"><button class="icon-btn toggle" id="mSfx" type="button">' + $('btnSfx').innerHTML + '</button><button class="icon-btn toggle" id="mMusic" type="button">' + $('btnMusic').innerHTML + '</button></div>');
     const paint = () => {
@@ -2846,6 +2859,7 @@
     };
     const paintGfx = () => { card.querySelector('#mGfx').textContent = T('gfx') + ': ' + T('gfx.' + gfxPref); };
     paint(); paintGfx();
+    card.querySelector('#mFb').onclick = () => { Sound.play('click'); openFeedback(openPause); };
     card.querySelector('#mGfx').onclick = () => { Sound.play('click'); gfxPref = { auto: 'full', full: 'lite', lite: 'auto' }[gfxPref] || 'auto'; lsSet(GFX_KEY, gfxPref); applyGfx(); paintGfx(); };
     card.querySelector('#mResume').onclick = () => { Sound.play('click'); closeModal(); };
     card.querySelector('#mRestart').hidden = !!level.run; // desafio não recomeça a etapa
