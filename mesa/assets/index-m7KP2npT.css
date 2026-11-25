@@ -91,3 +91,5 @@
 @keyframes mhFlutua{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-4px) rotate(2deg)}}
 @media (prefers-reduced-motion:reduce){:root .mh-sino-col>.mh-missoes::before{animation:none}}
 :root .mh-sino-col>.mh-missoes.mh-missoes{background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+
+@keyframes damasPulsoOb{0%,100%{box-shadow:0 0 0 3px #ffb703,0 0 14px 4px rgba(255,183,3,.75)}50%{box-shadow:0 0 0 5px #ffe066,0 0 22px 8px rgba(255,214,70,.95)}}.damas-mesa .casa-damas.obrigatoria:before{border:0;border-radius:50%;inset:5%;animation:damasPulsoOb 1.15s ease-in-out infinite}.damas-mesa .casa-damas.destino:after{width:34%;box-shadow:0 0 14px 6px rgba(255,224,102,.88)}

@@ -1,29 +1,37 @@
-/* Ícones do início Jogos: troféu, dado e pergaminho discretos, sem flutuar, com leve brilho atrás e duplo toque para ocultar. */
+/* Ãcones da pÃ¡gina inicial (Jogos): fixos na lateral direita acima do Perfil, visÃ­veis apenas na primeira pÃ¡gina Jogos. */
 
 @keyframes mhLuzSuave {
-  0%, 100% { opacity: 0.26; transform: scale(0.92); }
-  50% { opacity: 0.62; transform: scale(1.08); }
+  0%, 100% { opacity: 0.28; transform: scale(0.92); }
+  50% { opacity: 0.64; transform: scale(1.08); }
 }
 
 .mh-icones-jogos {
   display: none;
+  flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  height: 28px;
-  padding: 0 12px;
-  margin: -4px 0 -24px;
-  flex: none;
-  position: relative;
-  z-index: 4;
+  gap: 10px;
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+  z-index: 45;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
   pointer-events: none;
-  transition: opacity 0.22s ease, transform 0.22s ease, height 0.22s ease, margin 0.22s ease;
+  transition: opacity 0.22s ease, transform 0.22s ease;
 }
-.tela.inicio.jogos-colorido .mh-rolagem > .mh-icones-jogos {
+.mh-icones-jogos.mh-visivel {
   display: flex;
+}
+body.mh-home-icones-ocultos .mh-icones-jogos {
+  opacity: 0;
+  transform: translateX(14px) scale(0.9);
+  pointer-events: none !important;
+}
+body.mh-home-icones-ocultos .mh-icones-jogos > * {
+  pointer-events: none !important;
 }
 .tela.inicio.jogos-colorido .mh-rolagem {
   padding-top: 2px !important;
@@ -40,17 +48,6 @@
   margin-top: 0 !important;
   padding-top: 0 !important;
 }
-.tela.inicio.jogos-colorido.mh-icones-ocultos .mh-rolagem > .mh-icones-jogos {
-  opacity: 0;
-  height: 0;
-  margin: 0 0 -8px;
-  transform: translateY(-6px) scale(0.92);
-  overflow: hidden;
-  pointer-events: none;
-}
-.tela.inicio.jogos-colorido.mh-icones-ocultos .mh-icones-jogos > * {
-  pointer-events: none !important;
-}
 .mh-icones-jogos > .mh-trofeu,
 .mh-icones-jogos > .mh-dado,
 .mh-icones-jogos > .mh-missoes {
@@ -59,25 +56,26 @@
   left: auto;
   top: auto;
   z-index: 3;
-  width: 26px;
-  height: 26px;
-  min-width: 26px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
   padding: 0;
   margin: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   background: transparent;
   box-shadow: none;
   outline-offset: 2px;
   cursor: pointer;
   overflow: visible;
-  opacity: 0.92;
+  opacity: 0.96;
   transition: transform 0.14s ease, opacity 0.15s ease;
 }
 .mh-icones-jogos > .mh-trofeu:hover,
 .mh-icones-jogos > .mh-dado:hover,
 .mh-icones-jogos > .mh-missoes:hover {
   opacity: 1;
+  transform: scale(1.06);
 }
 .mh-icones-jogos > .mh-dado {
   cursor: pointer;
@@ -87,7 +85,7 @@
 .mh-icones-jogos > .mh-missoes::after {
   content: "";
   position: absolute;
-  inset: -6px;
+  inset: -7px;
   z-index: -1;
   border-radius: 50%;
   pointer-events: none;
@@ -95,14 +93,14 @@
   will-change: opacity, transform;
 }
 .mh-icones-jogos > .mh-trofeu::after {
-  background: radial-gradient(circle, rgba(255, 214, 102, 0.52) 0%, rgba(255, 214, 102, 0) 70%);
+  background: radial-gradient(circle, rgba(255, 214, 102, 0.54) 0%, rgba(255, 214, 102, 0) 70%);
 }
 .mh-icones-jogos > .mh-dado::after {
-  background: radial-gradient(circle, rgba(255, 118, 128, 0.48) 0%, rgba(255, 118, 128, 0) 70%);
+  background: radial-gradient(circle, rgba(255, 118, 128, 0.5) 0%, rgba(255, 118, 128, 0) 70%);
   animation-delay: 0.9s;
 }
 .mh-icones-jogos > .mh-missoes::after {
-  background: radial-gradient(circle, rgba(130, 188, 255, 0.5) 0%, rgba(130, 188, 255, 0) 70%);
+  background: radial-gradient(circle, rgba(130, 188, 255, 0.52) 0%, rgba(130, 188, 255, 0) 70%);
   animation-delay: 1.8s;
 }
 .mh-icones-jogos > .mh-trofeu::before,
@@ -114,7 +112,7 @@
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
-  filter: drop-shadow(0 2px 3px #2a3f6a30);
+  filter: drop-shadow(0 3px 5px rgba(24, 38, 72, 0.28));
   animation: none !important;
 }
 .mh-icones-jogos > .mh-trofeu::before {
@@ -136,18 +134,22 @@
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
-  filter: drop-shadow(0 2px 3px #2a3f6a30);
+  filter: drop-shadow(0 3px 5px rgba(24, 38, 72, 0.28));
   animation: none !important;
 }
 .mh-icones-jogos > .mh-trofeu:active img,
 .mh-icones-jogos > .mh-dado:active img,
-.mh-icones-jogos > .mh-missoes:active img {
-  transform: scale(.9);
-}
+.mh-icones-jogos > .mh-missoes:active img,
 .mh-icones-jogos > .mh-trofeu:active::before,
 .mh-icones-jogos > .mh-dado:active::before,
 .mh-icones-jogos > .mh-missoes:active::before {
   transform: scale(.9);
+}
+@media (min-width: 768px) {
+  .mh-icones-jogos {
+    right: max(18px, calc(50vw - 300px));
+    bottom: 92px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .mh-icones-jogos > .mh-trofeu::after,
@@ -167,7 +169,7 @@
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
-/* Fora da página Jogos, ou no cabeçalho compartilhado, os ícones não aparecem. */
+/* Fora da pÃ¡gina Jogos, ou no cabeÃ§alho compartilhado, os Ã­cones nÃ£o aparecem. */
 .mh-cabecalho .mh-trofeu,
 .mh-cabecalho .mh-dado,
 .mh-cabecalho .mh-missoes,

@@ -148,18 +148,30 @@ function limparIconesDoCabecalho() {
   nos.forEach((n) => n.remove())
 }
 
+function estaNaPrimeiraPaginaJogos() {
+  const tela = document.querySelector(".tela.inicio.jogos-colorido")
+  if (!tela || tela.hidden) return false
+  // Garante que não há outra aba/jogo ativo e que a aba "Jogos" está selecionada (ou não há abas)
+  const abaJogos = tela.querySelector('[role="tab"]')
+  if (abaJogos && abaJogos.getAttribute("aria-selected") === "false") return false
+  return true
+}
+
 function garantirAtalho() {
   limparIconesDoCabecalho()
-  const tela = document.querySelector(".tela.inicio.jogos-colorido")
-  if (!tela) return
-  const rolagem = tela.querySelector(".mh-rolagem") || tela.querySelector(".rolagem")
-  if (!rolagem) return
-  let faixa = rolagem.querySelector(":scope > .mh-icones-jogos")
+  // Remove eventuais restos antigos dentro da rolagem
+  document.querySelectorAll(".mh-rolagem > .mh-icones-jogos, .rolagem > .mh-icones-jogos").forEach((n) => n.remove())
+  const visivel = estaNaPrimeiraPaginaJogos()
+  let faixa = document.body.querySelector(":scope > .mh-icones-jogos")
+  if (!visivel) {
+    if (faixa) faixa.classList.remove("mh-visivel")
+    return
+  }
   if (!faixa) {
-    faixa = el("div", { className: "mh-icones-jogos" })
-    rolagem.insertBefore(faixa, rolagem.firstChild)
-  } else if (rolagem.firstElementChild !== faixa) {
-    rolagem.insertBefore(faixa, rolagem.firstChild)
+    faixa = el("div", { className: "mh-icones-jogos mh-visivel" })
+    document.body.append(faixa)
+  } else {
+    faixa.classList.add("mh-visivel")
   }
   let t = faixa.querySelector(":scope > .mh-trofeu")
   if (!t) {
@@ -404,17 +416,14 @@ observarSeguro(garantirAtalho)
 // Duplo clique / duplo toque na página inicial alterna a visibilidade dos 3 ícones (Campeões, Roleta, Missões)
 const CHAVE_OCULTOS = "mesa-home-icones-ocultos"
 function aplicarEstadoIconesHome() {
-  const home = document.querySelector(".tela.inicio.jogos-colorido")
-  if (!home) return
   let oculto = false
   try { oculto = localStorage.getItem(CHAVE_OCULTOS) === "1" } catch {}
-  home.classList.toggle("mh-icones-ocultos", oculto)
+  document.body.classList.toggle("mh-home-icones-ocultos", oculto)
 }
 function alternarIconesHome() {
-  const home = document.querySelector(".tela.inicio.jogos-colorido")
-  if (!home) return
-  const proximo = !home.classList.contains("mh-icones-ocultos")
-  home.classList.toggle("mh-icones-ocultos", proximo)
+  if (!estaNaPrimeiraPaginaJogos()) return
+  const proximo = !document.body.classList.contains("mh-home-icones-ocultos")
+  document.body.classList.toggle("mh-home-icones-ocultos", proximo)
   try { localStorage.setItem(CHAVE_OCULTOS, proximo ? "1" : "0") } catch {}
 }
 function ehAlvoInterativoHome(alvo) {
