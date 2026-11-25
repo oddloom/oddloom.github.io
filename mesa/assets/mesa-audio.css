@@ -1,0 +1,257 @@
+/* Mesa — Controle padrão de volume (Música e Efeitos Sonoros) no app e em todos os minigames */
+.mesa-vol-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 12px;
+  border: 1.5px solid rgba(98, 122, 180, 0.28);
+  background: rgba(255, 255, 255, 0.88);
+  color: #24345c;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(24, 38, 78, 0.12);
+  transition: transform 0.14s ease, background 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
+}
+
+.mesa-vol-btn:hover {
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(24, 38, 78, 0.18);
+}
+
+.mesa-vol-btn:active {
+  transform: scale(0.93);
+}
+
+.mesa-vol-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mesa-vol-btn.mudo {
+  color: #8b95b0;
+  opacity: 0.82;
+}
+
+.mesa-vol-btn.flutuante {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top, 10px));
+  right: 54px;
+  z-index: 950;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Popover flutuante padrão */
+.mesa-vol-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  background: rgba(14, 22, 46, 0.22);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+
+.mesa-vol-backdrop.visivel {
+  opacity: 1;
+}
+
+.mesa-vol-painel {
+  position: fixed;
+  z-index: 9991;
+  width: min(300px, calc(100vw - 24px));
+  padding: 14px 16px 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(242, 246, 255, 0.97) 100%);
+  border: 2px solid rgba(110, 140, 215, 0.35);
+  box-shadow: 0 14px 36px rgba(16, 28, 64, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: #1f2b4d;
+  font-family: 'Nunito', 'Inter', system-ui, -apple-system, sans-serif;
+  transform: scale(0.94) translateY(-6px);
+  opacity: 0;
+  transition: transform 0.18s cubic-bezier(0.22, 1.2, 0.36, 1), opacity 0.16s ease;
+}
+
+.mesa-vol-painel.visivel {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.mesa-vol-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.mesa-vol-titulo {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1f2b4d;
+  letter-spacing: -0.01em;
+}
+
+.mesa-vol-fechar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(31, 43, 77, 0.08);
+  color: #3a4a72;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mesa-vol-fechar:hover {
+  background: rgba(31, 43, 77, 0.14);
+}
+
+/* Bloco reutilizável (inline em Configurações e dentro do popover) */
+.mesa-vol-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mesa-vol-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1.5px solid rgba(120, 146, 210, 0.22);
+}
+
+.mesa-vol-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mesa-vol-rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #24345c;
+}
+
+.mesa-vol-mute {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(110, 140, 215, 0.28);
+  background: #f3f6ff;
+  color: #2f5cf0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.12s ease, background 0.14s ease, color 0.14s ease;
+}
+
+.mesa-vol-mute.efeitos {
+  color: #109e78;
+}
+
+.mesa-vol-mute.mudo {
+  background: #edf0f7;
+  color: #8b95b0;
+  border-color: rgba(139, 149, 176, 0.3);
+}
+
+.mesa-vol-mute:active {
+  transform: scale(0.92);
+}
+
+.mesa-vol-mute svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mesa-vol-pct {
+  font-size: 12.5px;
+  font-weight: 800;
+  min-width: 38px;
+  text-align: right;
+  color: #465884;
+  font-variant-numeric: tabular-nums;
+}
+
+.mesa-vol-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(
+    to right,
+    var(--mv-cor, #3d7bff) 0%,
+    var(--mv-cor, #3d7bff) var(--mv-pct, 100%),
+    rgba(130, 150, 195, 0.26) var(--mv-pct, 100%),
+    rgba(130, 150, 195, 0.26) 100%
+  );
+}
+
+.mesa-vol-range.efeitos {
+  --mv-cor: #17b387;
+}
+
+.mesa-vol-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid var(--mv-cor, #3d7bff);
+  box-shadow: 0 2px 8px rgba(24, 38, 78, 0.28);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.mesa-vol-range::-webkit-slider-thumb:active {
+  transform: scale(1.12);
+}
+
+.mesa-vol-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid var(--mv-cor, #3d7bff);
+  box-shadow: 0 2px 8px rgba(24, 38, 78, 0.28);
+  cursor: pointer;
+}
+
+/* Ajuste quando inline dentro do dialog .aparencia */
+dialog.aparencia .mesa-vol-lista {
+  margin: 6px 0 12px;
+}

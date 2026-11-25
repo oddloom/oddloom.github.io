@@ -115,12 +115,16 @@
 
   function tocarSomElo(subiu) {
     try {
-      var pref = localStorage.getItem('mesa-efeitos');
-      if (pref === '0' || pref === 'false') return;
+      var volApi = window.__mesaAudio;
+      var fator = volApi && typeof volApi.volEfeitos === 'function' ? volApi.volEfeitos() : 1;
+      if (fator <= 0) return;
+      var pref = localStorage.getItem('mesa-audio-global-efeitos');
+      if (pref === 'desligado') return;
       var AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       var ctx = new AC();
       if (ctx.state === 'suspended') ctx.resume().catch(function () {});
+      var dest = volApi && typeof volApi.destinoEfeitos === 'function' ? volApi.destinoEfeitos(ctx) : ctx.destination;
       var now = ctx.currentTime;
       var notas = subiu ? [523.25, 659.25, 783.99, 1046.5] : [392.0, 349.23, 293.66];
       var passo = subiu ? 0.075 : 0.11;
@@ -133,7 +137,7 @@
         gain.gain.exponentialRampToValueAtTime(subiu ? 0.11 : 0.085, now + i * passo + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + i * passo + (subiu ? 0.28 : 0.3));
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(dest);
         osc.start(now + i * passo);
         osc.stop(now + i * passo + 0.34);
       }
@@ -584,19 +588,79 @@
       .catch(function () { return null; });
   }
 
+  function estaEmLobby(estado) {
+    if (!estado) return false;
+    return !estado.ludo && !estado.damas && !estado.xadrez && !estado.botao &&
+      !estado.truco && !estado.cartas && !estado.jogo && !estado.gartic &&
+      !estado.bomb && !estado.artilharia && !estado.stop && !estado.sinuca;
+  }
+
   var mesaAtual = '';
   var promessaAntes = null;
   var disparadoMesa = '';
   var canceladorPoll = 0;
+  var pendenteExibicao = null; // { payload } ou { codigo, jogo, promessaAntes }
+
+  function exibirQuandoSair() {
+    var pend = pendenteExibicao;
+    if (!pend) return;
+    pendenteExibicao = null;
+
+    if (pend.payload) {
+      var dado = pend.payload;
+      setTimeout(function () { mostrar(dado); }, 280);
+      return;
+    }
+
+    // Jogador saiu antes do polling terminar: resolve rápido já na sala/home
+    var tokenSaida = ++canceladorPoll;
+    var atrasos = [260, 550, 950];
+    Promise.resolve(pend.promessaAntes).then(function (antes) {
+      if (!antes || tokenSaida !== canceladorPoll) return;
+      var tentativa = 0;
+      function checarSaida() {
+        if (tokenSaida !== canceladorPoll) return;
+        buscarSnapshotElo().then(function (depois) {
+          if (tokenSaida !== canceladorPoll) return;
+          if (depois && (depois.pontos !== antes.pontos || depois.p > antes.p)) {
+            var delta = depois.pontos - antes.pontos;
+            mostrar({
+              antes: antes.pontos,
+              depois: depois.pontos,
+              delta: delta,
+              jogo: pend.jogo,
+              piso: delta === 0 && depois.p > antes.p,
+            });
+            return;
+          }
+          if (tentativa < atrasos.length) {
+            setTimeout(checarSaida, atrasos[tentativa++]);
+          }
+        });
+      }
+      setTimeout(checarSaida, atrasos[tentativa++]);
+    });
+  }
 
   function aoSair() {
     mesaAtual = '';
     promessaAntes = null;
-    canceladorPoll++;
+    if (pendenteExibicao) {
+      exibirQuandoSair();
+    } else {
+      canceladorPoll++;
+    }
   }
 
   function aoEstado(atual, anterior, codigoMesa, modoEntrada) {
     if (!atual || atual.espectador) return;
+
+    // Se havia Elo pendente e o jogador voltou para a sala/lobby da mesa (ex.: "Voltar à mesa"), exibe agora
+    if (pendenteExibicao && estaEmLobby(atual) && !estaEmLobby(anterior)) {
+      exibirQuandoSair();
+      return;
+    }
+
     var modo = modoEntrada || '';
     if (modo !== 'rankeado') return;
     if (!contaAtual()) return;
@@ -616,7 +680,9 @@
     var estavaFim = Boolean(detectarFim(anterior));
     if (estavaFim) return;
 
+    // Guarda o resultado em segundo plano; NÃO exibe durante a partida (só ao sair para sala ou home)
     disparadoMesa = codigo;
+    pendenteExibicao = { codigo: codigo, jogo: jogoFim, promessaAntes: promessaAntes, payload: null };
     var tokenPoll = ++canceladorPoll;
     var atrasos = [350, 650, 1000, 1500];
 
@@ -630,13 +696,16 @@
           if (tokenPoll !== canceladorPoll) return;
           if (depois && (depois.pontos !== antes.pontos || depois.p > antes.p)) {
             var delta = depois.pontos - antes.pontos;
-            mostrar({
+            var payload = {
               antes: antes.pontos,
               depois: depois.pontos,
               delta: delta,
               jogo: jogoFim,
               piso: delta === 0 && depois.p > antes.p,
-            });
+            };
+            if (pendenteExibicao && pendenteExibicao.codigo === codigo) {
+              pendenteExibicao.payload = payload;
+            }
             return;
           }
           if (tentativa < atrasos.length) {
@@ -657,6 +726,7 @@
     aoSair: aoSair,
     detectarFim: detectarFim,
     ligaDe: ligaDe,
+    _pendente: function () { return pendenteExibicao; },
   };
 
   window.__mesaElo = api;

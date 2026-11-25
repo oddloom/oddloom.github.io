@@ -401,4 +401,48 @@ function observarSeguro(fn) {
 
 observarSeguro(garantirAtalho)
 
+// Duplo clique / duplo toque na página inicial alterna a visibilidade dos 3 ícones (Campeões, Roleta, Missões)
+const CHAVE_OCULTOS = "mesa-home-icones-ocultos"
+function aplicarEstadoIconesHome() {
+  const home = document.querySelector(".tela.inicio.jogos-colorido")
+  if (!home) return
+  let oculto = false
+  try { oculto = localStorage.getItem(CHAVE_OCULTOS) === "1" } catch {}
+  home.classList.toggle("mh-icones-ocultos", oculto)
+}
+function alternarIconesHome() {
+  const home = document.querySelector(".tela.inicio.jogos-colorido")
+  if (!home) return
+  const proximo = !home.classList.contains("mh-icones-ocultos")
+  home.classList.toggle("mh-icones-ocultos", proximo)
+  try { localStorage.setItem(CHAVE_OCULTOS, proximo ? "1" : "0") } catch {}
+}
+function ehAlvoInterativoHome(alvo) {
+  return !!(alvo && alvo.closest && alvo.closest("button, a, input, select, textarea, dialog, .mh-icones-jogos, .mesa-vol-painel"))
+}
+document.addEventListener("dblclick", (ev) => {
+  const alvo = ev.target
+  if (!alvo || !alvo.closest || !alvo.closest(".tela.inicio.jogos-colorido")) return
+  if (ehAlvoInterativoHome(alvo)) return
+  alternarIconesHome()
+})
+let _ultimoToqueHome = 0, _ultimoToqueX = 0, _ultimoToqueY = 0
+document.addEventListener("touchend", (ev) => {
+  if (!ev.changedTouches || ev.changedTouches.length !== 1) return
+  const alvo = ev.target
+  if (!alvo || !alvo.closest || !alvo.closest(".tela.inicio.jogos-colorido")) return
+  if (ehAlvoInterativoHome(alvo)) return
+  const t = ev.changedTouches[0]
+  const agora = performance.now()
+  if (agora - _ultimoToqueHome < 320 && Math.hypot(t.clientX - _ultimoToqueX, t.clientY - _ultimoToqueY) < 42) {
+    _ultimoToqueHome = 0
+    alternarIconesHome()
+  } else {
+    _ultimoToqueHome = agora
+    _ultimoToqueX = t.clientX
+    _ultimoToqueY = t.clientY
+  }
+}, { passive: true })
+observarSeguro(aplicarEstadoIconesHome)
+
 })();
