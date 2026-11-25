@@ -2,7 +2,7 @@
 (function(){
 // Campeões da Season no bundle da MesaApp (www). Lê o ranking mensal real do servidor.
 const CORES = ["#f4212e", "#1d9bf0", "#ff7a00", "#7856ff"]
-const LUMI = "/mesa/arte/nubo/lumi-campeoes.png?v=4"
+const LUMI = "/mesa/arte/nubo/lumi-campeoes.png?v=5"
 const SERVIDOR = "https://mesas-domino.officialoddloom.workers.dev"
 const EXEMPLOS = [
   { code: "EXEMPLO1", nome: "Exemplo 1", avatar: null, moldura: null, pontos: 120, v: 18, p: 24, posicao: 1 },

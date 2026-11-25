@@ -60,7 +60,14 @@ main{max-width:1080px;margin:0 auto;padding:clamp(40px,8vw,88px) clamp(16px,4vw,
 .head{text-align:center;margin-bottom:clamp(32px,5vw,56px)}
 h1{font-weight:700;font-size:clamp(36px,6vw,64px);line-height:1.05;letter-spacing:-.035em}
 h1 span{color:var(--blue)}
-.head-mascote{width:clamp(96px,15vw,150px);height:auto;margin:-8px auto -8px;filter:drop-shadow(0 8px 14px #8ba6b333)}
+.head-mascote{width:clamp(118px,16vw,168px);height:auto;margin:-10px auto 10px;filter:drop-shadow(0 12px 22px rgba(72,92,165,.22))}
+.head-cta{margin-top:22px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.playstore-btn{display:inline-flex;align-items:center;gap:11px;padding:10px 20px 10px 16px;border-radius:14px;background:#1D1D1F;color:#fff;box-shadow:0 8px 20px rgba(0,0,0,.12);transition:transform .2s cubic-bezier(.16,1,.3,1),background .2s,box-shadow .2s}
+.playstore-btn:hover{background:#000;transform:translateY(-2px);box-shadow:0 12px 26px rgba(0,0,0,.18)}
+.playstore-btn svg{width:24px;height:24px;flex:none}
+.playstore-btn span{display:flex;flex-direction:column;text-align:left;line-height:1.1}
+.playstore-btn small{font-size:10px;font-weight:500;letter-spacing:.02em;opacity:.82;text-transform:uppercase}
+.playstore-btn strong{font-size:16px;font-weight:600;letter-spacing:-.015em;margin-top:1px}
 .head p{color:var(--muted);font-size:clamp(17px,2vw,21px);margin-top:14px}
 
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(16px,2.5vw,28px)}
@@ -108,15 +115,29 @@ footer a:hover{color:var(--text)}
 <nav aria-label="Principal">
   <div class="in">
     <a class="logo" href="./" aria-label="Oddloom Games, início">Oddloom<b>.</b></a>
-    <span class="links"><a class="contact" href="artigos/">Artigos</a><a class="contact" href="sobre/">Sobre</a><a class="contact" href="mailto:officialoddloom@gmail.com">Contato</a></span>
+    <span class="links"><a class="contact" href="https://play.google.com/store/apps/developer?id=Oddloom+Games" target="_blank" rel="noopener">Google Play</a><a class="contact" href="artigos/">Artigos</a><a class="contact" href="sobre/">Sobre</a><a class="contact" href="mailto:officialoddloom@gmail.com">Contato</a></span>
   </div>
 </nav>
 
 <main>
   <div class="head">
-    <img class="head-mascote" src="img/nubo.webp" alt="Nubo, mascote do Mesa" width="640" height="640">
+    <img class="head-mascote" src="img/lumi-home.png?v=1" alt="Lumi, mascote da Oddloom Games" width="474" height="640">
     <h1>Jogos para jogar <span>agora.</span></h1>
     <p>Grátis, no navegador. Sem instalar, sem cadastro.</p>
+    <div class="head-cta">
+      <a class="playstore-btn" href="https://play.google.com/store/apps/developer?id=Oddloom+Games" target="_blank" rel="noopener" aria-label="Baixar jogos da Oddloom Games no Google Play">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#4285F4" d="M3.2 2.6v18.8c0 .7.7 1.1 1.3.8L14 13.2V10.8L4.5 1.8C3.9 1.5 3.2 1.9 3.2 2.6z"/>
+          <path fill="#EA4335" d="M17.2 8.3 14 10.8 4.5 1.8C5 1.5 5.6 1.5 6.1 1.8l11.1 6.5z"/>
+          <path fill="#FBBC04" d="M17.2 15.7 6.1 22.2c-.5.3-1.1.3-1.6 0L14 13.2l3.2 2.5z"/>
+          <path fill="#34A853" d="M20.5 11.1 17.2 8.3 14 10.8v2.4l3.2 2.5 3.3-2.5c.8-.6.8-1.9 0-2.1z"/>
+        </svg>
+        <span>
+          <small>Disponível no</small>
+          <strong>Google Play</strong>
+        </span>
+      </a>
+    </div>
   </div>
 
   <div class="grid">
