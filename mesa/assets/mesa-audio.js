@@ -47,7 +47,31 @@
     efeitos: pctEfeitos > 0 ? pctEfeitos : 80,
   };
 
-  // Master GainNode por AudioContext para controlar todos os efeitos sonoros ao vivo
+  function volMusica() {
+    return pctMusica / 100;
+  }
+
+  function volEfeitos() {
+    return pctEfeitos / 100;
+  }
+
+  function aplicarGanho(ctx, gainNode, v) {
+    if (!ctx || !gainNode || ctx.state === 'closed') return;
+    if (ctx.state !== 'running') {
+      try { gainNode.gain.value = v; } catch (_) {}
+      return;
+    }
+    var now = ctx.currentTime;
+    try {
+      gainNode.gain.cancelScheduledValues(now);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+      gainNode.gain.linearRampToValueAtTime(v, now + 0.025);
+    } catch (_) {
+      try { gainNode.gain.value = v; } catch (__) {}
+    }
+  }
+
+  // Master GainNode por AudioContext para Efeitos Sonoros
   var mapaDestinos = new WeakMap();
   var listaGanhos = [];
 
@@ -71,21 +95,111 @@
       var item = listaGanhos[i];
       if (!item.ctx || item.ctx.state === 'closed') continue;
       vivos.push(item);
-      try {
-        item.gain.gain.setTargetAtTime(v, item.ctx.currentTime, 0.02);
-      } catch (_) {
-        try { item.gain.gain.value = v; } catch (__) {}
-      }
+      aplicarGanho(item.ctx, item.gain, v);
     }
     listaGanhos = vivos;
   }
 
-  function volMusica() {
-    return pctMusica / 100;
+  // Master GainNode por AudioContext para Música (Gun Arena e Web Audio)
+  var mapaDestinosMusica = new WeakMap();
+  var listaGanhosMusica = [];
+
+  function destinoMusica(ctx) {
+    if (!ctx) return null;
+    var g = mapaDestinosMusica.get(ctx);
+    if (!g) {
+      g = ctx.createGain();
+      g.gain.value = volMusica();
+      g.connect(ctx.destination);
+      mapaDestinosMusica.set(ctx, g);
+      listaGanhosMusica.push({ ctx: ctx, gain: g });
+    }
+    return g;
   }
 
-  function volEfeitos() {
-    return pctEfeitos / 100;
+  function atualizarGanhosMusica() {
+    var v = volMusica();
+    var vivos = [];
+    for (var i = 0; i < listaGanhosMusica.length; i++) {
+      var item = listaGanhosMusica[i];
+      if (!item.ctx || item.ctx.state === 'closed') continue;
+      vivos.push(item);
+      aplicarGanho(item.ctx, item.gain, v);
+    }
+    listaGanhosMusica = vivos;
+  }
+
+  // Controle real para HTMLAudioElement (música ambiente da Home/Sala e prévia da Loja)
+  // Usa Web Audio GainNode no iOS/Safari (onde HTMLAudioElement.volume é somente leitura)
+  // e atualiza audio.volume diretamente nos demais navegadores.
+  var ehIOS = /iP(hone|ad|od)/i.test(navigator.userAgent || '') ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var ctxElementos = null;
+  var mapaElementos = new WeakMap();
+  var listaElementos = [];
+
+  function obterCtxElementos() {
+    if (!ehIOS) return null;
+    if (!ctxElementos) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ctxElementos = new AC(); } catch (_) { return null; }
+    }
+    if (ctxElementos && ctxElementos.state === 'suspended') {
+      try { ctxElementos.resume().catch(function () {}); } catch (_) {}
+    }
+    return ctxElementos;
+  }
+
+  function aplicarVolumeElemento(audio, baseVol) {
+    if (!audio) return;
+    var base = Number.isFinite(baseVol) ? Math.max(0, Math.min(1, baseVol)) : 1;
+    var info = mapaElementos.get(audio);
+    if (!info) {
+      info = { audio: audio, base: base, gain: null, ligado: false };
+      mapaElementos.set(audio, info);
+      listaElementos.push(info);
+    } else {
+      info.base = base;
+    }
+
+    if (ehIOS && !info.ligado) {
+      var ctx = obterCtxElementos();
+      if (ctx) {
+        try {
+          var src = ctx.createMediaElementSource(audio);
+          var gBase = ctx.createGain();
+          gBase.gain.value = info.base;
+          src.connect(gBase).connect(destinoMusica(ctx));
+          info.gain = gBase;
+          info.ligado = true;
+          audio.volume = 1;
+        } catch (_) {}
+      }
+    }
+
+    if (info.ligado && info.gain && ctxElementos) {
+      aplicarGanho(ctxElementos, info.gain, info.base);
+      try { audio.volume = 1; } catch (_) {}
+    } else {
+      try { audio.volume = Math.max(0, Math.min(1, info.base * volMusica())); } catch (_) {}
+    }
+  }
+
+  function atualizarElementosMusica() {
+    var v = volMusica();
+    var vivos = [];
+    for (var i = 0; i < listaElementos.length; i++) {
+      var info = listaElementos[i];
+      if (!info || !info.audio) continue;
+      vivos.push(info);
+      if (info.ligado && info.gain && ctxElementos) {
+        aplicarGanho(ctxElementos, info.gain, info.base);
+      } else {
+        try { info.audio.volume = Math.max(0, Math.min(1, info.base * v)); } catch (_) {}
+      }
+    }
+    listaElementos = vivos;
   }
 
   function sincronizarAntigo(tipo, pct) {
@@ -96,7 +210,9 @@
   }
 
   function notificar() {
+    atualizarGanhosMusica();
     atualizarGanhosEfeitos();
+    atualizarElementosMusica();
     atualizarTodosBotoes();
     try {
       window.dispatchEvent(new Event(EV_VOL));
@@ -175,11 +291,14 @@
       btnMute.setAttribute('aria-pressed', String(val === 0));
     }
 
-    input.addEventListener('input', function () {
+    function aoAlterar() {
       if (ehMusica) definirMusica(input.value);
       else definirEfeitos(input.value);
       render();
-    });
+    }
+
+    input.addEventListener('input', aoAlterar);
+    input.addEventListener('change', aoAlterar);
 
     btnMute.addEventListener('click', function () {
       var atual = ehMusica ? pctMusica : pctEfeitos;
@@ -241,6 +360,8 @@
     box.className = 'mesa-vol-painel';
     box.setAttribute('role', 'dialog');
     box.setAttribute('aria-label', t().titulo);
+    box.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
+    box.addEventListener('touchstart', function (ev) { ev.stopPropagation(); }, { passive: true });
 
     var topo = document.createElement('div');
     topo.className = 'mesa-vol-topo';
@@ -316,16 +437,14 @@
     return btn;
   }
 
-  // ---- Injeção automática e padronizada em todos os minigames que não têm botão de som próprio ----
-  var SELETORES_JOGO = '.art-tela, .bomb-tela, .domino-tela, .truco-tela, .uni-tela, .xe-tela, .damas-tela, .ludo-tela, .botao-tela, .sinuca-tela, .gartic-tela, .stop-tela, .mesa-jogo, .sala-jogo';
+  var SELETORES_JOGO = '.tela-domino, .tela-truco, .tela-uni, .tela-sinuca-site, .tela-xadrez, .tela-damas, .tela-ludo, .tela-botao, .tela-gartic, .tela-stop, .tela-bomb, .art-tela, .tela-sala';
 
   function garantirBotaoNaTela() {
-    var app = document.getElementById('app') || document.body;
+    var app = document.getElementById('app');
     if (!app) return;
 
-    // Se já existe o botão nativo do Gun Arena (.art-som-caixa) ou do Bomb/Gartic/Stop (.bomb-som),
-    // eles já abrem abrirPainel() diretamente — removemos qualquer botão flutuante duplicado.
-    var temNativo = Boolean(app.querySelector('.art-som-caixa, .bomb-som'));
+    // Se a tela já tem botão nativo de som (Gun Arena, Bomb, Gartic, Stop, Uni), ele abre o painel diretamente
+    var temNativo = Boolean(app.querySelector('.art-som-caixa, .bomb-som, .som-uni'));
     var flutuante = document.querySelector('.mesa-vol-btn.flutuante');
 
     if (temNativo) {
@@ -384,7 +503,9 @@
       else if (gm === 'ligado' && pctMusica === 0) { pctMusica = ultimoNaoZero.musica || 75; localStorage.setItem(CHAVE_MUSICA, String(pctMusica)); }
       if (ge === 'desligado' && pctEfeitos > 0) { pctEfeitos = 0; localStorage.setItem(CHAVE_EFEITOS, '0'); }
       else if (ge === 'ligado' && pctEfeitos === 0) { pctEfeitos = ultimoNaoZero.efeitos || 80; localStorage.setItem(CHAVE_EFEITOS, String(pctEfeitos)); }
+      atualizarGanhosMusica();
       atualizarGanhosEfeitos();
+      atualizarElementosMusica();
       atualizarTodosBotoes();
     } catch (_) {}
   });
@@ -396,7 +517,9 @@
     pctEfeitos: function () { return pctEfeitos; },
     definirMusica: definirMusica,
     definirEfeitos: definirEfeitos,
+    destinoMusica: destinoMusica,
     destinoEfeitos: destinoEfeitos,
+    aplicarVolumeElemento: aplicarVolumeElemento,
     criarControlesInline: criarControlesInline,
     abrirPainel: abrirPainel,
     fecharPainel: fecharPainel,
