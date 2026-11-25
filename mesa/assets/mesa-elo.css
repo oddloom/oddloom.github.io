@@ -523,3 +523,102 @@
     transition: none !important;
   }
 }
+
+/* Card de Elo na tela da sala (modo Ranqueada) */
+.sala-elo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  margin: 8px 0 4px;
+  border-radius: 18px;
+  background: linear-gradient(155deg, rgba(235, 245, 255, 0.96), rgba(220, 234, 255, 0.9));
+  border: 1.5px solid rgba(90, 145, 235, 0.28);
+  box-shadow: 0 6px 18px rgba(24, 52, 108, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.sala-elo-topo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sala-elo-emblema {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  flex: none;
+  filter: drop-shadow(0 4px 8px rgba(22, 42, 86, 0.22));
+}
+.sala-elo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.sala-elo-rotulo {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #4b6594;
+}
+.sala-elo-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sala-elo-liga {
+  font-size: 18px;
+  font-weight: 900;
+  color: #162646;
+}
+.sala-elo-pts {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1f64e6;
+}
+.sala-elo-barra {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(24, 52, 108, 0.12);
+  overflow: hidden;
+}
+.sala-elo-barra > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3b82f6, #6366f1, #f59e0b);
+  transition: width 0.35s ease;
+}
+.sala-elo-metas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sala-elo-meta {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+.sala-elo-meta.subir {
+  background: rgba(34, 197, 94, 0.14);
+  color: #157347;
+}
+.sala-elo-meta.cair {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b42318;
+}
+.sala-elo-meta.piso {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+}
+.sala-elo-aviso {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b4f75;
+}

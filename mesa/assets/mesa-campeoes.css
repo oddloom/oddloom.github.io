@@ -147,8 +147,25 @@ body.mh-home-icones-ocultos .mh-icones-jogos > * {
 }
 @media (min-width: 768px) {
   .mh-icones-jogos {
-    right: max(18px, calc(50vw - 300px));
-    bottom: 92px;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    top: 12px;
+    bottom: auto;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+  }
+  body.mh-home-icones-ocultos .mh-icones-jogos {
+    transform: translateX(-50%) translateY(-10px) scale(0.92);
+  }
+  .mh-icones-jogos > .mh-trofeu,
+  .mh-icones-jogos > .mh-dado,
+  .mh-icones-jogos > .mh-missoes {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
