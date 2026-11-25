@@ -1,0 +1,525 @@
+/* Mesa — Componente único de animação de Elo (identidade visual fiel ao Mesa + física de mola) */
+
+.mesa-elo-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: radial-gradient(circle at 50% 40%, rgba(43, 63, 140, 0.58), rgba(11, 26, 46, 0.78));
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  font-family: 'Nunito', Inter, system-ui, -apple-system, sans-serif;
+  opacity: 0;
+  transition: opacity 220ms ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mesa-elo-backdrop.visivel {
+  opacity: 1;
+}
+
+.mesa-elo-backdrop.saindo {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Canvas de partículas em tela cheia */
+.mesa-elo-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Palco central (permite o Lumi saltar para fora do topo do cartão) */
+.mesa-elo-palco {
+  position: relative;
+  z-index: 2;
+  width: min(372px, 92vw);
+  padding-top: 56px;
+}
+
+/* Mascote Lumi saindo do topo do cartão */
+.mesa-elo-lumi-wrap {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  z-index: 4;
+  width: 144px;
+  height: 144px;
+  margin-left: -72px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(34px) scale(0.55);
+  transition:
+    transform 540ms cubic-bezier(0.34, 1.56, 0.64, 1) 110ms,
+    opacity 260ms ease 110ms;
+}
+
+.mesa-elo-backdrop.visivel .mesa-elo-lumi-wrap {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.mesa-elo-lumi {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(22, 49, 90, 0.32));
+}
+
+.mesa-elo-backdrop.visivel .mesa-elo-palco.subiu .mesa-elo-lumi {
+  animation: mesa-elo-lumi-pulo 2.2s ease-in-out 560ms infinite;
+}
+
+.mesa-elo-backdrop.visivel .mesa-elo-palco.caiu .mesa-elo-lumi {
+  animation: mesa-elo-lumi-balanco 2.8s ease-in-out 560ms infinite;
+}
+
+@keyframes mesa-elo-lumi-pulo {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  45% { transform: translateY(-9px) scale(0.97, 1.04); }
+  55% { transform: translateY(-9px) scale(1.02, 0.99); }
+}
+
+@keyframes mesa-elo-lumi-balanco {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(4px) rotate(2.5deg); }
+}
+
+/* Brilho solar atrás do Lumi na subida */
+.mesa-elo-halo {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  width: 220px;
+  height: 220px;
+  margin-left: -110px;
+  z-index: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 16deg,
+    rgba(255, 224, 102, 0.42) 16deg 32deg,
+    transparent 32deg 48deg,
+    rgba(130, 230, 255, 0.34) 48deg 64deg,
+    transparent 64deg 80deg
+  );
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.95) 20%, transparent 68%);
+  -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.95) 20%, transparent 68%);
+  animation: mesa-elo-girar 15s linear infinite;
+}
+
+@keyframes mesa-elo-girar {
+  to { transform: rotate(360deg); }
+}
+
+/* Cartão principal — fiel ao vidro azul-céu/lavanda da Roleta e Home do Mesa */
+.mesa-elo-card {
+  position: relative;
+  z-index: 2;
+  border-radius: 30px;
+  border: 3px solid #ffffff;
+  padding: 82px 22px 20px;
+  text-align: center;
+  color: #112b4e;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(28px) scale(0.86);
+  transition:
+    transform 460ms cubic-bezier(0.34, 1.56, 0.64, 1) 40ms,
+    opacity 220ms ease 40ms;
+}
+
+.mesa-elo-backdrop.visivel .mesa-elo-card {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.mesa-elo-backdrop.saindo .mesa-elo-card {
+  opacity: 0;
+  transform: translateY(14px) scale(0.92);
+}
+
+/* Tema Subida: luminoso, ensolarado, azul-céu e lavanda do Mesa */
+.mesa-elo-palco.subiu .mesa-elo-card {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(255, 233, 166, 0.55) 0 11%, transparent 12%),
+    radial-gradient(circle at 90% 18%, rgba(201, 168, 255, 0.45) 0 8%, transparent 9%),
+    radial-gradient(circle at 10% 82%, rgba(159, 227, 255, 0.55) 0 10%, transparent 11%),
+    radial-gradient(circle at 92% 86%, rgba(255, 208, 226, 0.45) 0 9%, transparent 10%),
+    linear-gradient(162deg, #fffef6 0%, #dcf0ff 50%, #efe4ff 100%);
+  box-shadow:
+    0 26px 64px rgba(18, 43, 84, 0.5),
+    0 0 42px rgba(255, 212, 71, 0.32),
+    inset 0 2px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Tema Descida: lavanda crepuscular suave e aconchegante (mantendo a cara do Mesa) */
+.mesa-elo-palco.caiu .mesa-elo-card {
+  background:
+    radial-gradient(circle at 14% 14%, rgba(205, 194, 255, 0.45) 0 10%, transparent 11%),
+    radial-gradient(circle at 88% 22%, rgba(255, 198, 214, 0.4) 0 9%, transparent 10%),
+    radial-gradient(circle at 12% 84%, rgba(186, 214, 255, 0.42) 0 9%, transparent 10%),
+    linear-gradient(162deg, #f8f5ff 0%, #e4e2f7 52%, #f6e2ea 100%);
+  box-shadow:
+    0 26px 64px rgba(24, 24, 58, 0.52),
+    inset 0 2px 0 rgba(255, 255, 255, 0.9);
+}
+
+.mesa-elo-backdrop.visivel .mesa-elo-palco.caiu .mesa-elo-card {
+  animation: mesa-elo-shake 520ms cubic-bezier(0.36, 0.07, 0.19, 0.97) 260ms both;
+}
+
+@keyframes mesa-elo-shake {
+  0%, 100% { transform: translateX(0) scale(1); }
+  18% { transform: translateX(-7px) rotate(-0.8deg); }
+  36% { transform: translateX(6px) rotate(0.7deg); }
+  54% { transform: translateX(-4px) rotate(-0.4deg); }
+  72% { transform: translateX(3px) rotate(0.2deg); }
+}
+
+/* Botão Pular discreto no canto superior direito */
+.mesa-elo-pular {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  border: 1.5px solid rgba(17, 43, 78, 0.12);
+  background: rgba(255, 255, 255, 0.82);
+  color: #53729c;
+  font: 800 12px/1 'Nunito', system-ui, sans-serif;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(42, 63, 106, 0.14);
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.mesa-elo-pular:hover {
+  background: #ffffff;
+  color: #112b4e;
+}
+
+.mesa-elo-pular:active {
+  transform: scale(0.94);
+}
+
+/* Pill com ícone 3D real do minigame jogado */
+.mesa-elo-jogo-pill {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid rgba(17, 43, 78, 0.08);
+  box-shadow: 0 2px 6px rgba(42, 63, 106, 0.12);
+  font-size: 11px;
+  font-weight: 800;
+  color: #36527a;
+}
+
+.mesa-elo-jogo-icone {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* Faixa 3D do título (mesma estética tátil da Roleta) */
+.mesa-elo-faixa {
+  display: inline-block;
+  margin: 0 auto 12px;
+  padding: 6px 22px 7px;
+  border-radius: 999px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  opacity: 0;
+  transform: scale(0.76) translateY(8px);
+  transition:
+    transform 440ms cubic-bezier(0.34, 1.56, 0.64, 1) 180ms,
+    opacity 200ms ease 180ms;
+}
+
+.mesa-elo-backdrop.visivel .mesa-elo-faixa {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.mesa-elo-palco.subiu .mesa-elo-faixa {
+  color: #6b3a00;
+  background: linear-gradient(180deg, #fff4bd 0%, #ffc93c 55%, #f3a30f 100%);
+  box-shadow: 0 4px 0 #b86a00, 0 8px 16px rgba(184, 106, 0, 0.28), inset 0 2px 0 #fffbe0;
+  text-shadow: 0 1px 0 #fff6c8;
+}
+
+.mesa-elo-palco.caiu .mesa-elo-faixa {
+  color: #ffffff;
+  background: linear-gradient(180deg, #ff7e98 0%, #e44d6e 58%, #c93859 100%);
+  box-shadow: 0 4px 0 #8d2039, 0 8px 16px rgba(141, 32, 57, 0.26), inset 0 2px 0 rgba(255, 255, 255, 0.35);
+  text-shadow: 0 1px 2px rgba(110, 18, 40, 0.45);
+}
+
+/* Painel interno branco translúcido com emblema + pontos */
+.mesa-elo-painel {
+  background: rgba(255, 255, 255, 0.82);
+  border: 2px solid #ffffff;
+  border-radius: 22px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 6px 18px rgba(42, 63, 106, 0.12), inset 0 1px 0 #ffffff;
+  margin-bottom: 14px;
+}
+
+.mesa-elo-emblema-linha {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.mesa-elo-emblema-box {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: linear-gradient(160deg, #ffffff 0%, #e8f3ff 100%);
+  box-shadow: 0 5px 14px rgba(42, 63, 106, 0.16), inset 0 2px 0 #ffffff;
+  opacity: 0;
+  transform: scale(0.5) rotate(-12deg);
+  transition:
+    transform 520ms cubic-bezier(0.34, 1.56, 0.64, 1) 240ms,
+    opacity 220ms ease 240ms;
+}
+
+.mesa-elo-backdrop.visivel .mesa-elo-emblema-box {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.mesa-elo-emblema-img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 8px rgba(22, 49, 90, 0.24));
+}
+
+.mesa-elo-pontos-col {
+  text-align: left;
+}
+
+.mesa-elo-liga-txt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 800;
+  color: #53729c;
+  margin-bottom: 2px;
+}
+
+.mesa-elo-liga-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.mesa-elo-palco.subiu .mesa-elo-liga-badge {
+  background: linear-gradient(135deg, #ffe270, #ffb703);
+  color: #6b3a00;
+}
+
+.mesa-elo-palco.caiu .mesa-elo-liga-badge {
+  background: #fde2e8;
+  color: #b52a4b;
+}
+
+.mesa-elo-numero-linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mesa-elo-valor {
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 1;
+  color: #112b4e;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mesa-elo-valor.pulso {
+  transform: scale(1.16);
+}
+
+.mesa-elo-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  transform: scale(0.55) translateY(6px);
+  transition:
+    transform 460ms cubic-bezier(0.34, 1.56, 0.64, 1) 320ms,
+    opacity 220ms ease 320ms;
+}
+
+.mesa-elo-backdrop.visivel .mesa-elo-delta {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.mesa-elo-palco.subiu .mesa-elo-delta {
+  background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 0 #047857, 0 6px 14px rgba(16, 185, 129, 0.34);
+}
+
+.mesa-elo-palco.caiu .mesa-elo-delta {
+  background: linear-gradient(180deg, #fb7185 0%, #e11d48 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 0 #9f1239, 0 6px 14px rgba(225, 29, 72, 0.28);
+}
+
+/* Antes -> Depois bem claro */
+.mesa-elo-comparacao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: #edf5ff;
+  border: 1px solid #d5e6fb;
+  font-size: 13px;
+  font-weight: 700;
+  color: #53729c;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 12px;
+}
+
+.mesa-elo-comparacao b {
+  color: #112b4e;
+  font-weight: 900;
+}
+
+/* Barra de progresso da liga com brilho deslizante */
+.mesa-elo-barra-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 800;
+  color: #53729c;
+  margin-bottom: 5px;
+}
+
+.mesa-elo-barra-trilha {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  background: #dce9f9;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(22, 49, 90, 0.16);
+}
+
+.mesa-elo-barra-fill {
+  position: relative;
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 950ms cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+}
+
+.mesa-elo-barra-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.55) 50%, transparent 100%);
+  transform: translateX(-100%);
+  animation: mesa-elo-shimmer 1.7s ease-in-out 500ms infinite;
+}
+
+@keyframes mesa-elo-shimmer {
+  to { transform: translateX(120%); }
+}
+
+.mesa-elo-palco.subiu .mesa-elo-barra-fill {
+  background: linear-gradient(90deg, #10b981 0%, #34d399 55%, #facc15 100%);
+}
+
+.mesa-elo-palco.caiu .mesa-elo-barra-fill {
+  background: linear-gradient(90deg, #f43f5e 0%, #fb7185 100%);
+}
+
+/* Botão principal 3D clicável estilo Mesa */
+.mesa-elo-continuar {
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  border-radius: 16px;
+  font: 900 16px/1 'Nunito', system-ui, sans-serif;
+  color: #ffffff;
+  cursor: pointer;
+  background: linear-gradient(180deg, #4aaeff 0%, #1687e8 100%);
+  box-shadow: 0 4px 0 #0f5fae, 0 8px 16px rgba(22, 135, 232, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.mesa-elo-continuar:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #0f5fae, 0 4px 8px rgba(22, 135, 232, 0.25);
+}
+
+/* Barrinha discreta de auto-fechamento */
+.mesa-elo-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  width: 100%;
+  transform-origin: left center;
+}
+
+.mesa-elo-palco.subiu .mesa-elo-timer {
+  background: linear-gradient(90deg, #34d399, #ffc93c);
+}
+
+.mesa-elo-palco.caiu .mesa-elo-timer {
+  background: linear-gradient(90deg, #fb7185, #a78bfa);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mesa-elo-halo,
+  .mesa-elo-lumi,
+  .mesa-elo-card,
+  .mesa-elo-barra-fill::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

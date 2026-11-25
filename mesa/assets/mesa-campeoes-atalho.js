@@ -58,10 +58,36 @@ function el(tag, props, ...kids) {
   return n
 }
 
+function perfilAtualDe(p) {
+  if (!p) return p
+  if (estado?.eu && conta()?.code === p.code) {
+    return { ...p, nome: estado.eu.nome || p.nome, avatar: estado.eu.avatar ?? p.avatar, moldura: estado.eu.moldura ?? p.moldura }
+  }
+  const amigo = (estado?.amigos || []).find((a) => a.code === p.code)
+  if (amigo) {
+    return { ...p, nome: amigo.nome || p.nome, avatar: amigo.avatar ?? p.avatar, moldura: amigo.moldura ?? p.moldura }
+  }
+  return p
+}
+
 function fotoDe(p) {
-  const f = el("span", { className: "foto" }, (p.nome || "?")[0].toUpperCase())
-  f.style.setProperty("--cor", CORES[(p.code || "A").charCodeAt(0) % CORES.length])
+  const atual = perfilAtualDe(p)
+  if (window.__mesaPerfil?.foto && atual?.code) {
+    try { return window.__mesaPerfil.foto(atual) } catch { /* fallback */ }
+  }
+  const f = el("span", { className: "foto" }, (atual?.nome || "?")[0].toUpperCase())
+  f.style.setProperty("--cor", CORES[(atual?.code || "A").charCodeAt(0) % CORES.length])
   return f
+}
+
+function abrirPerfilNativo(l) {
+  if (!l || ehExemplo(l.code)) { pintarPerfil(l); return }
+  if (window.__mesaPerfil?.abrir) {
+    if (janela && janela.open) janela.close()
+    window.__mesaPerfil.abrir(l.code)
+    return
+  }
+  pintarPerfil(l)
 }
 
 function patchWs() {
@@ -250,7 +276,7 @@ function cartaoPodio(l, classe, simbolo) {
     el("span", { className: "cp-pts", text: `${Number(l.pontos).toLocaleString("pt-BR")} pts` }),
   )
   b.setAttribute("aria-label", `${l.posicao}º lugar, ${l.nome}`)
-  b.onclick = () => pintarPerfil(l)
+  b.onclick = () => abrirPerfilNativo(l)
   return b
 }
 
@@ -262,7 +288,7 @@ function linhaLista(l, eu) {
     el("span", { className: "cp-nome" }, el("strong", { text: l.nome || "—" }), el("span", { text: `${l.v} ${l.v === 1 ? "vitória" : "vitórias"} · ${l.p} ${l.p === 1 ? "partida" : "partidas"}` })),
     el("strong", { className: "cp-pts", text: `${Number(l.pontos).toLocaleString("pt-BR")} pts` }),
   )
-  b.onclick = () => pintarPerfil(l)
+  b.onclick = () => abrirPerfilNativo(l)
   return b
 }
 
