@@ -25,13 +25,13 @@
   left: auto;
   top: auto;
   z-index: 3;
-  width: 54px;
-  height: 54px;
-  min-width: 54px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
   padding: 0;
   margin: 0;
   border: 0;
-  border-radius: 14px;
+  border-radius: 10px;
   background: transparent;
   box-shadow: none;
   outline-offset: 2px;
@@ -49,7 +49,7 @@
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
-  filter: drop-shadow(0 5px 5px #2a3f6a40);
+  filter: drop-shadow(0 3px 4px #2a3f6a38);
   animation: mhFlutua 3.7s ease-in-out .2s infinite;
   will-change: transform;
 }
@@ -72,7 +72,7 @@
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
-  filter: drop-shadow(0 5px 5px #2a3f6a40);
+  filter: drop-shadow(0 3px 4px #2a3f6a38);
   animation: mhFlutua 3.7s ease-in-out .2s infinite;
   will-change: transform;
 }
