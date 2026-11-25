@@ -213,7 +213,11 @@
   // ---------- compras com dinheiro real (03/11, só no app, pela Play) ----------
   // O preço vem sempre da loja. Sem produto criado no Console ou fora do app, nenhum botão aparece.
   // Ordem segura: entrega, grava e só então consome. Se o app fechar no meio, iapRecover entrega ao abrir de novo.
-  const IAP_ENERGY = { energy_5: 5, energy_15: 15 }, IAP_SKINS = { skin_temple: { id: 'gem.temple', slot: 'gem', value: 'temple' } };
+  const IAP_ENERGY = { energy_5: 5, energy_15: 15 }, IAP_SKINS = {
+    skin_temple: { id: 'gem.temple', slot: 'gem', value: 'temple' },
+    skin_gold: { id: 'gem.gold', slot: 'gem', value: 'gold' },
+    skin_word_rare: { id: 'word.rare', slot: 'word', value: 'rare' },
+  };
   const IapPlugin = () => (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.NativePurchases) || null;
   let iapProducts = {};
   const iapPrice = (sku) => (iapProducts[sku] && iapProducts[sku].priceString) || '';
@@ -2891,12 +2895,12 @@
     { id: 'gems', icon: 'skgold', slot: 'gem', skins: [
       { id: 'gem.classic', art: 'skclassic', value: null },
       { id: 'gem.obsidian', art: 'skobsidian', value: 'obsidian', price: 800 },
-      { id: 'gem.gold', art: 'skgold', value: 'gold', price: 1500 },
-      // paga com dinheiro real (02/11): a compra pela Play ainda não existe; quem comprou com moedas antes continua dono
+      { id: 'gem.gold', art: 'skgold', value: 'gold', paid: 'skin_gold' },
+      // paga com dinheiro real: quem comprou com moedas antes continua dono
       { id: 'gem.temple', art: 'sktemple', value: 'temple', paid: 'skin_temple' }] },
     { id: 'words', icon: 'ixorb', slot: 'word', skins: [
       { id: 'word.solar', art: 'p3', value: null },
-      { id: 'word.rare', art: 'wr_p3', value: 'rare', price: 600 },
+      { id: 'word.rare', art: 'wr_p3', value: 'rare', paid: 'skin_word_rare' },
       { id: 'word.goldgem', soon: true }] },
     { id: 'trail', icon: 'ixarrow', slot: 'trail', skins: [
       { id: 'trail.gold', art: 'ixarrow', value: null },
@@ -2959,7 +2963,7 @@
             '<div class="ts-info"><b>' + o.name + '</b>' + (o.note ? '<small>' + o.note + '</small>' : '') +
               (o.btn === 'buy' ? '<button type="button" class="btn small ts-buy" data-k="' + o.key + '" aria-label="' + T('shop.buy') + ' ' + o.price + '"' + (save.coins < o.price ? ' disabled' : '') + '>' + coin(o.price, 48) + '</button>' // 16/10: só o preço (pedido dele)
                 : o.btn === 'use' ? '<button type="button" class="btn dark small ts-use" data-k="' + o.key + '">' + T('codex.use') + '</button>'
-                : o.btn === 'paid' ? (iapPrice(o.paid) ? '<button type="button" class="btn small ts-iap" data-sku="' + o.paid + '">' + iapPrice(o.paid) + '</button>' : '<button type="button" class="btn dark small" disabled>R$ 3,00</button>') : '') +
+                : o.btn === 'paid' ? (iapPrice(o.paid) ? '<button type="button" class="btn small ts-iap" data-sku="' + o.paid + '">' + iapPrice(o.paid) + '</button>' : '<button type="button" class="btn dark small" disabled>R$ 4,99</button>') : '') +
             '</div></div>').join('') + '</div>' +
         '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('close') + '</button></div>');
       card.classList.add('tshop');

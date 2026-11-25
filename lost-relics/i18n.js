@@ -191,32 +191,187 @@
       'loading': 'Opening the temple…',
       'playstore.label': 'Get it on Google Play', 'playstore.over': 'Get it on', 'playstore.name': 'Google Play',
     },
+    es: {
+      'shop.info': 'Sobre {item}', 'acct.mesaManaged': 'Esta cuenta es administrada por Mesa.', 'acct.mesaReconnect': 'Tu conexión expiró. Vuelve a Mesa y abre el juego.', 'acct.mesaOn': 'CUENTA MESA ✓', 'acct.mesaRetry': 'RECONECTAR POR MESA',
+      'map.next': 'SIGUIENTE MUNDO', 'map.next.label': 'Ir a {world}', 'map.next.locked': 'Supera el nivel {level} para abrir el siguiente mundo', 'map.shop.label': 'Tienda: {n} monedas',
+      'title.sub': 'Una expedición de joyas', 'daily.btn': 'JUGADA DEL DÍA', 'daily.title': 'JUGADA DEL DÍA', 'daily.hint': 'UNA SOLA JUGADA. ¡ENCUENTRA LA MEJOR!', 'daily.perfect': '¡PERFECTO! Encontraste la mejor jugada.', 'daily.close': '¡Casi! Puedes lograr más.', 'daily.low': 'Hay una jugada mucho mejor... ¡inténtalo de nuevo!',
+      'daily.pct': '{p}% de la mejor', 'daily.best': 'mejor posible: {n}', 'daily.coins': '+{n} monedas por la jugada del día', 'daily.shareBtn': 'COMPARTIR', 'daily.retry': 'REINTENTAR', 'daily.copied': '¡Texto copiado!', 'share.copyHint': 'Copia el texto para compartir:',
+      'daily.share': 'Jugada del Día {d} en Lost Relics: hice {n} puntos en 1 jugada ({p}% de la mejor). ¿Puedes superarla?', 'menu.back': 'MENÚ',
+      'weekly.btn': 'RÉCORDS', 'weekly.title': 'RÉCORD SEMANAL', 'weekly.hint': '20 JUGADAS. ¡MISMO TABLERO PARA TODOS!', 'weekly.rules': 'Sin objetos, martillo ni movimientos extra. Skins permitidas.', 'weekly.name': 'Tu nombre en el ranking', 'weekly.placeholder': 'Nombre', 'weekly.play': 'JUGAR', 'weekly.change': 'CAMBIAR NOMBRE', 'weekly.retry': 'JUGAR DE NUEVO', 'weekly.week': 'SEMANA DE {d}', 'weekly.score': 'Tu récord: {n}', 'weekly.loading': 'Cargando récords…', 'weekly.empty': 'Aún no hay récords esta semana.', 'weekly.local': 'Ranking local sin conexión.', 'weekly.online': 'Ranking online',
+      'mode.normal': 'NORMAL', 'mode.hard': 'DIFÍCIL', 'mode.hard.locked': 'Difícil: supera este nivel para desbloquear', 'mode.hard.rules': 'Cuenta para el ranking: sin objetos ni ayudas. Skins permitidas.', 'mode.hard.score': 'Tu récord esta semana: {n}',
+      'records.title': 'RÉCORDS DIFÍCILES', 'records.hint': 'Elige un nivel completado. El ranking se reinicia cada lunes.', 'records.empty': 'Completa un nivel Normal para abrir el modo Difícil.', 'records.best': 'Tu mejor: {n}', 'records.noScore': 'Aún no jugado', 'rank.you': 'TÚ', 'records.featTitle': 'Destacados de la semana', 'records.yourLevels': 'Tus niveles', 'records.tabWeek': 'Semanal', 'records.tabAll': 'Total', 'records.holder': 'Líder del nivel', 'records.allEmpty': 'Nadie marcó récord en este nivel.',
+      'info.btn': 'Cómo funciona', 'info.locked': 'El modo Difícil se abre al vencer este nivel.', 'info.hardOpen': 'Difícil desbloqueado: sin objetos, cuenta para el ranking.', 'pre.moves': '{n} movimientos', 'weak.short': 'Punto débil: acierta el color del anillo.',
+      'season.title': 'Temporada', 'season.ends': 'termina en {n} días', 'season.pts': '{n} pts', 'season.pos': '#{p} de {n}', 'season.none': 'Vence un nivel en Difícil para puntuar.', 'records.short': 'Récords', 'season.local': 'Sin conexión.', 'season.rules': 'Puntos = suma de tu mejor puntaje Difícil en cada nivel.', 'season.champs': 'Campeones', 'season.noChamps': 'La primera temporada está en curso.', 'season.loading': 'Cargando temporada…',
+      'tier.bronze': 'Bronce', 'tier.silver': 'Plata', 'tier.gold': 'Oro', 'tier.diamond': 'Diamante', 'records.featured': 'DESTACADO', 'records.share': 'COMPARTIR RÉCORD', 'records.lockedFeat': 'Vence Normal {n} para competir',
+      'rank.sending': 'Enviando al ranking…', 'rank.ok': '✓ En el ranking', 'rank.fail': 'No enviado.', 'rank.retry': 'Reintentar', 'rank.name': 'Nombre inválido.', 'rank.nameRule': 'Usa al menos 2 letras o números.',
+      'records.shareTitle': 'RÉCORD NIVEL {n}', 'records.shareSubtitle': 'MODO DIFÍCIL · SIN VENTAJAS', 'records.points': 'PUNTOS', 'records.shareCall': '¿PUEDES SUPERARLO?', 'records.shareText': 'Mi récord en el nivel {level} Difícil de Lost Relics es {score} puntos.',
+      'tutorial.follow': 'Intercambia las joyas que brillan', 'tutorial.done': '¡PERFECTO! AHORA SIGUE.',
+      'menu.play': 'JUGAR', 'menu.continue': 'CONTINUAR', 'menu.sound': 'SONIDO', 'menu.music': 'MÚSICA', 'on': 'SÍ', 'off': 'NO', 'lang': 'ESPAÑOL',
+      'map.title': 'Amazonia', 'map.sub': 'Senda de la Selva', 'map.world': 'MUNDO 1', 'map.world2': 'MUNDO 2', 'map.world3': 'MUNDO 3', 'map.world4': 'MUNDO 4', 'map.title2': 'Selva Esmeralda', 'map.sub2': 'Maldición de la Pirámide', 'map.title3': 'Río Sagrado', 'map.sub3': 'Aguas de la Serpiente', 'map.title4': 'Valle Dorado', 'map.sub4': 'Pirámides del Desierto', 'map.soon': 'Próximo mundo pronto',
+      'level': 'NIVEL', 'moves': 'MOVIMIENTOS', 'score': 'MONEDAS',
+      'shop.tab.items': 'Objetos', 'shop.tab.gems': 'Joyas', 'shop.tab.words': 'Palabras', 'shop.tab.trail': 'Rastros', 'shop.buy': 'COMPRAR', 'shop.page': 'PÁGINA {n} / {t}',
+      'wallet': 'Tienes {n} monedas', 'shop.title': 'Tienda', 'shop.eyebrow': 'USA TUS MONEDAS', 'shop.have': 'Tienes: {n}', 'shop.use': 'USAR EN ESTE NIVEL', 'shop.get': 'Comprar ventajas en la tienda', 'shop.note': 'Ganas monedas al completar cada nivel.',
+      'item.seal': 'Joyas Sello', 'item.seal.d': 'Dos Joyas Sello ya en el tablero.', 'codex.tab.items': 'OBJETOS', 'codex.tab.gems': 'SKINS DE JOYAS', 'codex.tab.words': 'SKINS DE TEXTO', 'codex.tab.trail': 'RASTROS',
+      'codex.inuse': 'EN USO', 'codex.inuse.d': 'Activa ahora en el juego.', 'codex.soon': 'PRONTO', 'codex.soon.t': 'Reliquia oculta', 'codex.soon.d': 'Llegará en una próxima actualización.',
+      'codex.paid.soon': 'Compra disponible pronto', 'energy.pack': '+{n} ENERGÍAS', 'iap.fail': 'No se pudo completar la compra.', 'iap.pending': 'Pago pendiente. Se entregará al confirmar.', 'iap.recovered': '¡Compra entregada!',
+      'codex.gem.classic': 'Joyas Clásicas', 'codex.word.solar': 'Solar', 'codex.word.rare': 'Joyas Raras', 'codex.word.goldgem': 'Oro y Gema', 'codex.trail.gold': 'Rastro Dorado', 'codex.gem.gold': 'Reliquias de Oro', 'codex.gem.obsidian': 'Obsidiana Rúnica', 'codex.gem.temple': 'Joyas del Templo', 'codex.trail.jade': 'Rastro de Jade', 'codex.trail.fire': 'Fuego Solar',
+      'codex.owned': 'TUYA', 'codex.use': 'USAR', 'codex.gems.d': 'Cambia el aspecto de todas las joyas del tablero.', 'codex.words.d': 'Cambia las palabras de NIVEL y los elogios.', 'codex.trail.d': 'Cambia el rastro de la Joya Flecha y el estallido del Sello.',
+      'chal.btn': 'DESAFÍOS', 'chal.short.exp': 'EXPEDICIÓN', 'chal.short.rush': 'JEFES', 'chal.short.curse': 'MALDICIÓN', 'chal.title': 'DESAFÍOS', 'chal.unlock': 'Se abre en el nivel {n} o con monedas',
+      'relic.btn': 'RELIQUIAS', 'relic.title': 'RELIQUIAS', 'relic.count': 'Jefes vencidos: {n}/{m}', 'relic.altar': 'Altar de estrellas: {n}/{m} para +{c} monedas', 'relic.claim': 'RECLAMAR +{c}',
+      'map.current': 'Ir al nivel actual', 'streak.title': 'SENDA DEL EXPLORADOR', 'streak.0': 'Gana niveles seguidos para obtener ventajas gratis.', 'streak.n': '{n} victoria(s) seguida(s): ¡ventaja gratis!', 'streak.lost': 'La Senda se reinició.', 'streak.up': 'Senda del Explorador: {n}/3',
+      'item.moves': '+3 movimientos', 'item.moves.d': 'Empieza con 3 movimientos extra.', 'item.dyn': 'Joyas Flecha', 'item.dyn.d': 'Dos Joyas Flecha en el tablero.', 'item.orb': 'Orbe Solar', 'item.orb.d': 'Empieza con un Orbe Solar listo.', 'item.hammer': 'Martillo', 'item.hammer.d': 'Rompe cualquier joya sin gastar movimiento.', 'goal': 'META',
+      'play': 'JUGAR', 'retry': 'REINTENTAR', 'next': 'SIGUIENTE NIVEL', 'map': 'MAPA', 'resume': 'CONTINUAR', 'restart': 'REINICIAR', 'gfx': 'GRÁFICOS',
+      'fb.btn': 'OPINIÓN / BUG', 'fb.title': 'COMENTARIOS', 'fb.ask': '¿Qué mejorarías, qué falta o encontraste un error? Cuéntanos:', 'fb.placeholder': 'Describe tu idea, sugerencia o error (opcional)', 'fb.cat.idea': 'Sugerencia', 'fb.cat.improve': 'Mejorar', 'fb.cat.bug': 'Bug / Error', 'fb.send': 'ENVIAR', 'fb.reward': 'gana {n} monedas', 'fb.thanks': '¡Gracias por tu opinión!', 'fb.thanksCoins': '¡Gracias! +{n} monedas', 'fb.fail': 'No se pudo enviar ahora.',
+      'acct.title': 'CUENTA', 'acct.why': 'Inicia sesión con Google para guardar tu progreso en la nube.', 'acct.login': 'ENTRAR CON GOOGLE', 'acct.loginSub': 'guarda en la nube', 'acct.skip': 'JUGAR SIN CUENTA', 'acct.ok': '¡Progreso guardado en la nube!', 'acct.fail': 'No se pudo iniciar sesión.', 'acct.cancel': 'Inicio de sesión cancelado.', 'acct.on': 'Conectado como {n}.', 'acct.logout': 'CERRAR SESIÓN', 'acct.btn': 'ENTRAR CON GOOGLE', 'acct.btnOn': 'CUENTA GOOGLE ✓',
+      'energy.title': 'ENERGÍA', 'energy.ad': '+1 ENERGÍA', 'energy.adSub': 'ver anuncio', 'energy.coins': '+1 ENERGÍA', 'energy.coinsSub': '{n} monedas · quedan {r} hoy', 'energy.coinsDone': 'límite diario alcanzado', 'energy.next': 'Próxima energía en {t}', 'energy.full': '¡Energía llena!',
+      'chest.title': 'TESORO', 'chest.next': 'Próximo cofre en {t}', 'chest.open': 'ABRIR', 'chest.day': 'DÍA {n} SEGUIDO', 'chest.back': 'Vuelve en 12 horas por otro.', 'chest.ok': 'RECOGER', 'note.chest': '¡Tu cofre está listo!', 'note.energy': '¡Energía llena! Las reliquias te esperan.',
+      'gfx.auto': 'AUTO', 'gfx.full': 'ALTO', 'gfx.lite': 'LIGERO', 'pause': 'PAUSA', 'close': 'CERRAR',
+      'goal.score': 'Haz {n} puntos', 'goal.collect': 'Reúne {n}', 'goal.sand': 'Limpia toda la arena', 'goal.artifact': 'Lleva {n} cofre(s) al fondo', 'goal.rock': 'Rompe {n} rocas', 'goal.vine': 'Rompe {n} sellos', 'goal.boss': 'Derrota a los {n} escarabajos',
+      'goal.jaguar': 'Derrota al Jaguar de Jade', 'goal.statue': 'Derriba el Ídolo de Piedra', 'goal.serpent': 'Derrota a Kukulkán', 'goal.boa': 'Ahuyenta a la boa', 'goal.monkey': 'Ahuyenta al mono', 'goal.onca': 'Derrota al Jaguar', 'goal.spider': 'Derrota a la Araña', 'goal.frog': 'Ahuyenta al sapo', 'goal.moss': 'Limpia todo el musgo',
+      'win.title': '¡Nivel completado!', 'win.best': 'Récord: {n}', 'win.new': '¡Nuevo récord!', 'win.double': '2× MONEDAS (+{n})', 'win.doubleAd': 'viendo un anuncio', 'win.doubled': '¡Monedas duplicadas! +{n}', 'chest.double': '2× MONEDAS (+{n})', 'chest.doubleAd': 'viendo un anuncio', 'chest.doubled': '¡Cofre duplicado! +{n} monedas',
+      'lose.title': '¡Casi lo logras!', 'lose.left': 'Aún falta:', 'lose.extra': '+5 MOVIMIENTOS', 'lose.extraAd': 'viendo un anuncio',
+      'rush': '¡Fiebre del Tesoro!', 'shuffle': 'Sin jugadas, mezclando…', 'praise.1': '¡Genial!', 'praise.2': '¡Increíble!', 'praise.3': '¡Legendario!', 'boss': 'NIVEL DE GUARDIÁN',
+      'announce': 'Nivel {n}', 'announce.say': '¡Nivel {n}!', 'announce.boss': '¡Nivel de guardián!', 'announce.final': '¡Nivel final!',
+      'ad.tag': 'ANUNCIO', 'ad.slot': 'Espacio publicitario', 'ad.reward': 'recompensa: +5 movimientos', 'ad.next': 'entre niveles', 'ad.rewardIn': 'Recompensa en', 'ad.closeIn': 'Cerrar en', 'ad.rewardOk': '¡Recompensa lista!', 'ad.skip': 'SALTAR', 'ad.close': 'CERRAR',
+      'loading': 'Abriendo el templo…', 'playstore.label': 'Disponible en Google Play', 'playstore.over': 'Disponible en', 'playstore.name': 'Google Play',
+    },
+    fr: {
+      'shop.info': 'À propos de {item}', 'map.next': 'MONDE SUIVANT', 'map.shop.label': 'Boutique : {n} pièces', 'title.sub': 'Une expédition de joyaux',
+      'daily.btn': 'COUP DU JOUR', 'daily.title': 'COUP DU JOUR', 'daily.hint': 'UN SEUL COUP. TROUVEZ LE MEILLEUR !', 'daily.shareBtn': 'PARTAGER', 'daily.retry': 'RÉESSAYER', 'menu.back': 'MENU',
+      'weekly.btn': 'RECORDS', 'weekly.title': 'RECORD HEBDO', 'mode.normal': 'NORMAL', 'mode.hard': 'DIFFICILE', 'records.title': 'RECORDS DIFFICILES', 'rank.you': 'VOUS',
+      'menu.play': 'JOUER', 'menu.continue': 'CONTINUER', 'menu.sound': 'SON', 'menu.music': 'MUSIQUE', 'on': 'OUI', 'off': 'NON', 'lang': 'FRANÇAIS',
+      'map.title': 'Amazonie', 'map.sub': 'Sentier de la Forêt', 'map.world': 'MONDE 1', 'map.world2': 'MONDE 2', 'map.world3': 'MONDE 3', 'map.world4': 'MONDE 4', 'map.title2': 'Jungle Émeraude', 'map.title3': 'Rivière Sacrée', 'map.title4': 'Vallée Dorée',
+      'level': 'NIVEAU', 'moves': 'COUPS', 'score': 'PIÈCES', 'shop.tab.items': 'Objets', 'shop.tab.gems': 'Joyaux', 'shop.tab.words': 'Mots', 'shop.tab.trail': 'Traînées', 'shop.buy': 'ACHETER',
+      'wallet': 'Vous avez {n} pièces', 'shop.title': 'Boutique', 'shop.have': 'Vous avez : {n}', 'shop.use': 'UTILISER', 'codex.inuse': 'ACTIF', 'codex.soon': 'BIENTÔT', 'codex.owned': 'ACQUIS', 'codex.use': 'UTILISER',
+      'codex.paid.soon': 'Achat bientôt disponible', 'energy.pack': '+{n} ÉNERGIES', 'iap.fail': 'Achat impossible.', 'iap.pending': 'Paiement en attente.', 'iap.recovered': 'Achat livré !',
+      'codex.gem.classic': 'Joyaux Classiques', 'codex.gem.obsidian': 'Obsidienne Runique', 'codex.gem.gold': 'Reliques d’Or', 'codex.gem.temple': 'Joyaux du Temple', 'codex.word.solar': 'Solaire', 'codex.word.rare': 'Joyaux Rares', 'codex.trail.gold': 'Traînée Dorée', 'codex.trail.jade': 'Traînée de Jade', 'codex.trail.fire': 'Feu Solaire',
+      'chal.btn': 'DÉFIS', 'chal.title': 'DÉFIS', 'relic.btn': 'RELIQUES', 'relic.title': 'RELIQUES', 'goal': 'OBJECTIF',
+      'play': 'JOUER', 'retry': 'RÉESSAYER', 'next': 'NIVEAU SUIVANT', 'map': 'CARTE', 'resume': 'REPRENDRE', 'restart': 'RECOMMENCER', 'gfx': 'GRAPHISMES',
+      'fb.btn': 'AVIS / BUG', 'fb.title': 'COMMENTAIRES', 'fb.ask': 'Une idée, un souci ou un bug ? Dites-le-nous :', 'fb.placeholder': 'Décrivez votre idée ou bug (facultatif)', 'fb.cat.idea': 'Idée', 'fb.cat.improve': 'Améliorer', 'fb.cat.bug': 'Bug', 'fb.send': 'ENVOYER', 'fb.reward': 'gagnez {n} pièces', 'fb.thanks': 'Merci pour votre avis !', 'fb.thanksCoins': 'Merci ! +{n} pièces', 'fb.fail': 'Envoi impossible.',
+      'acct.title': 'COMPTE', 'acct.login': 'CONNEXION GOOGLE', 'acct.skip': 'JOUER SANS COMPTE', 'acct.btn': 'CONNEXION GOOGLE', 'acct.btnOn': 'COMPTE GOOGLE ✓', 'acct.logout': 'DÉCONNEXION',
+      'energy.title': 'ÉNERGIE', 'energy.ad': '+1 ÉNERGIE', 'energy.adSub': 'regarder une pub', 'energy.coins': '+1 ÉNERGIE', 'energy.full': 'Énergie pleine !',
+      'chest.title': 'TRÉSOR', 'chest.open': 'OUVRIR', 'chest.ok': 'PRENDRE', 'pause': 'PAUSE', 'close': 'FERMER',
+      'goal.score': 'Faites {n} points', 'goal.collect': 'Collectez {n}', 'goal.sand': 'Nettoyez tout le sable', 'goal.artifact': 'Amenez {n} coffre(s) en bas', 'goal.rock': 'Cassez {n} rochers', 'goal.vine': 'Brisez {n} sceaux',
+      'win.title': 'Niveau terminé !', 'win.best': 'Record : {n}', 'win.new': 'Nouveau record !', 'win.double': '2× PIÈCES (+{n})', 'win.doubleAd': 'en regardant une pub', 'win.doubled': 'Pièces doublées ! +{n}', 'chest.double': '2× PIÈCES (+{n})', 'chest.doubleAd': 'en regardant une pub', 'chest.doubled': 'Coffre doublé ! +{n} pièces',
+      'lose.title': 'Presque !', 'lose.left': 'Il reste :', 'lose.extra': '+5 COUPS', 'lose.extraAd': 'en regardant une pub',
+      'rush': 'Ruée au Trésor !', 'shuffle': 'Aucun coup, mélange…', 'praise.1': 'Super !', 'praise.2': 'Incroyable !', 'praise.3': 'Légendaire !', 'boss': 'NIVEAU GARDIEN', 'announce': 'Niveau {n}',
+      'ad.tag': 'PUB', 'ad.skip': 'PASSER', 'ad.close': 'FERMER', 'loading': 'Ouverture du temple…', 'playstore.label': 'Disponible sur Google Play',
+    },
+    de: {
+      'shop.info': 'Über {item}', 'map.next': 'NÄCHSTE WELT', 'map.shop.label': 'Shop: {n} Münzen', 'title.sub': 'Eine Juwelen-Expedition',
+      'daily.btn': 'ZUG DES TAGES', 'daily.title': 'ZUG DES TAGES', 'daily.hint': 'NUR EIN ZUG. FINDE DEN BESTEN!', 'daily.shareBtn': 'TEILEN', 'daily.retry': 'NOCHMAL', 'menu.back': 'MENÜ',
+      'weekly.btn': 'REKORDE', 'weekly.title': 'WOCHENREKORD', 'mode.normal': 'NORMAL', 'mode.hard': 'SCHWER', 'records.title': 'SCHWERE REKORDE', 'rank.you': 'DU',
+      'menu.play': 'SPIELEN', 'menu.continue': 'WEITER', 'menu.sound': 'TON', 'menu.music': 'MUSIK', 'on': 'AN', 'off': 'AUS', 'lang': 'DEUTSCH',
+      'map.title': 'Amazonas', 'map.world': 'WELT 1', 'map.world2': 'WELT 2', 'map.world3': 'WELT 3', 'map.world4': 'WELT 4', 'map.title2': 'Smaragd-Dschungel', 'map.title3': 'Heiliger Fluss', 'map.title4': 'Goldenes Tal',
+      'level': 'LEVEL', 'moves': 'ZÜGE', 'score': 'MÜNZEN', 'shop.tab.items': 'Items', 'shop.tab.gems': 'Juwelen', 'shop.tab.words': 'Wörter', 'shop.tab.trail': 'Spuren', 'shop.buy': 'KAUFEN',
+      'wallet': 'Du hast {n} Münzen', 'shop.title': 'Shop', 'shop.have': 'Besitz: {n}', 'shop.use': 'NUTZEN', 'codex.inuse': 'AKTIV', 'codex.soon': 'BALD', 'codex.owned': 'IM BESITZ', 'codex.use': 'NUTZEN',
+      'codex.paid.soon': 'Kauf bald verfügbar', 'energy.pack': '+{n} ENERGIE', 'iap.fail': 'Kauf fehlgeschlagen.', 'iap.pending': 'Zahlung ausstehend.', 'iap.recovered': 'Kauf geliefert!',
+      'codex.gem.classic': 'Klassische Juwelen', 'codex.gem.obsidian': 'Runen-Obsidian', 'codex.gem.gold': 'Goldrelikte', 'codex.gem.temple': 'Tempeljuwelen', 'codex.word.solar': 'Solar', 'codex.word.rare': 'Seltene Juwelen',
+      'chal.btn': 'HERAUSFORDERUNG', 'chal.title': 'HERAUSFORDERUNGEN', 'relic.btn': 'RELIKTE', 'relic.title': 'RELIKTE', 'goal': 'ZIEL',
+      'play': 'SPIELEN', 'retry': 'NOCHMAL', 'next': 'NÄCHSTES LEVEL', 'map': 'KARTE', 'resume': 'WEITER', 'restart': 'NEUSTART', 'gfx': 'GRAFIK',
+      'fb.btn': 'FEEDBACK / BUG', 'fb.title': 'FEEDBACK', 'fb.ask': 'Ideen, Kritik oder einen Bug gefunden? Schreib uns:', 'fb.placeholder': 'Beschreibe deine Idee oder den Bug (optional)', 'fb.cat.idea': 'Idee', 'fb.cat.improve': 'Verbessern', 'fb.cat.bug': 'Bug', 'fb.send': 'SENDEN', 'fb.reward': '{n} Münzen erhalten', 'fb.thanks': 'Danke für dein Feedback!', 'fb.thanksCoins': 'Danke! +{n} Münzen', 'fb.fail': 'Senden fehlgeschlagen.',
+      'acct.title': 'KONTO', 'acct.login': 'MIT GOOGLE ANMELDEN', 'acct.skip': 'OHNE KONTO SPIELEN', 'acct.btn': 'MIT GOOGLE ANMELDEN', 'acct.btnOn': 'GOOGLE-KONTO ✓', 'acct.logout': 'ABMELDEN',
+      'energy.title': 'ENERGIE', 'energy.ad': '+1 ENERGIE', 'energy.adSub': 'Werbung ansehen', 'energy.coins': '+1 ENERGIE', 'energy.full': 'Energie voll!',
+      'chest.title': 'SCHATZ', 'chest.open': 'ÖFFNEN', 'chest.ok': 'NEHMEN', 'pause': 'PAUSE', 'close': 'SCHLIESSEN',
+      'goal.score': 'Erziele {n} Punkte', 'goal.collect': 'Sammle {n}', 'goal.sand': 'Entferne allen Sand', 'goal.artifact': 'Bringe {n} Truhe(n) nach unten', 'goal.rock': 'Zerbrich {n} Felsen', 'goal.vine': 'Brich {n} Siegel',
+      'win.title': 'Level geschafft!', 'win.best': 'Rekord: {n}', 'win.new': 'Neuer Rekord!', 'win.double': '2× MÜNZEN (+{n})', 'win.doubleAd': 'Werbung ansehen', 'win.doubled': 'Münzen verdoppelt! +{n}', 'chest.double': '2× MÜNZEN (+{n})', 'chest.doubleAd': 'Werbung ansehen', 'chest.doubled': 'Truhe verdoppelt! +{n} Münzen',
+      'lose.title': 'Knapp daneben!', 'lose.left': 'Fehlt noch:', 'lose.extra': '+5 ZÜGE', 'lose.extraAd': 'Werbung ansehen',
+      'rush': 'Schatzrausch!', 'shuffle': 'Keine Züge, mische…', 'praise.1': 'Super!', 'praise.2': 'Unglaublich!', 'praise.3': 'Legendär!', 'boss': 'WÄCHTER-LEVEL', 'announce': 'Level {n}',
+      'ad.tag': 'WERBUNG', 'ad.skip': 'ÜBERSPRINGEN', 'ad.close': 'SCHLIESSEN', 'loading': 'Tempel wird geöffnet…', 'playstore.label': 'Jetzt bei Google Play',
+    },
+    it: {
+      'shop.info': 'Info su {item}', 'map.next': 'PROSSIMO MONDO', 'map.shop.label': 'Negozio: {n} monete', 'title.sub': 'Una spedizione di gioielli',
+      'daily.btn': 'MOSSA DEL GIORNO', 'daily.title': 'MOSSA DEL GIORNO', 'daily.shareBtn': 'CONDIVIDI', 'daily.retry': 'RIPROVA', 'menu.back': 'MENU',
+      'weekly.btn': 'RECORD', 'mode.normal': 'NORMALE', 'mode.hard': 'DIFFICILE', 'rank.you': 'TU',
+      'menu.play': 'GIOCA', 'menu.continue': 'CONTINUA', 'menu.sound': 'SUONO', 'menu.music': 'MUSICA', 'on': 'SÌ', 'off': 'NO', 'lang': 'ITALIANO',
+      'map.world': 'MONDO 1', 'map.world2': 'MONDO 2', 'map.world3': 'MONDO 3', 'map.world4': 'MONDO 4',
+      'level': 'LIVELLO', 'moves': 'MOSSE', 'score': 'MONETE', 'shop.tab.items': 'Oggetti', 'shop.tab.gems': 'Gioielli', 'shop.tab.words': 'Parole', 'shop.tab.trail': 'Scie', 'shop.buy': 'COMPRA',
+      'wallet': 'Hai {n} monete', 'shop.title': 'Negozio', 'codex.inuse': 'IN USO', 'codex.soon': 'PRESTO', 'codex.owned': 'TUO', 'codex.use': 'USA',
+      'energy.pack': '+{n} ENERGIE', 'iap.fail': 'Acquisto non riuscito.', 'iap.pending': 'Pagamento in sospeso.', 'iap.recovered': 'Acquisto consegnato!',
+      'codex.gem.gold': 'Reliquie d’Oro', 'codex.gem.temple': 'Gioielli del Tempio', 'codex.word.rare': 'Gioielli Rari',
+      'chal.btn': 'SFIDE', 'relic.btn': 'RELIQUIE', 'goal': 'OBIETTIVO', 'play': 'GIOCA', 'retry': 'RIPROVA', 'next': 'PROSSIMO LIVELLO', 'map': 'MAPPA', 'resume': 'RIPRENDI', 'restart': 'RICOMINCIA', 'gfx': 'GRAFICA',
+      'fb.btn': 'FEEDBACK / BUG', 'fb.title': 'FEEDBACK', 'fb.ask': 'Idee, consigli o bug? Scrivici:', 'fb.cat.idea': 'Idea', 'fb.cat.improve': 'Migliorare', 'fb.cat.bug': 'Bug', 'fb.send': 'INVIA', 'fb.reward': 'ottieni {n} monete', 'fb.thanks': 'Grazie per il feedback!', 'fb.thanksCoins': 'Grazie! +{n} monete',
+      'energy.title': 'ENERGIA', 'energy.ad': '+1 ENERGIA', 'energy.adSub': 'guarda un annuncio', 'chest.title': 'TESORO', 'chest.open': 'APRI', 'chest.ok': 'PRENDI', 'pause': 'PAUSA', 'close': 'CHIUDI',
+      'win.title': 'Livello completato!', 'win.double': '2× MONETE (+{n})', 'win.doubleAd': 'guardando un annuncio', 'lose.title': 'Quasi!', 'lose.extra': '+5 MOSSE', 'lose.extraAd': 'guardando un annuncio',
+      'praise.1': 'Ottimo!', 'praise.2': 'Incredibile!', 'praise.3': 'Leggendario!', 'announce': 'Livello {n}', 'loading': 'Apertura del tempio…',
+    },
+    id: {
+      'shop.info': 'Tentang {item}', 'map.next': 'DUNIA BERIKUTNYA', 'title.sub': 'Ekspedisi permata', 'daily.btn': 'LANGKAH HARIAN', 'daily.shareBtn': 'BAGIKAN', 'daily.retry': 'COBA LAGI', 'menu.back': 'MENU',
+      'weekly.btn': 'REKOR', 'mode.normal': 'NORMAL', 'mode.hard': 'SULIT', 'rank.you': 'KAMU',
+      'menu.play': 'MAIN', 'menu.continue': 'LANJUT', 'menu.sound': 'SUARA', 'menu.music': 'MUSIK', 'on': 'NYALA', 'off': 'MATI', 'lang': 'INDONESIA',
+      'level': 'LEVEL', 'moves': 'LANGKAH', 'score': 'KOIN', 'shop.tab.items': 'Item', 'shop.tab.gems': 'Permata', 'shop.tab.words': 'Kata', 'shop.tab.trail': 'Jejak', 'shop.buy': 'BELI',
+      'shop.title': 'Toko', 'codex.inuse': 'DIPAKAI', 'codex.soon': 'SEGERA', 'codex.owned': 'DIMILIKI', 'codex.use': 'PAKAI', 'energy.pack': '+{n} ENERGI',
+      'codex.gem.gold': 'Relik Emas', 'codex.gem.temple': 'Permata Kuil', 'codex.word.rare': 'Permata Langka',
+      'chal.btn': 'TANTANGAN', 'relic.btn': 'RELIK', 'goal': 'TARGET', 'play': 'MAIN', 'retry': 'COBA LAGI', 'next': 'LEVEL BERIKUTNYA', 'map': 'PETA', 'resume': 'LANJUT', 'restart': 'ULANG', 'gfx': 'GRAFIS',
+      'fb.btn': 'MASUKAN / BUG', 'fb.title': 'MASUKAN', 'fb.ask': 'Ada saran atau menemukan bug? Beri tahu kami:', 'fb.cat.idea': 'Saran', 'fb.cat.improve': 'Perbaikan', 'fb.cat.bug': 'Bug', 'fb.send': 'KIRIM', 'fb.reward': 'dapat {n} koin', 'fb.thanks': 'Terima kasih!', 'fb.thanksCoins': 'Terima kasih! +{n} koin',
+      'energy.title': 'ENERGI', 'energy.ad': '+1 ENERGI', 'energy.adSub': 'tonton iklan', 'chest.title': 'PETI', 'chest.open': 'BUKA', 'chest.ok': 'AMBIL', 'pause': 'JEDA', 'close': 'TUTUP',
+      'win.title': 'Level selesai!', 'win.double': '2× KOIN (+{n})', 'win.doubleAd': 'tonton iklan', 'lose.title': 'Hampir berhasil!', 'lose.extra': '+5 LANGKAH', 'lose.extraAd': 'tonton iklan',
+      'praise.1': 'Hebat!', 'praise.2': 'Luar Biasa!', 'praise.3': 'Legendaris!', 'announce': 'Level {n}', 'loading': 'Membuka kuil…',
+    },
+    ja: {
+      'shop.info': '{item}について', 'map.next': '次のワールド', 'title.sub': '宝石の探検', 'daily.btn': '今日の一手', 'daily.shareBtn': '共有', 'daily.retry': 'もう一度', 'menu.back': 'メニュー',
+      'weekly.btn': '記録', 'mode.normal': 'ノーマル', 'mode.hard': 'ハード', 'rank.you': 'あなた',
+      'menu.play': 'プレイ', 'menu.continue': 'つづきから', 'menu.sound': '効果音', 'menu.music': '音楽', 'on': 'オン', 'off': 'オフ', 'lang': '日本語',
+      'level': 'ステージ', 'moves': '手数', 'score': 'コイン', 'shop.tab.items': 'アイテム', 'shop.tab.gems': '宝石', 'shop.tab.words': '文字', 'shop.tab.trail': '軌跡', 'shop.buy': '購入',
+      'shop.title': 'ショップ', 'codex.inuse': '使用中', 'codex.soon': '近日公開', 'codex.owned': '所持済み', 'codex.use': '使う', 'energy.pack': 'エネルギー +{n}',
+      'codex.gem.gold': '黄金の遺物', 'codex.gem.temple': '神殿の宝石', 'codex.word.rare': 'レア宝石文字',
+      'chal.btn': 'チャレンジ', 'relic.btn': '遺物', 'goal': '目標', 'play': 'プレイ', 'retry': 'やり直す', 'next': '次のステージ', 'map': 'マップ', 'resume': '再開', 'restart': '最初から', 'gfx': '画質',
+      'fb.btn': 'ご意見・バグ', 'fb.title': 'フィードバック', 'fb.ask': 'ご意見やバグがあれば教えてください：', 'fb.cat.idea': '提案', 'fb.cat.improve': '改善点', 'fb.cat.bug': 'バグ報告', 'fb.send': '送信', 'fb.reward': '{n}コイン獲得', 'fb.thanks': 'ご意見ありがとうございます！', 'fb.thanksCoins': 'ありがとう！ +{n}コイン',
+      'energy.title': 'エネルギー', 'energy.ad': 'エネルギー +1', 'energy.adSub': '広告を見る', 'chest.title': '宝箱', 'chest.open': '開ける', 'chest.ok': '受け取る', 'pause': '一時停止', 'close': '閉じる',
+      'win.title': 'ステージクリア！', 'win.double': 'コイン2倍 (+{n})', 'win.doubleAd': '広告を見る', 'lose.title': 'あと少し！', 'lose.extra': '+5手', 'lose.extraAd': '広告を見る',
+      'praise.1': 'グレート！', 'praise.2': 'すごい！', 'praise.3': 'レジェンド！', 'announce': 'ステージ {n}', 'loading': '神殿を開いています…',
+    },
   };
+  const LANG_ORDER = ['pt', 'en', 'es', 'fr', 'de', 'it', 'id', 'ja'];
+  const LANG_HTML = { pt: 'pt-BR', en: 'en', es: 'es', fr: 'fr', de: 'de', it: 'it', id: 'id', ja: 'ja' };
   const GEM_NAMES = {
     pt: ['rubis', 'esmeraldas', 'safiras', 'topázios', 'ametistas', 'diamantes'],
     en: ['rubies', 'emeralds', 'sapphires', 'topazes', 'amethysts', 'diamonds'],
+    es: ['rubíes', 'esmeraldas', 'zafiros', 'topacios', 'amatistas', 'diamantes'],
+    fr: ['rubis', 'émeraudes', 'saphirs', 'topazes', 'améthystes', 'diamants'],
+    de: ['Rubine', 'Smaragde', 'Saphire', 'Topase', 'Amethyste', 'Diamanten'],
+    it: ['rubini', 'smeraldi', 'zaffiri', 'topazi', 'ametiste', 'diamanti'],
+    id: ['rubi', 'zamrud', 'safir', 'topaz', 'kecubung', 'berlian'],
+    ja: ['ルビー', 'エメラルド', 'サファイア', 'トパーズ', 'アメジスト', 'ダイヤ'],
   };
+  function detectLang(loc) {
+    const s = String(loc || '').toLowerCase();
+    if (s.startsWith('pt')) return 'pt';
+    if (s.startsWith('es')) return 'es';
+    if (s.startsWith('fr')) return 'fr';
+    if (s.startsWith('de')) return 'de';
+    if (s.startsWith('it')) return 'it';
+    if (s.startsWith('id') || s.startsWith('in')) return 'id';
+    if (s.startsWith('ja')) return 'ja';
+    return 'en';
+  }
   let lang = 'pt';
   try { lang = LRStorage.getItem('lostrelics.lang') || ''; } catch (e) {}
-  if (!STRINGS[lang]) lang = /^pt/i.test(navigator.language || '') ? 'pt' : 'en';
+  if (!STRINGS[lang]) lang = detectLang(navigator.language || '');
+  document.documentElement.lang = LANG_HTML[lang] || 'en';
 
   root.I18N = {
     get lang() { return lang; },
+    get langs() { return LANG_ORDER.slice(); },
     t(key, vars) {
-      let s = (STRINGS[lang] && STRINGS[lang][key]) || STRINGS.pt[key] || key;
+      let s = (STRINGS[lang] && STRINGS[lang][key]) || STRINGS.en[key] || STRINGS.pt[key] || key;
       if (vars) for (const k in vars) s = s.replace('{' + k + '}', vars[k]);
       return s;
     },
-    gem(i) { return GEM_NAMES[lang][i]; },
+    gem(i) { return (GEM_NAMES[lang] || GEM_NAMES.en)[i]; },
     toggle() {
-      lang = lang === 'pt' ? 'en' : 'pt';
+      const idx = LANG_ORDER.indexOf(lang);
+      lang = LANG_ORDER[(idx + 1) % LANG_ORDER.length];
       try { LRStorage.setItem('lostrelics.lang', lang); } catch (e) {}
-      document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+      document.documentElement.lang = LANG_HTML[lang] || 'en';
     },
     setDefault(loc) {
       let saved = null;
       try { saved = LRStorage.getItem('lostrelics.lang'); } catch (e) {}
-      if (!saved) lang = /^pt/i.test(loc) ? 'pt' : 'en';
+      if (!saved) {
+        lang = detectLang(loc);
+        document.documentElement.lang = LANG_HTML[lang] || 'en';
+      }
     },
   };
 })(window);
