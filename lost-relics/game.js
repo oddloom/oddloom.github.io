@@ -291,6 +291,7 @@
     card.querySelector('#mEnBack').onclick = () => { Sound.play('click'); clearInterval(iv); closeModal(); if (back) back(); else if (scene !== 'map') wipe(openMap); };
     Ads.offerReward({
       level: 0,
+      placement: 'energy_refill',
       onAvailable(show) { const b = card.querySelector('#mEnAd'); if (!b) return; b.hidden = false; b.onclick = () => { Sound.play('click'); show(); }; },
       onReward() { track('energy_buy', { via: 'ad' }); grant(); },
     });
@@ -323,9 +324,29 @@
       '<div class="en-big"><img alt="" src="' + ART.icon('chest', 160) + '"></div>' +
       '<div class="chest-loot"><span><img alt="" src="' + ART.icon('coin', 64) + '"><b>+' + r.coins + '</b></span><span><img alt="" src="' + ART.icon('sun', 64) + '"><b>+' + r.energy + '</b></span></div>' +
       '<div class="moves-line">' + T('chest.back') + '</div>' +
-      '<div class="btns"><button class="btn" id="mChOk" type="button">' + T('chest.ok') + '</button></div>');
+      '<div class="btns"><button class="btn stack" id="mChDouble" type="button" hidden>' + T('chest.double', { n: r.coins }) + '<span class="sub">' + T('chest.doubleAd') + '</span></button><button class="btn" id="mChOk" type="button">' + T('chest.ok') + '</button></div>');
     card.classList.add('energy-card');
     card.querySelector('#mChOk').onclick = () => { Sound.play('click'); closeModal(); askNotes(); };
+    let chestDoubled = false;
+    Ads.offerReward({
+      level: 0,
+      placement: 'chest_double_coins',
+      onAvailable(show) {
+        const b = card.querySelector('#mChDouble');
+        if (!b || chestDoubled) return;
+        b.hidden = false;
+        b.onclick = () => { if (chestDoubled) return; Sound.play('click'); b.disabled = true; show(); };
+      },
+      onReward() {
+        if (chestDoubled) return;
+        chestDoubled = true;
+        save.coins += r.coins; persist(); paintWallet();
+        const b = card.querySelector('#mChDouble'); if (b) b.remove();
+        const coinB = card.querySelector('.chest-loot b'); if (coinB) coinB.textContent = '+' + (r.coins * 2);
+        showPraise(T('chest.doubled', { n: r.coins }), 'info');
+      },
+      onSkip() { const b = card.querySelector('#mChDouble'); if (b && !chestDoubled) b.disabled = false; },
+    });
     paintWallet(); paintEnergy(); scheduleNotes();
   }
   // ---------- mapa: energia (esquerda) e baú (abaixo das moedas) ----------
@@ -2624,8 +2645,8 @@
     if (hardMode) loadLevelBoards(card, id, Records.listLevel(id, L.week));
   }
 
-  // anúncio entre fases (03/11, pedido dele): nenhum até a fase 15, 1 a cada 5 vitórias até a 30, depois 1 a cada 3
-  const adDue = (id) => id > 15 && save.wins % (id <= 30 ? 5 : 3) === 0;
+  // anúncio entre fases: fases 1–3 livres (onboarding), depois elegível a cada 2 vitórias (filtrado pelo cooldown de 90s em ads.js)
+  const adDue = (id) => id >= 4 && save.wins % 2 === 0;
   async function showWin() {
     if (level.run) return runStageWon();
     if (level.daily) return showDaily();
@@ -2665,7 +2686,7 @@
       (hardMode ? '<div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' : '<div class="moves-line streak-up">' + T('streak.up', { n: save.streak }) + '</div>') +
       (sealNew ? '<div class="seal-line on">' + T('seal.done', { c: SEAL_COINS }) + '</div>' : '') +
       (last ? '<p>' + T('map.soon') + '</p>' : '') +
-      '<div class="btns">' + (last || hardMode ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
+      '<div class="btns">' + (!hardMode && earned > 0 ? '<button class="btn stack" id="mDouble" type="button" hidden>' + T('win.double', { n: earned }) + '<span class="sub">' + T('win.doubleAd') + '</span></button>' : '') + (last || hardMode ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
       (hardMode ? '<button class="btn" id="mShare" type="button">' + T('records.share') + '</button>' : '') +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
     winBurst(hardMode ? 14 : 10 + stars * 6);
@@ -2685,10 +2706,34 @@
     showScore(0);
     const iv = setInterval(() => { showScore(Math.round(sc.v)); if (sc.v >= target) clearInterval(iv); }, 40);
     const next = card.querySelector('#mNext');
+    let doubled = false;
+    if (!hardMode && earned > 0) {
+      Ads.offerReward({
+        level: id,
+        placement: 'win_double_coins',
+        onAvailable(show) {
+          const b = card.querySelector('#mDouble');
+          if (!b || doubled) return;
+          b.hidden = false;
+          b.onclick = () => { if (doubled) return; Sound.play('click'); b.disabled = true; show(); };
+        },
+        onReward() {
+          if (doubled) return;
+          doubled = true;
+          save.coins += earned; persist(); paintWallet();
+          const b = card.querySelector('#mDouble'); if (b) b.remove();
+          clearInterval(iv); showScore(earned * 2);
+          const bestEl = card.querySelector('.best');
+          if (bestEl) bestEl.innerHTML = (isNew ? T('win.new') + ' · ' : '') + walletHTML();
+          showPraise(T('win.doubled', { n: earned }), 'info');
+        },
+        onSkip() { const b = card.querySelector('#mDouble'); if (b && !doubled) b.disabled = false; },
+      });
+    }
     if (next) next.onclick = () => {
       Sound.play('click'); closeModal();
       const go = () => openPre(id + 1);
-      if (adDue(id)) Ads.interstitial(go, { level: id }); else go();
+      if (adDue(id)) Ads.interstitial(go, { level: id, placement: 'win_next' }); else go();
     };
     const share = card.querySelector('#mShare');
     if (share) share.onclick = async () => {
@@ -2705,7 +2750,11 @@
         track('share_result', { mode: 'hard', level: id, result: r === 'shared' ? 'ok' : r, score: state.score });
       } catch (e) { track('share_result', { mode: 'hard', level: id, result: 'cancel' }); }
     };
-    card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMap); };
+    card.querySelector('#mMap').onclick = () => {
+      Sound.play('click'); closeModal();
+      const go = () => wipe(openMap);
+      if (adDue(id)) Ads.interstitial(go, { level: id, placement: 'win_map' }); else go();
+    };
     if (hardMode) {
       // envio ao ranking com aviso do resultado: ✓ no ranking, ou "não enviado" com botão de tentar de novo
       const runWeek = level.week, replay = weeklyReplay.slice(), score = state.score;
@@ -2750,11 +2799,21 @@
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
     card.classList.add('lose-card');
     // perdeu e desistiu (tentar de novo ou mapa) = trilha zera; se pegar +5 movimentos e vencer, mantém
-    card.querySelector('#mRetry').onclick = () => { Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); breakStreak(); const hd = !!level.hard; payEnergy(id, hd, (c) => { closeModal(); wipe(() => startLevel(id, {}, hd, c)); }, () => wipe(openMap)); };
-    card.querySelector('#mMap').onclick = () => { Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); breakStreak(); closeModal(); wipe(openMap); };
+    card.querySelector('#mRetry').onclick = () => {
+      Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); breakStreak();
+      const hd = !!level.hard;
+      const retryNow = () => payEnergy(id, hd, (c) => { closeModal(); wipe(() => startLevel(id, {}, hd, c)); }, () => wipe(openMap));
+      if (id >= 4) Ads.interstitial(retryNow, { level: id, placement: 'lose_retry' }); else retryNow();
+    };
+    card.querySelector('#mMap').onclick = () => {
+      Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); breakStreak(); closeModal();
+      const go = () => wipe(openMap);
+      if (id >= 4) Ads.interstitial(go, { level: id, placement: 'lose_map' }); else go();
+    };
     if (!level.hard && !usedExtra && !state.cursed) { // desafio difícil e maldição não aceitam movimentos extras
       Ads.offerReward({
         level: id,
+        placement: 'lose_extra_moves',
         onAvailable(show) {
           const b = card.querySelector('#mExtra');
           if (!b) return;
@@ -3474,7 +3533,7 @@
         '<p class="save-summary">' + T('run.rush.next', { n: run.stage, m: run.list.length, v: run.moves }) + '</p>' +
         '<div class="btns"><button class="btn" id="mNext" type="button">' + T('next') + '</button><button class="btn dark small" id="mEnd" type="button">' + T('run.stop') + '</button></div>');
       const go = () => nextRunStage();
-      card.querySelector('#mNext').onclick = () => { Sound.play('click'); if (run.stage % 5 === 0) Ads.interstitial(go, { level: 0 }); else go(); };
+      card.querySelector('#mNext').onclick = () => { Sound.play('click'); if (run.stage % 2 === 0) Ads.interstitial(go, { level: 0, placement: 'run_stage' }); else go(); };
       card.querySelector('#mEnd').onclick = () => { Sound.play('click'); runFinish(true); };
       return;
     }
@@ -3489,7 +3548,7 @@
       const p = b.dataset.p;
       if (p === 'moves') run.carry += 5; else if (p === 'coins') run.coins += 60; else run.boost = { [p]: 1 };
       const go = () => nextRunStage();
-      if (run.stage % 5 === 0) Ads.interstitial(go, { level: 0 }); else go();
+      if (run.stage % 2 === 0) Ads.interstitial(go, { level: 0, placement: 'run_stage' }); else go();
     }; });
     card.querySelector('#mEnd').onclick = () => { Sound.play('click'); runFinish(true); };
   }
@@ -3503,6 +3562,7 @@
     card.querySelector('#mEnd').onclick = () => { Sound.play('click'); finishRun('lose', { reason: state.cursed ? 'cursed' : 'moves' }); runFinish(false); };
     if (!run.extra && !state.cursed) Ads.offerReward({ // 1 vez por corrida
       level: 0,
+      placement: 'run_extra_moves',
       onAvailable(show) { const b = card.querySelector('#mExtra'); if (!b) return; b.hidden = false; b.onclick = () => { Sound.play('click'); show(); }; },
       onReward() { run.extra = true; state.moves += 5; closeModal(); renderHUD(); Ads.gameplay(true); busy = false; },
     });
@@ -3513,8 +3573,8 @@
     const card = openModal('<h2 class="plaque-title">' + T('chal.short.' + type) + '</h2><div class="orn"><i></i></div>' +
       '<p class="save-summary">' + (type === 'curse' ? T(won ? 'run.curse.won' : 'run.curse.lost') : T('run.result', { n: Math.max(0, stage) })) + (coins ? ' ' + T('run.coins', { c: coins }) : '') + '</p>' +
       '<div class="btns"><button class="btn" id="mAgain" type="button">' + T('retry') + '</button><button class="btn dark small" id="mBack" type="button">' + T('chal.btn') + '</button></div>');
-    card.querySelector('#mAgain').onclick = () => { Sound.play('click'); closeModal(); startRun(type); };
-    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); run = null; wipe(() => { openMenu(); openChallenges(); }); };
+    card.querySelector('#mAgain').onclick = () => { Sound.play('click'); closeModal(); Ads.interstitial(() => startRun(type), { level: 0, placement: 'run_again' }); };
+    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); run = null; Ads.interstitial(() => wipe(() => { openMenu(); openChallenges(); }), { level: 0, placement: 'run_back' }); };
   }
   function openMenu() {
     scene = 'menu'; state = null; updateHammerBtn();

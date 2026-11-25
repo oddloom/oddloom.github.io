@@ -8,15 +8,18 @@
 // Com provider 'none' não mostra anúncio nenhum.
 //
 // Onde aparece (Lost Relics): nunca durante a fase.
-//  - recompensado: ao perder, "+5 movimentos" (1 vez por tentativa)
-//  - intersticial: a cada 3 fases vencidas, ao seguir pra próxima
+//  - recompensado: +5 movimentos ao perder (campanha/corrida), +1 energia, 2x moedas na vitória normal e no baú 12h
+//  - intersticial: a partir da fase 4, em transições naturais (vitória, derrota, corrida), com cooldown de 90s e folga de 45s após premiado
 (function (root) {
   const cfg = root.ADS_CONFIG || {};
   const provider = cfg.provider || (cfg.client ? 'adsense' : 'mock');
   let hooks = { pause() {}, resume() {} };
   let mockCount = 0;
   const AD_STATE_KEY = 'lostrelics.ads.v1';
-  let adState = { lastInterstitialAt: 0 };
+  const MIN_INTERSTITIAL_LEVEL = 4; // fases 1–3 livres como onboarding
+  const INTERSTITIAL_COOLDOWN_MS = 90 * 1000; // 90s entre intersticiais
+  const REWARD_GRACE_MS = 45 * 1000; // evita empilhar intersticial logo após um premiado
+  let adState = { lastInterstitialAt: 0, lastRewardedAt: 0 };
   try { adState = Object.assign(adState, JSON.parse(LRStorage.getItem(AD_STATE_KEY)) || {}); } catch (e) {}
   const saveAdState = () => { try { LRStorage.setItem(AD_STATE_KEY, JSON.stringify(adState)); } catch (e) {} };
   const track = (name, params) => { if (root.Telemetry) root.Telemetry.event(name, params || {}); };
@@ -65,7 +68,7 @@
       root.adBreak({
         type: 'next', name: 'restart',
         beforeAd: () => hooks.pause(), afterAd: () => hooks.resume(),
-        adBreakDone: () => cb(),
+        adBreakDone: (info) => cb(!info || info.breakStatus === 'viewed' || info.breakStatus === 'dismissed'),
       });
     },
     offerReward({ onAvailable, onReward, onSkip }) {
@@ -107,7 +110,7 @@
         adError: () => end(false),
       });
     },
-    interstitial(cb) { crazygames.request('midgame', () => cb()); },
+    interstitial(cb) { crazygames.request('midgame', (ok) => cb(ok)); },
     offerReward({ onAvailable, onReward, onSkip }) {
       if (!cg) return;
       onAvailable(() => crazygames.request('rewarded', (ok) => (ok ? onReward() : onSkip && onSkip())));
@@ -140,8 +143,8 @@
     init() {},
     interstitial(cb) {
       const sdk = gd();
-      if (!sdk) { cb(); return; }
-      sdk.showAd().then(() => cb(), () => cb());
+      if (!sdk) { cb(false); return; }
+      sdk.showAd().then(() => cb(true), () => cb(false));
     },
     offerReward({ onAvailable, onReward, onSkip }) {
       const sdk = gd();
@@ -170,15 +173,15 @@
     const p = kind === 'reward' ? am.prepareRewardVideoAd({ adId: AM.reward, isTesting: AM.testing }) : am.prepareInterstitial({ adId: AM.inter, isTesting: AM.testing });
     p.then(() => { if (kind === 'reward') amReward = true; else amInter = true; }, () => setTimeout(() => amLoad(kind), 30000));
   };
-  const amEnd = (kind) => { hooks.resume(); const d = amDone; amDone = null; if (d) d(kind === 'reward' ? amGranted : true); amLoad(kind); };
+  const amEnd = (kind, ok) => { hooks.resume(); const d = amDone; amDone = null; if (d) d(kind === 'reward' ? amGranted : ok !== false); amLoad(kind); };
   const admob = {
     init() {
       const C = root.Capacitor;
       am = C && ((C.Plugins && C.Plugins.AdMob) || (C.registerPlugin && C.registerPlugin('AdMob')));
       if (!am) return;
       // nomes do plugin atual, sem "on" na frente; com o nome antigo o aviso nunca chegava e o jogo travava depois de fechar o anúncio (30/10)
-      am.addListener('interstitialAdDismissed', () => amEnd('inter'));
-      am.addListener('interstitialAdFailedToShow', () => amEnd('inter'));
+      am.addListener('interstitialAdDismissed', () => amEnd('inter', true));
+      am.addListener('interstitialAdFailedToShow', () => amEnd('inter', false));
       am.addListener('onRewardedVideoAdReward', () => { amGranted = true; });
       am.addListener('onRewardedVideoAdDismissed', () => amEnd('reward'));
       am.addListener('onRewardedVideoAdFailedToShow', () => amEnd('reward'));
@@ -188,9 +191,9 @@
         .then(() => { amLoad('inter'); amLoad('reward'); }, () => {});
     },
     interstitial(cb) {
-      if (!am || !amInter) { cb(); return; }
-      amInter = false; amDone = () => cb(); hooks.pause();
-      am.showInterstitial().catch(() => amEnd('inter'));
+      if (!am || !amInter) { if (am && !amInter) amLoad('inter'); cb(false); return; }
+      amInter = false; amDone = (ok) => cb(ok !== false); hooks.pause();
+      am.showInterstitial().catch(() => amEnd('inter', false));
     },
     offerReward({ onAvailable, onReward, onSkip }) {
       if (!am || !amReward) return;
@@ -207,12 +210,12 @@
   const simulated = {
     init() {},
     // o jogo já chama só a cada 3 fases
-    interstitial(cb) { mockCount++; mock('next', () => cb()); },
+    interstitial(cb) { mockCount++; mock('next', () => cb(true)); },
     offerReward({ onAvailable, onReward, onSkip }) {
       onAvailable(() => mock('reward', (ok) => (ok ? onReward() : onSkip && onSkip())));
     },
   };
-  const none = { init() {}, interstitial(cb) { cb(); }, offerReward() {} };
+  const none = { init() {}, interstitial(cb) { cb(false); }, offerReward() {} };
 
   const impl = {
     adsense: typeof root.adBreak === 'function' ? adsense : simulated,
@@ -222,30 +225,41 @@
 
   root.Ads = {
     provider,
+    config: { minInterstitialLevel: MIN_INTERSTITIAL_LEVEL, interstitialCooldownMs: INTERSTITIAL_COOLDOWN_MS, rewardGraceMs: REWARD_GRACE_MS },
     // o jogo informa como pausar/voltar o som durante o anúncio
     setHooks(h) { hooks = Object.assign(hooks, h); },
     // Entre partidas. cb() roda depois do anúncio (ou na hora, se não houver).
     interstitial(cb, meta) {
-      const level = Math.floor(+((meta && meta.level) || 0)), now = Date.now();
-      // Protege a primeira sessão e evita anúncios repetidos em sequência.
-      if (provider === 'none' || (level && level <= 15) || now - adState.lastInterstitialAt < 4 * 60 * 1000) { cb(); return; }
-      track('ad_offer', { mode: 'interstitial', level });
-      impl.interstitial(() => {
-        adState.lastInterstitialAt = Date.now(); saveAdState();
-        track('ad_result', { mode: 'interstitial', level, result: 'completed' }); cb();
+      const level = Math.floor(+((meta && meta.level) || 0)), placement = (meta && meta.placement) || 'transition', now = Date.now();
+      // Protege onboarding (fases 1–3), respeita cooldown de 90s e evita empilhar logo após premiado.
+      if (
+        provider === 'none' ||
+        (level > 0 && level < MIN_INTERSTITIAL_LEVEL) ||
+        now - adState.lastInterstitialAt < INTERSTITIAL_COOLDOWN_MS ||
+        now - (adState.lastRewardedAt || 0) < REWARD_GRACE_MS
+      ) { cb(); return; }
+      track('ad_offer', { mode: 'interstitial', level, placement });
+      impl.interstitial((shown) => {
+        if (shown !== false) {
+          adState.lastInterstitialAt = Date.now(); saveAdState();
+          track('ad_result', { mode: 'interstitial', level, placement, result: 'completed' });
+        } else {
+          track('ad_result', { mode: 'interstitial', level, placement, result: 'unavailable' });
+        }
+        cb();
       });
     },
     // Recompensado. onAvailable(show) só é chamado se existir anúncio;
     // aí o jogo mostra o botão e chama show() quando o jogador tocar.
     offerReward(o) {
-      const level = Math.floor(+((o && o.level) || 0));
+      const level = Math.floor(+((o && o.level) || 0)), placement = (o && o.placement) || 'reward';
       impl.offerReward({
         onAvailable(show) {
-          track('ad_offer', { mode: 'rewarded', level });
-          o.onAvailable(() => { track('ad_result', { mode: 'rewarded', level, result: 'started' }); show(); });
+          track('ad_offer', { mode: 'rewarded', level, placement });
+          o.onAvailable(() => { track('ad_result', { mode: 'rewarded', level, placement, result: 'started' }); show(); });
         },
-        onReward() { track('ad_result', { mode: 'rewarded', level, result: 'rewarded' }); o.onReward(); },
-        onSkip() { track('ad_result', { mode: 'rewarded', level, result: 'skipped' }); if (o.onSkip) o.onSkip(); },
+        onReward() { adState.lastRewardedAt = Date.now(); saveAdState(); track('ad_result', { mode: 'rewarded', level, placement, result: 'rewarded' }); o.onReward(); },
+        onSkip() { track('ad_result', { mode: 'rewarded', level, placement, result: 'skipped' }); if (o.onSkip) o.onSkip(); },
       });
     },
     // partida rodando (true) ou parada (false): a CrazyGames usa nas métricas
