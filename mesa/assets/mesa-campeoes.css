@@ -1,8 +1,10 @@
 /* Ãcones da pÃ¡gina inicial (Jogos): fixos na lateral direita acima do Perfil, visÃ­veis apenas na primeira pÃ¡gina Jogos. */
 
 @keyframes mhLuzSuave {
-  0%, 100% { opacity: 0.28; transform: scale(0.92); }
-  50% { opacity: 0.64; transform: scale(1.08); }
+  0%, 100% { opacity: 0.38; transform: scale(0.76); }
+  50% { opacity: 0.96; transform: scale(1.32); }
+}
+  50% { opacity: 0.94; transform: scale(1.28); }
 }
 
 .mh-icones-jogos {
@@ -10,7 +12,7 @@
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   position: fixed;
   right: max(12px, env(safe-area-inset-right, 0px));
   bottom: calc(86px + env(safe-area-inset-bottom, 0px));
@@ -56,9 +58,9 @@ body.mh-home-icones-ocultos .mh-icones-jogos > * {
   left: auto;
   top: auto;
   z-index: 3;
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   padding: 0;
   margin: 0;
   border: 0;
@@ -85,23 +87,25 @@ body.mh-home-icones-ocultos .mh-icones-jogos > * {
 .mh-icones-jogos > .mh-missoes::after {
   content: "";
   position: absolute;
-  inset: -7px;
+  inset: -10px;
   z-index: -1;
   border-radius: 50%;
   pointer-events: none;
-  animation: mhLuzSuave 3.2s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.48) 46%, rgba(255, 255, 255, 0) 75%);
+  animation: mhLuzSuave 2.3s ease-in-out infinite;
   will-change: opacity, transform;
 }
-.mh-icones-jogos > .mh-trofeu::after {
-  background: radial-gradient(circle, rgba(255, 214, 102, 0.54) 0%, rgba(255, 214, 102, 0) 70%);
-}
 .mh-icones-jogos > .mh-dado::after {
-  background: radial-gradient(circle, rgba(255, 118, 128, 0.5) 0%, rgba(255, 118, 128, 0) 70%);
-  animation-delay: 0.9s;
+  animation-delay: 0.65s;
 }
 .mh-icones-jogos > .mh-missoes::after {
-  background: radial-gradient(circle, rgba(130, 188, 255, 0.52) 0%, rgba(130, 188, 255, 0) 70%);
-  animation-delay: 1.8s;
+  animation-delay: 1.3s;
+}
+.mh-icones-jogos > .mh-dado::after {
+  animation-delay: 0.65s;
+}
+.mh-icones-jogos > .mh-missoes::after {
+  animation-delay: 1.3s;
 }
 .mh-icones-jogos > .mh-trofeu::before,
 .mh-icones-jogos > .mh-dado::before,
@@ -163,9 +167,9 @@ body.mh-home-icones-ocultos .mh-icones-jogos > * {
   .mh-icones-jogos > .mh-trofeu,
   .mh-icones-jogos > .mh-dado,
   .mh-icones-jogos > .mh-missoes {
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
