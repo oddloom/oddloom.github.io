@@ -148,58 +148,9 @@ function limparIconesDoCabecalho() {
   nos.forEach((n) => n.remove())
 }
 
-function estaNaPrimeiraPaginaJogos() {
-  const tela = document.querySelector(".tela.inicio.jogos-colorido")
-  if (!tela || tela.hidden) return false
-  // Garante que não há outra aba/jogo ativo e que a aba "Jogos" está selecionada (ou não há abas)
-  const abaJogos = tela.querySelector('[role="tab"]')
-  if (abaJogos && abaJogos.getAttribute("aria-selected") === "false") return false
-  return true
-}
-
 function garantirAtalho() {
   limparIconesDoCabecalho()
-  // Remove eventuais restos antigos dentro da rolagem
-  document.querySelectorAll(".mh-rolagem > .mh-icones-jogos, .rolagem > .mh-icones-jogos").forEach((n) => n.remove())
-  const visivel = estaNaPrimeiraPaginaJogos()
-  let faixa = document.body.querySelector(":scope > .mh-icones-jogos")
-  if (!visivel) {
-    if (faixa) faixa.classList.remove("mh-visivel")
-    return
-  }
-  if (!faixa) {
-    faixa = el("div", { className: "mh-icones-jogos mh-visivel" })
-    document.body.append(faixa)
-  } else {
-    faixa.classList.add("mh-visivel")
-  }
-  let t = faixa.querySelector(":scope > .mh-trofeu")
-  if (!t) {
-    t = el("button", { className: "mh-trofeu", type: "button", title: "Campeões da Season" })
-    t.setAttribute("aria-label", "Campeões da Season")
-    t.append(el("img", { src: "/mesa/arte/mesa-ui/trofeu-campeoes.webp?v=1", alt: "", draggable: "false" }))
-    t.addEventListener("click", abrir)
-  }
-  let d = faixa.querySelector(":scope > .mh-dado")
-  if (!d) {
-    d = el("button", { className: "mh-dado", type: "button", title: "Dado" })
-    d.setAttribute("aria-label", "Dado")
-    d.setAttribute("aria-disabled", "true")
-    d.append(el("img", { src: "/mesa/arte/mesa-ui/dado-vermelho.webp?v=1", alt: "", draggable: "false" }))
-    d.addEventListener("click", (ev) => { ev.preventDefault(); ev.stopPropagation() })
-  }
-  let m = faixa.querySelector(":scope > .mh-missoes")
-  if (!m) {
-    m = el("button", { className: "mh-missoes", type: "button", title: "Missões" })
-    m.setAttribute("aria-label", "Missões")
-    m.append(el("img", { src: "/mesa/arte/mesa-ui/pergaminho-missoes.webp?v=2", alt: "", draggable: "false" }))
-    m.addEventListener("click", abrirMissoes)
-  }
-  if (t && !t.querySelector("img")) t.append(el("img", { src: "/mesa/arte/mesa-ui/trofeu-campeoes.webp?v=1", alt: "", draggable: "false" }))
-  if (d && !d.querySelector("img")) d.append(el("img", { src: "/mesa/arte/mesa-ui/dado-vermelho.webp?v=1", alt: "", draggable: "false" }))
-  if (m && !m.querySelector("img")) m.append(el("img", { src: "/mesa/arte/mesa-ui/pergaminho-missoes.webp?v=2", alt: "", draggable: "false" }))
-  const certo = faixa.children.length === 3 && faixa.children[0] === t && faixa.children[1] === d && faixa.children[2] === m
-  if (!certo) faixa.append(t, d, m)
+  document.querySelectorAll(".mh-icones-jogos").forEach((n) => n.remove())
 }
 
 function abrir() {
@@ -411,47 +362,8 @@ function observarSeguro(fn) {
   else agendar()
 }
 
-observarSeguro(garantirAtalho)
-
-// Duplo clique / duplo toque na página inicial alterna a visibilidade dos 3 ícones (Campeões, Roleta, Missões)
-const CHAVE_OCULTOS = "mesa-home-icones-ocultos"
-function aplicarEstadoIconesHome() {
-  let oculto = false
-  try { oculto = localStorage.getItem(CHAVE_OCULTOS) === "1" } catch {}
-  document.body.classList.toggle("mh-home-icones-ocultos", oculto)
-}
-function alternarIconesHome() {
-  if (!estaNaPrimeiraPaginaJogos()) return
-  const proximo = !document.body.classList.contains("mh-home-icones-ocultos")
-  document.body.classList.toggle("mh-home-icones-ocultos", proximo)
-  try { localStorage.setItem(CHAVE_OCULTOS, proximo ? "1" : "0") } catch {}
-}
-function ehAlvoInterativoHome(alvo) {
-  return !!(alvo && alvo.closest && alvo.closest("button, a, input, select, textarea, dialog, .mh-icones-jogos, .mesa-vol-painel"))
-}
-document.addEventListener("dblclick", (ev) => {
-  const alvo = ev.target
-  if (!alvo || !alvo.closest || !alvo.closest(".tela.inicio.jogos-colorido")) return
-  if (ehAlvoInterativoHome(alvo)) return
-  alternarIconesHome()
-})
-let _ultimoToqueHome = 0, _ultimoToqueX = 0, _ultimoToqueY = 0
-document.addEventListener("touchend", (ev) => {
-  if (!ev.changedTouches || ev.changedTouches.length !== 1) return
-  const alvo = ev.target
-  if (!alvo || !alvo.closest || !alvo.closest(".tela.inicio.jogos-colorido")) return
-  if (ehAlvoInterativoHome(alvo)) return
-  const t = ev.changedTouches[0]
-  const agora = performance.now()
-  if (agora - _ultimoToqueHome < 320 && Math.hypot(t.clientX - _ultimoToqueX, t.clientY - _ultimoToqueY) < 42) {
-    _ultimoToqueHome = 0
-    alternarIconesHome()
-  } else {
-    _ultimoToqueHome = agora
-    _ultimoToqueX = t.clientX
-    _ultimoToqueY = t.clientY
-  }
-}, { passive: true })
-observarSeguro(aplicarEstadoIconesHome)
+window.__mesaCampeoesAbrir = abrir
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", garantirAtalho, { once: true })
+else garantirAtalho()
 
 })();

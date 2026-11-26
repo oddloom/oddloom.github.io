@@ -25,7 +25,7 @@
   transition: opacity 0.22s ease, transform 0.22s ease;
 }
 .mh-icones-jogos.mh-visivel {
-  display: flex;
+  display: none !important;
 }
 body.mh-home-icones-ocultos .mh-icones-jogos {
   opacity: 0;
