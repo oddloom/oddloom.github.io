@@ -47,12 +47,19 @@
     efeitos: pctEfeitos > 0 ? pctEfeitos : 80,
   };
 
+  // Curva perceptiva quadrática: 100%=1.0, 50%=0.25, 30%=0.09, 10%=0.01, 0%=0 (mudo exato)
+  function curvaVolume(pct) {
+    if (pct <= 0) return 0;
+    var lin = pct / 100;
+    return lin * lin;
+  }
+
   function volMusica() {
-    return pctMusica / 100;
+    return curvaVolume(pctMusica);
   }
 
   function volEfeitos() {
-    return pctEfeitos / 100;
+    return curvaVolume(pctEfeitos);
   }
 
   function retomarCtx(ctx) {
@@ -184,9 +191,222 @@
     listaElementos = vivos;
   }
 
+  // Player de música via Web Audio (fetch -> decodeAudioData -> AudioBufferSourceNode -> GainNode)
+  // Garante controle real de volume no iOS Safari (onde HTMLAudioElement.volume é somente leitura).
+  var ctxMusicaWeb = null;
+  var cacheBuffers = Object.create(null);
+  var promessasDecode = Object.create(null);
+  var playersWeb = [];
+
+  function obterCtxMusicaWeb() {
+    if (ctxMusicaWeb && ctxMusicaWeb.state !== 'closed') return ctxMusicaWeb;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try {
+      ctxMusicaWeb = new AC();
+      destinoMusica(ctxMusicaWeb);
+      return ctxMusicaWeb;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function decodificarAudio(ctx, arrayBuf) {
+    return new Promise(function (resolve, reject) {
+      try {
+        var p = ctx.decodeAudioData(arrayBuf, resolve, reject);
+        if (p && typeof p.then === 'function') p.then(resolve, reject);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  function carregarBuffer(ctx, url) {
+    if (cacheBuffers[url]) return Promise.resolve(cacheBuffers[url]);
+    if (promessasDecode[url]) return promessasDecode[url];
+    promessasDecode[url] = fetch(url)
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.arrayBuffer();
+      })
+      .then(function (ab) {
+        return decodificarAudio(ctx, ab);
+      })
+      .then(function (buf) {
+        cacheBuffers[url] = buf;
+        delete promessasDecode[url];
+        return buf;
+      })
+      .catch(function (err) {
+        delete promessasDecode[url];
+        throw err;
+      });
+    return promessasDecode[url];
+  }
+
+  function criarPlayerMusica(opts) {
+    var loop = Boolean(opts && opts.loop);
+    var urlAtual = '';
+    var baseAtual = 0.2;
+    var onEndedAtual = null;
+    var ativo = false;
+    var seq = 0;
+    var sourceNode = null;
+    var baseGain = null;
+    var fallbackEl = null;
+    var esperandoDesbloqueio = false;
+
+    function pararFallback() {
+      if (!fallbackEl) return;
+      try { fallbackEl.pause(); fallbackEl.onended = null; } catch (_) {}
+      fallbackEl = null;
+    }
+
+    function pararNo() {
+      if (sourceNode) {
+        try { sourceNode.onended = null; sourceNode.stop(0); } catch (_) {}
+        try { sourceNode.disconnect(); } catch (_) {}
+        sourceNode = null;
+      }
+      if (baseGain) {
+        try { baseGain.disconnect(); } catch (_) {}
+        baseGain = null;
+      }
+    }
+
+    function iniciarFallback(url, baseVol, onEnded) {
+      pararFallback();
+      var el = new Audio(url);
+      el.loop = loop;
+      aplicarVolumeElemento(el, baseVol);
+      if (onEnded) el.onended = onEnded;
+      fallbackEl = el;
+      try {
+        var pr = el.play();
+        if (pr && pr.catch) pr.catch(function () {});
+      } catch (_) {}
+    }
+
+    function iniciarComBuffer(ctx, buf, meuSeq) {
+      if (!ativo || meuSeq !== seq) return;
+      if (ctx.state !== 'running') {
+        esperandoDesbloqueio = true;
+        retomarCtx(ctx);
+        return;
+      }
+      esperandoDesbloqueio = false;
+      pararNo();
+      pararFallback();
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = loop;
+      var gBase = ctx.createGain();
+      gBase.gain.value = baseAtual;
+      src.connect(gBase).connect(destinoMusica(ctx));
+      if (!loop && onEndedAtual) {
+        var cb = onEndedAtual;
+        src.onended = function () {
+          if (sourceNode === src) {
+            sourceNode = null;
+            ativo = false;
+            cb();
+          }
+        };
+      }
+      sourceNode = src;
+      baseGain = gBase;
+      try { src.start(0); } catch (_) {}
+    }
+
+    function tentarRetomarSePendente() {
+      if (!ativo || !esperandoDesbloqueio || !urlAtual) return;
+      var ctx = obterCtxMusicaWeb();
+      if (!ctx) return;
+      var buf = cacheBuffers[urlAtual];
+      if (!buf) return;
+      var meuSeq = seq;
+      if (ctx.state === 'running') {
+        iniciarComBuffer(ctx, buf, meuSeq);
+      } else {
+        try {
+          var p = ctx.resume();
+          if (p && p.then) {
+            p.then(function () { iniciarComBuffer(ctx, buf, meuSeq); }).catch(function () {});
+          }
+        } catch (_) {}
+      }
+    }
+
+    var player = {
+      tocar: function (url, baseVol, onEnded) {
+        var b = Number.isFinite(baseVol) ? Math.max(0, Math.min(1, baseVol)) : 0.2;
+        onEndedAtual = typeof onEnded === 'function' ? onEnded : null;
+        if (ativo && urlAtual === url) {
+          baseAtual = b;
+          if (baseGain && ctxMusicaWeb) aplicarGanho(ctxMusicaWeb, baseGain, b);
+          else if (fallbackEl) aplicarVolumeElemento(fallbackEl, b);
+          if (esperandoDesbloqueio) tentarRetomarSePendente();
+          return;
+        }
+        seq++;
+        var meuSeq = seq;
+        urlAtual = url;
+        baseAtual = b;
+        ativo = true;
+        esperandoDesbloqueio = false;
+        pararNo();
+        pararFallback();
+
+        var ctx = obterCtxMusicaWeb();
+        if (!ctx) {
+          iniciarFallback(url, b, onEndedAtual);
+          return;
+        }
+        retomarCtx(ctx);
+        carregarBuffer(ctx, url)
+          .then(function (buf) {
+            if (!ativo || meuSeq !== seq) return;
+            if (ctx.state === 'running') {
+              iniciarComBuffer(ctx, buf, meuSeq);
+            } else {
+              esperandoDesbloqueio = true;
+              try {
+                var p = ctx.resume();
+                if (p && p.then) {
+                  p.then(function () { iniciarComBuffer(ctx, buf, meuSeq); }).catch(function () {});
+                }
+              } catch (_) {}
+            }
+          })
+          .catch(function () {
+            if (!ativo || meuSeq !== seq) return;
+            iniciarFallback(url, b, onEndedAtual);
+          });
+      },
+      pausar: function () {
+        seq++;
+        ativo = false;
+        esperandoDesbloqueio = false;
+        urlAtual = '';
+        onEndedAtual = null;
+        pararNo();
+        pararFallback();
+      },
+      tentarRetomar: tentarRetomarSePendente,
+      estado: function () {
+        return { ativo: ativo, url: urlAtual, baseVol: baseAtual, usandoWebAudio: Boolean(sourceNode), esperando: esperandoDesbloqueio };
+      }
+    };
+
+    playersWeb.push(player);
+    return player;
+  }
+
   // Desbloqueio confiável de todos os AudioContext no primeiro gesto do usuário (essencial no iOS Safari)
   var desbloqueados = new WeakSet();
   function desbloquearTodosContextos() {
+    if (ctxMusicaWeb && ctxMusicaWeb.state !== 'closed') retomarCtx(ctxMusicaWeb);
     var listas = [listaGanhos, listaGanhosMusica];
     for (var l = 0; l < listas.length; l++) {
       var arr = listas[l];
@@ -206,7 +426,9 @@
         }
       }
     }
-    // Se algum áudio ambiente em loop estava pausado aguardando gesto no iOS, retoma com volume > 0
+    for (var k = 0; k < playersWeb.length; k++) {
+      try { playersWeb[k].tentarRetomar(); } catch (_) {}
+    }
     if (volMusica() > 0) {
       for (var j = 0; j < listaElementos.length; j++) {
         var el = listaElementos[j] && listaElementos[j].audio;
@@ -549,6 +771,7 @@
     destinoMusica: destinoMusica,
     destinoEfeitos: destinoEfeitos,
     aplicarVolumeElemento: aplicarVolumeElemento,
+    criarPlayerMusica: criarPlayerMusica,
     criarControlesInline: criarControlesInline,
     abrirPainel: abrirPainel,
     fecharPainel: fecharPainel,
