@@ -82,8 +82,11 @@
     var now = ctx.currentTime;
     try {
       gainNode.gain.cancelScheduledValues(now);
-      gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-      gainNode.gain.linearRampToValueAtTime(v, now + 0.025);
+      if (v <= 0) {
+        gainNode.gain.setValueAtTime(0, now);
+      } else {
+        gainNode.gain.setTargetAtTime(v, now, 0.012);
+      }
     } catch (_) {
       try { gainNode.gain.value = v; } catch (__) {}
     }
@@ -214,7 +217,8 @@
   function decodificarAudio(ctx, arrayBuf) {
     return new Promise(function (resolve, reject) {
       try {
-        var p = ctx.decodeAudioData(arrayBuf, resolve, reject);
+        var copy = arrayBuf && typeof arrayBuf.slice === 'function' ? arrayBuf.slice(0) : arrayBuf;
+        var p = ctx.decodeAudioData(copy, resolve, reject);
         if (p && typeof p.then === 'function') p.then(resolve, reject);
       } catch (err) {
         reject(err);
@@ -320,20 +324,28 @@
     }
 
     function tentarRetomarSePendente() {
-      if (!ativo || !esperandoDesbloqueio || !urlAtual) return;
+      if (!ativo || !urlAtual) return;
+      if (!esperandoDesbloqueio && !fallbackEl) return;
       var ctx = obterCtxMusicaWeb();
       if (!ctx) return;
-      var buf = cacheBuffers[urlAtual];
-      if (!buf) return;
       var meuSeq = seq;
+      var iniciar = function () {
+        if (!ativo || meuSeq !== seq) return;
+        var buf = cacheBuffers[urlAtual];
+        if (buf) {
+          iniciarComBuffer(ctx, buf, meuSeq);
+        } else {
+          carregarBuffer(ctx, urlAtual).then(function (b2) {
+            iniciarComBuffer(ctx, b2, meuSeq);
+          }).catch(function () {});
+        }
+      };
       if (ctx.state === 'running') {
-        iniciarComBuffer(ctx, buf, meuSeq);
+        iniciar();
       } else {
         try {
           var p = ctx.resume();
-          if (p && p.then) {
-            p.then(function () { iniciarComBuffer(ctx, buf, meuSeq); }).catch(function () {});
-          }
+          if (p && p.then) p.then(iniciar).catch(function () {});
         } catch (_) {}
       }
     }
@@ -772,6 +784,17 @@
     destinoEfeitos: destinoEfeitos,
     aplicarVolumeElemento: aplicarVolumeElemento,
     criarPlayerMusica: criarPlayerMusica,
+    diagnostico: function () {
+      return {
+        ehIOS: ehIOS,
+        pctMusica: pctMusica,
+        volMusica: volMusica(),
+        pctEfeitos: pctEfeitos,
+        volEfeitos: volEfeitos(),
+        ctxMusicaState: ctxMusicaWeb ? ctxMusicaWeb.state : null,
+        players: playersWeb.map(function (p) { return p.estado(); })
+      };
+    },
     criarControlesInline: criarControlesInline,
     abrirPainel: abrirPainel,
     fecharPainel: fecharPainel,
