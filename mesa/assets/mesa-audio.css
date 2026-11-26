@@ -255,3 +255,23 @@
 dialog.aparencia .mesa-vol-lista {
   margin: 6px 0 12px;
 }
+
+/* Dentro do Gun Arena rotacionado (modo paisagem em celular em pé) */
+.mesa-vol-backdrop.em-deitado {
+  position: absolute;
+  inset: 0;
+}
+
+.mesa-vol-painel.em-deitado {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(300px, calc(100% - 32px));
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  transform: translate(-50%, -50%) scale(0.94);
+}
+
+.mesa-vol-painel.em-deitado.visivel {
+  transform: translate(-50%, -50%) scale(1);
+}

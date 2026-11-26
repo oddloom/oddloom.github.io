@@ -55,10 +55,21 @@
     return pctEfeitos / 100;
   }
 
+  function retomarCtx(ctx) {
+    if (!ctx || ctx.state === 'closed') return;
+    if (ctx.state === 'suspended' || ctx.state === 'interrupted') {
+      try {
+        var p = ctx.resume();
+        if (p && p.catch) p.catch(function () {});
+      } catch (_) {}
+    }
+  }
+
   function aplicarGanho(ctx, gainNode, v) {
     if (!ctx || !gainNode || ctx.state === 'closed') return;
     if (ctx.state !== 'running') {
       try { gainNode.gain.value = v; } catch (_) {}
+      retomarCtx(ctx);
       return;
     }
     var now = ctx.currentTime;
@@ -129,26 +140,21 @@
     listaGanhosMusica = vivos;
   }
 
-  // Controle real para HTMLAudioElement (música ambiente da Home/Sala e prévia da Loja)
-  // Usa Web Audio GainNode no iOS/Safari (onde HTMLAudioElement.volume é somente leitura)
-  // e atualiza audio.volume diretamente nos demais navegadores.
+  // Controle seguro para HTMLAudioElement (música ambiente da Home/Sala e prévia da Loja).
+  // NUNCA usa createMediaElementSource no iOS/Safari (bug conhecido do WebKit silencia <audio>).
+  // Usa audio.muted para 0% (funciona no iOS) e audio.volume nos demais navegadores.
   var ehIOS = /iP(hone|ad|od)/i.test(navigator.userAgent || '') ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  var ctxElementos = null;
   var mapaElementos = new WeakMap();
   var listaElementos = [];
 
-  function obterCtxElementos() {
-    if (!ehIOS) return null;
-    if (!ctxElementos) {
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      try { ctxElementos = new AC(); } catch (_) { return null; }
-    }
-    if (ctxElementos && ctxElementos.state === 'suspended') {
-      try { ctxElementos.resume().catch(function () {}); } catch (_) {}
-    }
-    return ctxElementos;
+  function sincronizarElemento(info) {
+    var v = volMusica();
+    var finalVol = Math.max(0, Math.min(1, info.base * v));
+    try {
+      info.audio.muted = v <= 0 || info.base <= 0;
+      info.audio.volume = finalVol;
+    } catch (_) {}
   }
 
   function aplicarVolumeElemento(audio, baseVol) {
@@ -156,51 +162,65 @@
     var base = Number.isFinite(baseVol) ? Math.max(0, Math.min(1, baseVol)) : 1;
     var info = mapaElementos.get(audio);
     if (!info) {
-      info = { audio: audio, base: base, gain: null, ligado: false };
+      info = { audio: audio, base: base };
       mapaElementos.set(audio, info);
       listaElementos.push(info);
     } else {
       info.base = base;
     }
-
-    if (ehIOS && !info.ligado) {
-      var ctx = obterCtxElementos();
-      if (ctx) {
-        try {
-          var src = ctx.createMediaElementSource(audio);
-          var gBase = ctx.createGain();
-          gBase.gain.value = info.base;
-          src.connect(gBase).connect(destinoMusica(ctx));
-          info.gain = gBase;
-          info.ligado = true;
-          audio.volume = 1;
-        } catch (_) {}
-      }
-    }
-
-    if (info.ligado && info.gain && ctxElementos) {
-      aplicarGanho(ctxElementos, info.gain, info.base);
-      try { audio.volume = 1; } catch (_) {}
-    } else {
-      try { audio.volume = Math.max(0, Math.min(1, info.base * volMusica())); } catch (_) {}
-    }
+    sincronizarElemento(info);
   }
 
   function atualizarElementosMusica() {
-    var v = volMusica();
     var vivos = [];
     for (var i = 0; i < listaElementos.length; i++) {
       var info = listaElementos[i];
       if (!info || !info.audio) continue;
       vivos.push(info);
-      if (info.ligado && info.gain && ctxElementos) {
-        aplicarGanho(ctxElementos, info.gain, info.base);
-      } else {
-        try { info.audio.volume = Math.max(0, Math.min(1, info.base * v)); } catch (_) {}
-      }
+      sincronizarElemento(info);
     }
     listaElementos = vivos;
   }
+
+  // Desbloqueio confiável de todos os AudioContext no primeiro gesto do usuário (essencial no iOS Safari)
+  var desbloqueados = new WeakSet();
+  function desbloquearTodosContextos() {
+    var listas = [listaGanhos, listaGanhosMusica];
+    for (var l = 0; l < listas.length; l++) {
+      var arr = listas[l];
+      for (var i = 0; i < arr.length; i++) {
+        var ctx = arr[i] && arr[i].ctx;
+        if (!ctx || ctx.state === 'closed') continue;
+        retomarCtx(ctx);
+        if (ehIOS && !desbloqueados.has(ctx)) {
+          try {
+            var buf = ctx.createBuffer(1, 1, 22050);
+            var src = ctx.createBufferSource();
+            src.buffer = buf;
+            src.connect(ctx.destination);
+            src.start(0);
+            desbloqueados.add(ctx);
+          } catch (_) {}
+        }
+      }
+    }
+    // Se algum áudio ambiente em loop estava pausado aguardando gesto no iOS, retoma com volume > 0
+    if (volMusica() > 0) {
+      for (var j = 0; j < listaElementos.length; j++) {
+        var el = listaElementos[j] && listaElementos[j].audio;
+        if (el && el.loop && el.src && el.paused && !el.muted) {
+          try {
+            var pr = el.play();
+            if (pr && pr.catch) pr.catch(function () {});
+          } catch (_) {}
+        }
+      }
+    }
+  }
+
+  ['touchstart', 'touchend', 'pointerdown', 'click', 'keydown'].forEach(function (ev) {
+    document.addEventListener(ev, desbloquearTodosContextos, { capture: true, passive: true });
+  });
 
   function sincronizarAntigo(tipo, pct) {
     try {
@@ -377,25 +397,32 @@
     topo.append(h, x);
 
     box.append(topo, criarControlesInline());
-    document.body.append(backdrop, box);
+    var telaDeitada = document.querySelector('.art-tela.art-deitado');
+    if (telaDeitada) {
+      backdrop.classList.add('em-deitado');
+      box.classList.add('em-deitado');
+      telaDeitada.append(backdrop, box);
+    } else {
+      document.body.append(backdrop, box);
 
-    // Posicionamento inteligente perto da âncora ou centralizado no topo
-    var w = box.offsetWidth || 290;
-    var hBox = box.offsetHeight || 210;
-    var left = Math.round((window.innerWidth - w) / 2);
-    var top = 64;
-    if (ancora && ancora.getBoundingClientRect) {
-      var r = ancora.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) {
-        left = Math.round(r.right - w);
-        top = Math.round(r.bottom + 8);
-        if (left < 12) left = 12;
-        if (left + w > window.innerWidth - 12) left = window.innerWidth - w - 12;
-        if (top + hBox > window.innerHeight - 12) top = Math.max(12, Math.round(r.top - hBox - 8));
+      // Posicionamento inteligente perto da âncora ou centralizado no topo
+      var w = box.offsetWidth || 290;
+      var hBox = box.offsetHeight || 210;
+      var left = Math.round((window.innerWidth - w) / 2);
+      var top = 64;
+      if (ancora && ancora.getBoundingClientRect) {
+        var r = ancora.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          left = Math.round(r.right - w);
+          top = Math.round(r.bottom + 8);
+          if (left < 12) left = 12;
+          if (left + w > window.innerWidth - 12) left = window.innerWidth - w - 12;
+          if (top + hBox > window.innerHeight - 12) top = Math.max(12, Math.round(r.top - hBox - 8));
+        }
       }
+      box.style.left = left + 'px';
+      box.style.top = top + 'px';
     }
-    box.style.left = left + 'px';
-    box.style.top = top + 'px';
 
     var onKey = function (ev) {
       if (ev.key === 'Escape') fecharPainel();
