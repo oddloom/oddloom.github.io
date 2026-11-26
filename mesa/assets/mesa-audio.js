@@ -480,7 +480,7 @@
     }
 
     // Procura barra de atalhos padrão dentro de minigames ou sala
-    var barra = app.querySelector('.atalhos, .xe-cabecalho, .topo-damas, .ludo-topo');
+    var barra = app.querySelector('.atalhos, .xe-cabecalho, .topo-damas, .ludo-topo, .tela-sala .topo-volta');
     if (barra) {
       if (flutuante) flutuante.remove();
       if (!barra.querySelector('.mesa-vol-btn')) {
