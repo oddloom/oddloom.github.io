@@ -96,6 +96,7 @@
       mapaDestinos.set(ctx, g);
       listaGanhos.push({ ctx: ctx, gain: g });
     }
+    retomarCtx(ctx);
     return g;
   }
 
@@ -125,6 +126,7 @@
       mapaDestinosMusica.set(ctx, g);
       listaGanhosMusica.push({ ctx: ctx, gain: g });
     }
+    retomarCtx(ctx);
     return g;
   }
 
