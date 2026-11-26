@@ -175,3 +175,5 @@
   flex: none !important;
   border-radius: 12px;
 }
+
+.damas-regra-selo{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:.74rem;font-weight:700;letter-spacing:.01em;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.22);white-space:nowrap}.damas-regra-selo.casual{background:rgba(34,197,94,.2);border-color:rgba(74,222,128,.45);color:#dcfce7}
