@@ -622,3 +622,15 @@
   font-weight: 600;
   color: #3b4f75;
 }
+
+/* Botão × no canto superior direito do popup de Elo */
+.mesa-elo-pular {
+  width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  display: grid !important;
+  place-items: center !important;
+}

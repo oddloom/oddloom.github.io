@@ -364,7 +364,9 @@
     var btnPular = document.createElement('button');
     btnPular.type = 'button';
     btnPular.className = 'mesa-elo-pular';
-    btnPular.textContent = tx.pular;
+    btnPular.textContent = '×';
+    btnPular.setAttribute('aria-label', tx.fechar || 'Fechar');
+    btnPular.title = tx.fechar || 'Fechar';
     btnPular.addEventListener('click', function (ev) {
       ev.stopPropagation();
       fechar();
@@ -494,10 +496,7 @@
       setTimeout(function () { elValor.classList.remove('pulso'); }, 260);
     }
 
-    backdrop.addEventListener('click', function () {
-      concluirContagem();
-      fechar();
-    });
+    // Mantém o popup visível até clicar em ×, Continuar ou apertar Esc
 
     listenerTecla = function (ev) {
       if (ev.key === 'Escape' || ev.key === 'Enter' || ev.key === ' ') {
@@ -536,9 +535,7 @@
     rafContador = requestAnimationFrame(passo);
     timerGarantia = setTimeout(concluirContagem, durContagem + 120);
 
-    if (durAuto > 0) {
-      timerAuto = setTimeout(fechar, durAuto);
-    }
+    // Não fecha automaticamente — só quando o jogador clicar em × ou Continuar
   }
 
   // ---- Integração automática com todos os 11 minigames ranqueados ----

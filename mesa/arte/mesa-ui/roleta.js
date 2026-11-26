@@ -59,7 +59,7 @@ function patchWs() {
         } else if (m && m.t === "roleta-resultado") resposta(m)
       } catch { /* ignore */ }
     })
-    wsAtual = s
+    if (String(url).includes("/jogador/")) wsAtual = s
     return s
   }
   Wrap.prototype = Orig.prototype
