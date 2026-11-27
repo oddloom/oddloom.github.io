@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <script>window.LR_GOOGLE_ID = "265679649933-hdcm7ub4ng2qi5jlok1t4muiq2ss3gb3.apps.googleusercontent.com";</script>
-<script>window.LR_BUILD = "cea1f7fe"; window.LR_VER = {"art-extra.js":"4a12fc24"};</script>
+<script>window.LR_BUILD = "77daba35"; window.LR_VER = {"art-extra.js":"4a12fc24"};</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Lost Relics</title>
@@ -12,7 +12,7 @@
 <meta name="google-play-app" content="app-id=io.github.oddloom.lostrelics">
 <meta name="theme-color" content="#0a0907">
 <link rel="stylesheet" href="fonts.css?v=a99eca64">
-<link rel="stylesheet" href="style.css?v=1237638d">
+<link rel="stylesheet" href="style.css?v=e4c565e0">
 <meta property="og:title" content="Lost Relics">
 <meta property="og:description" content="Lost Relics: match-3 grátis numa aventura por templos antigos. 86 fases em 4 mundos, desafios semanais, Jogada do Dia e skins. Baixe grátis na Play Store!">
 <meta property="og:image" content="https://oddloomgames.com/img/thumb-lost-relics.jpg">
@@ -51,6 +51,7 @@
     <button id="btnWeekly" class="btn dark" type="button"></button>
     <button id="btnDaily" class="btn dark" type="button"></button>
     <button id="btnChallenges" class="btn dark" type="button"></button>
+    <button id="btnTutorial" class="btn dark small" type="button"></button>
     <button id="btnFeedback" class="btn dark small" type="button"></button>
     <button id="btnAccount" class="btn dark small acct-btn" type="button" hidden></button>
   </div>
@@ -88,12 +89,36 @@
   <div id="mapScroll"><div id="mapInner"></div></div>
 </section>
 
+<section id="screen-tutorial" class="screen" hidden aria-label="Tutorial">
+  <header class="tut-head">
+    <button id="btnTutExit" class="icon-btn" type="button" aria-label="Voltar"><svg viewBox="0 0 20 20"><path d="M12.5 3 5.5 10l7 7 1.6-1.6L8.7 10l5.4-5.4z"/></svg></button>
+    <strong id="tutScreenTitle" class="metal"></strong>
+    <span id="tutCounter" class="tut-counter" aria-live="polite">1/10</span>
+  </header>
+  <main id="tutStage" class="tut-stage">
+    <div class="tut-art"><img id="tutImg" alt="" decoding="async"></div>
+    <div class="tut-copy">
+      <div class="orn tut-orn" aria-hidden="true"><i></i></div>
+      <h2 id="tutPageTitle"></h2>
+      <p id="tutPageBody"></p>
+    </div>
+  </main>
+  <footer class="tut-foot">
+    <button id="btnTutPrev" class="tut-nav tut-prev" type="button" aria-label="Anterior"><span class="tut-arrow" aria-hidden="true"></span></button>
+    <div id="tutDots" class="tut-dots" role="tablist" aria-label="Páginas"></div>
+    <div class="tut-right">
+      <button id="btnTutNext" class="tut-nav tut-next" type="button" aria-label="Próxima"><span class="tut-arrow" aria-hidden="true"></span></button>
+      <button id="btnTutDone" class="btn dark small tut-done" type="button" hidden></button>
+    </div>
+  </footer>
+</section>
+
 <div id="wipe" aria-hidden="true"></div>
 <div id="modal" class="modal" hidden><div id="modalCard" class="card" role="dialog" aria-modal="true"></div></div>
 <div id="loading" class="loading"><div class="ld-logo"><img src="assets/logo.png" alt=""><i class="ld-shine"></i></div><div class="ld-bar"><i></i></div><p id="loadingTxt">…</p></div>
 
 <script src="storage.js?v=797e343a"></script>
-<script src="i18n.js?v=4b5948ed"></script>
+<script src="i18n.js?v=18118c50"></script>
 <script>window.LR_RECORDS_API = 'https://lost-relics-records.officialoddloom.workers.dev';</script>
 <script src="telemetry.js?v=f337f69a"></script>
 <script src="records.js?v=1db36cbf"></script>
@@ -108,7 +133,7 @@
 <script src="art-data.js?v=3c12fa20"></script>
 <script src="art.js?v=317d309f"></script>
 <script src="ui-art.js?v=f6e2bcd0"></script>
-<script src="game.js?v=cea1f7fe"></script>
+<script src="game.js?v=77daba35"></script>
 <script>if('serviceWorker' in navigator){addEventListener('load',function(){navigator.serviceWorker.register('sw.js').then(function(){return navigator.serviceWorker.ready}).then(function(){document.documentElement.dataset.sw='pronto'}).catch(function(){})})}</script>
 </body>
 </html>

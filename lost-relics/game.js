@@ -448,6 +448,7 @@
     cloud = { session: r.session, name: r.name || '' };
     lsSet(CLOUD_KEY, JSON.stringify(cloud));
     track('login', { result: 'ok' });
+    track('login_prompt', { result: 'ok' });
     if (r.data) applyCloud(r.data); // o que a nuvem tem a mais vem pra cá; o que este aparelho tem a mais sobe logo abaixo
     cloudPush(true);
   }
@@ -496,7 +497,7 @@
       '<div class="btns"><button class="btn g-btn" id="mAcIn" type="button">' + G_LOGO + '<span>' + T('acct.login') + '</span></button>' +
       '<button class="btn dark small" id="mAcSkip" type="button">' + T('acct.skip') + '</button></div>' +
       '<p class="info-line" id="mAcMsg" hidden></p>');
-    card.querySelector('#mAcSkip').onclick = () => { Sound.play('click'); track('login', { result: 'skip' }); done(); };
+    card.querySelector('#mAcSkip').onclick = () => { Sound.play('click'); track('login', { result: 'skip' }); track('login_prompt', { result: 'skip' }); done(); };
     if (!APP) {
       // site: troca o botão pelo oficial do Google
       const slot = card.querySelector('#mAcIn'), msg = card.querySelector('#mAcMsg'), box = document.createElement('div');
@@ -709,7 +710,7 @@
     hint = null; selected = null; drag = null; usedExtra = false; idle = 0; shake = 0;
     scene = 'play';
     syncMapAttention();
-    $('screen-map').hidden = true; $('screen-menu').hidden = true; $('hud').hidden = false;
+    $('screen-map').hidden = true; $('screen-menu').hidden = true; if ($('screen-tutorial')) $('screen-tutorial').hidden = true; tutState.open = false; $('hud').hidden = false;
     buildGoalChips();
     if (level.daily || level.weekly) { $('goals').innerHTML = ''; chipEls = []; }
     renderHUD();
@@ -1683,7 +1684,7 @@
   // Entrar (menu > mapa > fase) = zoom pra frente; voltar = zoom pra trás; mesma tela (trocar de mundo) = troca suave.
   // Sem suporte (WebView/navegador antigo): fade escuro rápido. Só opacity/transform, nada de clip-path (pesado no celular).
   let wiping = false;
-  const SCENE_RANK = { menu: 0, map: 1, play: 2 };
+  const SCENE_RANK = { menu: 0, map: 1, tutorial: 1, play: 2 };
   function wipe(fn) {
     const el = $('wipe');
     const reduced = REDUCED || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -2638,6 +2639,7 @@
   }
   let preOpen = null; // última janela de fase aberta (pra voltar nela se o Android recarregar o app)
   function openPre(id, hard) {
+    track('pre_level_open', { level: id, mode: hard ? 'hard' : 'normal' });
     const hardOpen = !!save.stars[id], hardMode = !!hard && hardOpen;
     preOpen = { id, hard: hardMode };
     const L = levelMode(id, hardMode);
@@ -2783,18 +2785,25 @@
         onSkip() { const b = card.querySelector('#mDouble'); if (b && !doubled) b.disabled = false; },
       });
     }
-    const maybeFbAfter8 = (after) => {
-      if (!hardMode && id >= 8 && !save.fbPrompted && !save.feedbackRewarded) {
+    const loginDue = !hardMode && id === 3 && APP && CLOUD_ON && !MESA_ACCOUNT && !cloud && !save.loginPrompted && !lsGet('lr.loginAsked');
+    const fbDue = !hardMode && id >= 8 && !save.fbPrompted && !save.feedbackRewarded;
+    const runPostWin = (after, placement) => {
+      if (loginDue) {
+        save.loginPrompted = 1; lsSet('lr.loginAsked', '1'); persist();
+        track('login_prompt', { result: 'shown', level: id });
+        openAccount(after);
+        return;
+      }
+      if (fbDue) {
         save.fbPrompted = 1; persist();
         openFeedback(after, { auto: true });
         return;
       }
-      after();
+      if (adDue(id)) Ads.interstitial(after, { level: id, placement }); else after();
     };
     if (next) next.onclick = () => {
       Sound.play('click'); closeModal();
-      const go = () => maybeFbAfter8(() => openPre(id + 1));
-      if (adDue(id)) Ads.interstitial(go, { level: id, placement: 'win_next' }); else go();
+      runPostWin(() => openPre(id + 1), 'win_next');
     };
     const share = card.querySelector('#mShare');
     if (share) share.onclick = async () => {
@@ -2813,8 +2822,7 @@
     };
     card.querySelector('#mMap').onclick = () => {
       Sound.play('click'); closeModal();
-      const go = () => maybeFbAfter8(() => wipe(openMap));
-      if (adDue(id)) Ads.interstitial(go, { level: id, placement: 'win_map' }); else go();
+      runPostWin(() => wipe(openMap), 'win_map');
     };
     if (hardMode) {
       // envio ao ranking com aviso do resultado: ✓ no ranking, ou "não enviado" com botão de tentar de novo
@@ -3421,6 +3429,7 @@
     paintAccount();
     $('btnChallenges').textContent = T('chal.btn') + (relicPending().coins ? ' !' : '');
     $('btnFeedback').textContent = T('fb.btn') + (save.feedbackRewarded ? '' : ' +' + FEEDBACK_COINS);
+    if ($('btnTutorial')) $('btnTutorial').textContent = T('guide.btn');
     const storeBtn = $('btnPlayStore');
     if (storeBtn) {
       storeBtn.hidden = APP;
@@ -3639,20 +3648,154 @@
     card.querySelector('#mAgain').onclick = () => { Sound.play('click'); closeModal(); Ads.interstitial(() => startRun(type), { level: 0, placement: 'run_again' }); };
     card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); run = null; Ads.interstitial(() => wipe(() => { openMenu(); openChallenges(); }), { level: 0, placement: 'run_back' }); };
   }
+  let menuReadySent = false;
+  const TUT_TOTAL = 10;
+  const tutState = { open: false, page: 0, completed: false, pushed: false, uiBound: false, preloaded: false, swipeX: 0, swipeY: 0, swiping: false };
+  const tutImgSrc = (i) => 'assets/tutorial/p' + (i + 1 < 10 ? '0' : '') + (i + 1) + '.webp';
+  function markTutDone() {
+    if (!tutState.completed) { tutState.completed = true; track('tutorial_complete', { mode: 'guide' }); }
+  }
+  function bindTutUi() {
+    if (tutState.uiBound || !$('screen-tutorial')) return;
+    tutState.uiBound = true;
+    const dotsEl = $('tutDots');
+    if (dotsEl && !dotsEl.children.length) {
+      for (let i = 0; i < TUT_TOTAL; i++) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'tut-dot';
+        b.setAttribute('role', 'tab');
+        b.setAttribute('aria-label', (i + 1) + '/' + TUT_TOTAL);
+        b.onclick = () => {
+          const dir = i === tutState.page ? 0 : (i > tutState.page ? 1 : -1);
+          Sound.play('click');
+          renderTutPage(i, dir);
+        };
+        dotsEl.appendChild(b);
+      }
+    }
+    $('btnTutExit').onclick = () => { Sound.play('click'); closeTutorial(false); };
+    $('btnTutPrev').onclick = () => { Sound.play('click'); tutStep(-1); };
+    $('btnTutNext').onclick = () => { Sound.play('click'); tutStep(1); };
+    $('btnTutDone').onclick = () => { Sound.play('click'); markTutDone(); closeTutorial(false); };
+    const imgEl = $('tutImg');
+    if (imgEl) {
+      imgEl.draggable = false;
+      imgEl.addEventListener('dragstart', (e) => e.preventDefault());
+    }
+    const stageEl = $('tutStage');
+    if (stageEl) {
+      stageEl.addEventListener('pointerdown', (e) => {
+        tutState.swiping = true;
+        tutState.swipeX = e.clientX;
+        tutState.swipeY = e.clientY;
+      });
+      stageEl.addEventListener('pointerup', (e) => {
+        if (!tutState.swiping) return;
+        tutState.swiping = false;
+        const dx = e.clientX - tutState.swipeX;
+        const dy = e.clientY - tutState.swipeY;
+        if (Math.abs(dx) >= 42 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          tutStep(dx < 0 ? 1 : -1);
+        }
+      });
+      stageEl.addEventListener('pointercancel', () => { tutState.swiping = false; });
+    }
+  }
+  function tutStep(delta) {
+    if (!tutState.open) return;
+    const next = tutState.page + delta;
+    if (next < 0 || next >= TUT_TOTAL) return;
+    Sound.play('swap');
+    renderTutPage(next, delta > 0 ? 1 : -1);
+  }
+  function renderTutPage(idx, dir) {
+    const p = Math.max(0, Math.min(TUT_TOTAL - 1, idx | 0));
+    tutState.page = p;
+    const n = p + 1;
+    $('tutScreenTitle').textContent = T('guide.title');
+    $('btnTutExit').setAttribute('aria-label', T('guide.exit'));
+    $('btnTutPrev').setAttribute('aria-label', T('guide.prev'));
+    $('btnTutNext').setAttribute('aria-label', T('guide.next'));
+    $('btnTutDone').textContent = T('guide.done');
+    $('tutCounter').textContent = n + '/' + TUT_TOTAL;
+    $('tutPageTitle').textContent = T('guide.' + n + '.t');
+    $('tutPageBody').textContent = T('guide.' + n + '.d');
+    const imgEl = $('tutImg');
+    imgEl.alt = T('guide.' + n + '.t');
+    imgEl.src = tutImgSrc(p);
+    $('btnTutPrev').disabled = p === 0;
+    const last = p === TUT_TOTAL - 1;
+    $('btnTutNext').hidden = last;
+    $('btnTutDone').hidden = !last;
+    if (last) markTutDone();
+    const dotsEl = $('tutDots');
+    if (dotsEl) {
+      Array.from(dotsEl.children).forEach((d, i) => {
+        const on = i === p;
+        d.classList.toggle('on', on);
+        d.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+    }
+    const stageEl = $('tutStage');
+    if (stageEl && dir) {
+      stageEl.classList.remove('anim-next', 'anim-prev');
+      void stageEl.offsetWidth;
+      stageEl.classList.add(dir > 0 ? 'anim-next' : 'anim-prev');
+    }
+  }
+  function closeTutorial(fromPop) {
+    if (!tutState.open) return;
+    tutState.open = false;
+    markTutDone();
+    if (!fromPop && tutState.pushed) {
+      tutState.pushed = false;
+      try { history.back(); } catch (e) {}
+    }
+    const scr = $('screen-tutorial');
+    if (scr) scr.hidden = true;
+    if (fromPop || REDUCED) openMenu(); else wipe(openMenu);
+  }
+  function openTutorial(startPage = 0, immediate = false) {
+    if (modalOpen()) closeModal();
+    track('tutorial_begin', { mode: 'guide' });
+    tutState.completed = false;
+    bindTutUi();
+    if (!tutState.preloaded) {
+      tutState.preloaded = true;
+      for (let i = 0; i < TUT_TOTAL; i++) { const im = new Image(); im.src = tutImgSrc(i); }
+    }
+    const enter = () => {
+      tutState.open = true;
+      scene = 'tutorial'; state = null; updateHammerBtn();
+      $('hud').hidden = true; $('screen-menu').hidden = true; $('screen-map').hidden = true;
+      $('screen-tutorial').hidden = false;
+      syncMapAttention();
+      if (!tutState.pushed && history.pushState) {
+        try { history.pushState({ lrTutorial: true }, ''); tutState.pushed = true; } catch (e) {}
+      }
+      renderTutPage(startPage, 0);
+    };
+    if (immediate) enter(); else wipe(enter);
+  }
   function openMenu() {
+    tutState.open = false;
     scene = 'menu'; state = null; updateHammerBtn();
-    $('hud').hidden = true; $('screen-map').hidden = true; $('screen-menu').hidden = false;
+    $('hud').hidden = true; $('screen-map').hidden = true; if ($('screen-tutorial')) $('screen-tutorial').hidden = true; $('screen-menu').hidden = false;
     paintMenu();
     syncMapAttention();
+    if (!menuReadySent) { menuReadySent = true; track('menu_ready'); }
   }
   $('btnPlay').onclick = () => {
     Sound.init(); Sound.play('click');
+    track('play_tap', { level: save.unlocked || 1 });
     wipe(() => { openMap(); if (save.unlocked === 1 && !save.stars[1]) openPre(1); });
   };
   $('btnDaily').onclick = () => { Sound.init(); Sound.play('click'); wipe(() => startLevel('daily')); };
   $('btnWeekly').onclick = () => { Sound.init(); Sound.play('click'); openRecordsHub(); };
   $('btnAccount').onclick = () => { Sound.init(); Sound.play('click'); openAccount(); };
   $('btnChallenges').onclick = () => { Sound.init(); Sound.play('click'); openChallenges(); };
+  if ($('btnTutorial')) $('btnTutorial').onclick = () => { Sound.init(); Sound.play('click'); openTutorial(); };
   $('btnFeedback').onclick = () => { Sound.init(); Sound.play('click'); openFeedback(); };
   $('btnSfx').onclick = () => { Sound.init(); Sound.setSfx(!Sound.sfx); paintMenu(); Sound.play('click'); };
   $('btnMusic').onclick = () => { Sound.init(); Sound.setMusic(!Sound.music); paintMenu(); };
@@ -3664,8 +3807,10 @@
   const hideMapNav = () => { const n = $('mapNav'); if (n) n.hidden = true; };
   function openMap() {
     Ads.gameplay(false);
+    track('map_open', { level: save.unlocked || 1 });
+    tutState.open = false;
     scene = 'map'; state = null; updateHammerBtn();
-    $('hud').hidden = true; $('screen-menu').hidden = true; $('screen-map').hidden = false;
+    $('hud').hidden = true; $('screen-menu').hidden = true; if ($('screen-tutorial')) $('screen-tutorial').hidden = true; $('screen-map').hidden = false;
     paintMenu();
     buildMap();
     startMapTick();
@@ -4080,7 +4225,17 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) { saveResume(); Sound.pause(); scheduleNotes(); cloudPush(true); } else { lsSet(RESUME_KEY, ''); cloudPush(true); Sound.resume(); if (scene === 'map') paintEnergy(); } syncMapAttention(); });
   document.addEventListener('pause', saveResume); // evento do Capacitor quando o app vai pro segundo plano
   window.addEventListener('pagehide', () => { saveResume(); if (scene === 'play' && !runEnded) abandonRun('pagehide'); });
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (modalOpen() && $('modalCard').querySelector('#mResume')) closeModal(); else openPause(); } });
+  window.addEventListener('popstate', () => { if (tutState.open) { tutState.pushed = false; closeTutorial(true); } });
+  document.addEventListener('backbutton', (e) => { if (!tutState.open) return; if (e && e.preventDefault) e.preventDefault(); closeTutorial(false); });
+  window.addEventListener('keydown', (e) => {
+    if (scene === 'tutorial') {
+      if (e.key === 'Escape') { Sound.play('click'); closeTutorial(false); }
+      else if (e.key === 'ArrowRight') tutStep(1);
+      else if (e.key === 'ArrowLeft') tutStep(-1);
+      return;
+    }
+    if (e.key === 'Escape') { if (modalOpen() && $('modalCard').querySelector('#mResume')) closeModal(); else openPause(); }
+  });
   Ads.setHooks({ pause: () => Sound.pause(), resume: () => Sound.resume() });
 
   // atalho de teste automático: avança o relógio do jogo sem depender da tela (aba escondida não anima)
@@ -4094,7 +4249,7 @@
     },
     swap(a, b) { if (!busy) trySwap(a, b); },
     get state() { return state; }, get busy() { return busy; }, get scene() { return scene; },
-    get save() { return save; }, get tutorialMove() { return tutorialMove; }, openPre, startLevel, openRelics, openChallenges, startRun, openRecordsHub, openShop,
+    get save() { return save; }, get tutorialMove() { return tutorialMove; }, openPre, startLevel, openRelics, openChallenges, startRun, openRecordsHub, openShop, openTutorial, closeTutorial,
     findMove() { return state && LR.findMove(state); },
   };
 
@@ -4106,6 +4261,13 @@
     const UIK = ART.uiImages();
     for (const k in UIK) { const im = UIK[k]; const url = im.toDataURL ? im.toDataURL('image/png') : im.src; document.documentElement.style.setProperty('--ui-' + k, 'url(' + url + ')'); }
     if (Object.keys(UIK).length) document.documentElement.classList.add('ui-kit');
+    const navArt = ART.nodeImg('navarrow');
+    if (navArt && $('screen-tutorial')) $('screen-tutorial').style.setProperty('--tut-arrow', 'url(' + navArt + ')');
+    else document.querySelectorAll('.tut-nav').forEach((b) => b.classList.add('no-art'));
+    try {
+      const capApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+      if (capApp && capApp.addListener) capApp.addListener('backButton', () => { if (tutState.open) closeTutorial(false); });
+    } catch (e) {}
     UIART.applyCorners();
     // martelo pintado (15/10): botão de pedra redondo, martelo (aceso quando armado) e selo de pedra com o contador
     if (ART.nodeImg('hbtn')) {
@@ -4128,6 +4290,7 @@
     else if (location.hash === '#fxdemo') { startLevel(5); setTimeout(() => { state.grid[3][2].special = 'lineH'; state.grid[5][5].special = 'barrel'; state.grid[6][1] = { id: 9997, kind: 'gem', color: null, special: 'idol', armed: false, vine: false }; setInterval(() => { if (Math.random() < 0.34) blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); else if (Math.random() < 0.5) blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); else blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 1400); if (0) setInterval(() => { blastFx({ special: 'lineH', x: 2, y: 3, area: [] }); blastFx({ special: 'barrel', x: 5, y: 5, area: [] }); blastFx({ special: 'idol', x: 1, y: 6, area: [[0, 0], [3, 1], [6, 2], [4, 7]] }); }, 900); }, 1500); }
     else if (/^#evento-/.test(location.hash)) { if (location.hash === '#evento-anton') document.documentElement.classList.add('ev-anton'); startLevel(3); setTimeout(() => { const p3 = I18N.lang === 'pt' && ART.nodeImg('p3'); showPraise(T('praise.3'), p3 ? 'art p3' : '', p3); const b = document.createElement('div'); const ra = I18N.lang === 'pt' && ART.nodeImg('rush'); b.className = 'praise ' + (ra ? 'art rush' : 'banner'); if (ra) b.innerHTML = '<img alt="" src="' + ra + '">'; else b.textContent = T('rush'); b.style.top = '62%'; b.style.animation = 'none'; b.style.transform = 'translate(-50%,-50%)'; document.body.appendChild(b); const a = document.querySelector('.praise:not(.banner)'); if (a) { a.style.animation = 'none'; a.style.transform = 'translate(-50%,-50%)'; a.style.opacity = '1'; a.style.top = '40%'; setTimeout(() => document.body.appendChild(a), 1); } }, 2600); }
     else if (location.hash === '#mapa') openMap();
+    else if (/^#tutorial(\d*)$/.test(location.hash)) { const pm = /^#tutorial(\d+)$/.exec(location.hash); openTutorial(pm ? Math.max(0, Math.min(TUT_TOTAL - 1, +pm[1] - 1)) : 0, true); }
     // #conta / #progresso: janelas de login e do código de progresso (print da moldura, 30/10)
     else if (location.hash === '#conta') openAccount();
     // #maparolaN: mapa com a fase N aberta, rolado meia tela pra baixo (confere a rolagem nativa e o botão de voltar)
@@ -4182,7 +4345,7 @@
     else if (location.hash === '#derrotademo') { startLevel(1); setTimeout(() => { showLose(); const x = document.getElementById('mExtra'); if (x) x.hidden = false; }, 900); }
     else if (location.hash === '#pontosdemo') { startLevel(1); setTimeout(() => { state.score = 1290; renderHUD(); floats.push({ x: cellX(3), y: cellY(4), text: '+90', num: 90, color: '#ffe08a', t: 0, hold: true }); }, 900); }
     else if (location.hash === '#vitoriademo') { startLevel(1); setTimeout(() => { state.score = 16900; showWin(); }, 1200); setTimeout(() => document.querySelectorAll('.stars-big img').forEach((im, i) => { if (i < 2) { im.src = ART.nodeImg('vstar') || im.src; im.classList.add('on'); } }), 2600); }
-    else { if (MESA_ACCOUNT && MESA_ACCOUNT.data) applyCloud(MESA_ACCOUNT.data); openMenu(); takeResume(); iapInit(); if (cloud) cloudPush(true); if (APP && CLOUD_ON && !MESA_ACCOUNT && !cloud && !lsGet('lr.loginAsked')) { lsSet('lr.loginAsked', '1'); setTimeout(() => { if (!modalOpen()) openAccount(); }, 600); } setTimeout(() => checkAppUpdate(), 1200); }
+    else { if (MESA_ACCOUNT && MESA_ACCOUNT.data) applyCloud(MESA_ACCOUNT.data); openMenu(); takeResume(); iapInit(); if (cloud) cloudPush(true); setTimeout(() => checkAppUpdate(), 1200); }
     requestAnimationFrame(frame);
   }
   $('loadingTxt').textContent = T('loading');
