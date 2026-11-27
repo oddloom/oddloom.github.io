@@ -885,9 +885,9 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 .season-strip .season-me i { font-style: normal; font-size: 12px; color: var(--bone-dim); }
 .season-strip small { font-size: 11.5px; color: var(--bone-dim); }
 .tier { display: inline-block; padding: 2px 8px; border-radius: 999px; font: 800 10.5px var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: #1d1209; }
-.tier-bronze { background: linear-gradient(180deg, #e2a46c, #9a5a2a); }
-.tier-silver { background: linear-gradient(180deg, #f1f4f6, #9aa4ad); }
-.tier-gold { background: linear-gradient(180deg, #ffe7a0, #c99428); }
+.tier-bronze { background: linear-gradient(180deg, #ffe28a, #d48c1c); }
+.tier-silver { background: linear-gradient(180deg, #ff6b7a, #b81d33); color: #fff5f6; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.tier-gold { background: linear-gradient(180deg, #6ef2a8, #198c54); color: #062214; }
 .tier-diamond { background: linear-gradient(180deg, #d8fbff, #4fc6dd); box-shadow: 0 0 8px rgba(110,220,240,.6); }
 .season-row { grid-template-columns: 32px 1fr auto auto; }
 .season-card .season-body { width: 100%; max-height: min(58vh, 460px); overflow-y: auto; display: grid; gap: 8px; }
@@ -1326,3 +1326,114 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
   .tut-dot.on { width: 14px; }
   .ui-kit .btn.dark.tut-done, .btn.dark.tut-done { --be2: 20px; min-height: 40px; min-width: 92px; padding: 0 16px; font-size: 12px; }
 }
+
+/* ---------- Recompensa Diária de 7 dias (Expedição Diária — artes em assets/diaria/) ---------- */
+.dr-menu-btn.ready {
+  border-color: rgba(46, 204, 113, .65);
+  box-shadow: 0 0 18px rgba(24, 168, 90, .35), inset 0 1px 0 rgba(255, 236, 170, .28);
+}
+.card.dr-card,
+.ui-kit .card.dr-card {
+  --cw: min(392px, 95vw);
+  width: var(--cw);
+  max-height: 94svh;
+  overflow-y: auto;
+  border-image: none;
+  border: 0;
+  border-radius: 0;
+  padding: 92px 48px 82px;
+  background:
+    url('assets/diaria/moldura.webp') center / 100% 100% no-repeat,
+    radial-gradient(ellipse at 50% 0%, rgba(24, 168, 90, .22), rgba(12, 16, 14, .96) 68%);
+}
+.ui-kit .card.dr-card .btns { margin-inline: 0; gap: 6px; }
+.ui-kit .card.dr-card .btns .btn { min-height: 48px; }
+.ui-kit .card.dr-card .btns .btn.small { min-height: 42px; }
+.dr-card .dr-sub { margin: 4px 0 10px; font-size: 13px; opacity: .92; }
+.dr-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+.dr-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 78px;
+  padding: 8px 6px;
+  border-radius: 6px;
+  background:
+    url('assets/diaria/slot-normal.webp') center / 100% 100% no-repeat,
+    linear-gradient(180deg, rgba(32, 28, 22, .92), rgba(16, 14, 11, .95));
+  border: 0;
+  text-align: center;
+  overflow: hidden;
+}
+.dr-slot.active {
+  background:
+    url('assets/diaria/slot-ativo.webp') center / 100% 100% no-repeat,
+    linear-gradient(180deg, rgba(24, 92, 56, .92), rgba(14, 44, 28, .96));
+  box-shadow: 0 0 16px rgba(24, 168, 90, .48);
+  animation: drPulse 1.8s ease-in-out infinite;
+}
+.dr-slot.dr-day7 {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: 72px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  text-align: left;
+  background:
+    url('assets/diaria/slot-dia7.webp') center / 100% 100% no-repeat,
+    linear-gradient(135deg, rgba(64, 46, 18, .95), rgba(18, 56, 36, .95));
+  border: 0;
+}
+.dr-slot.dr-day7.active {
+  box-shadow: 0 0 22px rgba(244, 200, 96, .52), 0 0 14px rgba(24, 168, 90, .45);
+}
+.dr-day-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #f3d285;
+  text-shadow: 0 1px 2px #000;
+}
+.dr-ic {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .7));
+}
+.dr-ic-chest { width: 64px; height: 64px; flex: none; }
+.dr-d7-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.dr-lbl {
+  font-size: 11px;
+  line-height: 1.2;
+  color: #fff6dc;
+  text-shadow: 0 1px 2px #000;
+}
+.dr-slot.dr-day7 .dr-lbl { font-size: 13px; }
+.dr-slot.claimed > *:not(.dr-stamp) { opacity: .48; filter: saturate(.6); }
+.dr-stamp {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .85));
+}
+.dr-btns { gap: 8px; }
+@keyframes drPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+.gfx-lite .dr-slot.active { animation: none; }

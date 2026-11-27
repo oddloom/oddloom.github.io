@@ -183,6 +183,7 @@
   const E_MAX = 5, E_REGEN = 30 * 60e3, E_FREE_UNTIL = 10, E_COINS = 60, E_COINS_DAY = 5, CHEST_EVERY = 12 * 3600e3;
   save.energy = save.energy || { n: E_MAX, t: Date.now() };
   save.chest = save.chest || { next: 0, streak: 0, day: '' };
+  save.dailyReward = save.dailyReward || { day: 0, last: 0, streak: 0 };
   let runCharged = false, runChargedFrom = E_MAX;
   function energyNow() {
     const e = save.energy, now = Date.now();
@@ -300,74 +301,195 @@
       onReward() { track('energy_buy', { via: 'ad' }); grant(); },
     });
   }
-  // ---------- baú de 12 h ----------
-  const chestReady = () => Date.now() >= (save.chest.next || 0);
-  function chestReward(streak) { return { coins: 40 + 20 * (Math.min(streak, 5) - 1), energy: streak >= 5 ? 2 : 1 }; }
-  function openChest() {
-    Sound.init(); Sound.play('click');
-    if (!chestReady()) {
-      const card = openModal('<h2 class="metal">' + T('chest.title') + '</h2><div class="orn"><i></i></div>' +
-        '<div class="en-big"><img alt="" src="' + ART.icon('chest', 160) + '"></div><div class="moves-line" id="chNext"></div>' +
-        '<div class="btns"><button class="btn dark small" id="mChBack" type="button">' + T('map') + '</button></div>');
-      card.classList.add('energy-card');
-      const paint = () => { if ($('modal').hidden || !card.isConnected) return clearInterval(iv); const left = save.chest.next - Date.now(); if (left <= 0) { clearInterval(iv); return openChest(); } card.querySelector('#chNext').textContent = T('chest.next', { t: clock(left) }); };
-      const iv = setInterval(paint, 1000); paint();
-      card.querySelector('#mChBack').onclick = () => { Sound.play('click'); clearInterval(iv); closeModal(); };
-      return;
+  // ---------- recompensa diária de 7 dias (Expedição Diária) ----------
+  const drDayKey = (d) => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  const drNextMidnight = () => { const d = new Date(); d.setHours(24, 0, 0, 0); return d.getTime(); };
+  const DAILY_REWARDS = [
+    { day: 1, coins: 50 },
+    { day: 2, item: 'hammer', qty: 1 },
+    { day: 3, coins: 80 },
+    { day: 4, item: 'dyn', qty: 1 },
+    { day: 5, coins: 120, energy: 1 },
+    { day: 6, item: 'seal', qty: 1, item2: 'moves', qty2: 1 },
+    { day: 7, coins: 250, item: 'orb', qty: 1, item2: 'hammer', qty2: 1, grand: true },
+  ];
+  function dailyRewardState() {
+    const dr = save.dailyReward || (save.dailyReward = { day: 0, last: 0, streak: 0 });
+    const today = drDayKey(new Date()), yest = drDayKey(new Date(Date.now() - 864e5));
+    if (dr.last === today) {
+      return { ready: false, claimedToday: true, currentDay: dr.day || 1, claimedUntil: dr.day || 1, broken: false, lostDay: 0, nextAt: drNextMidnight() };
     }
-    const dk = (d) => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
-    const today = dk(new Date()), yest = dk(new Date(Date.now() - 864e5));
-    const c = save.chest;
-    c.streak = c.day === today ? c.streak : c.day === yest ? c.streak + 1 : 1;
-    c.day = today; c.next = Date.now() + CHEST_EVERY;
-    const r = chestReward(c.streak);
-    save.coins += r.coins; energyNow(); save.energy.n += r.energy; persist();
-    track('chest_open', { streak: c.streak });
-    Sound.play('win'); buzz([20, 40, 60]);
-    const card = openModal((c.streak > 1 ? '<div class="eyebrow">' + T('chest.day', { n: c.streak }) + '</div>' : '') + '<h2 class="metal">' + T('chest.title') + '</h2><div class="orn"><i></i></div>' +
-      '<div class="en-big"><img alt="" src="' + ART.icon('chest', 160) + '"></div>' +
-      '<div class="chest-loot"><span><img alt="" src="' + ART.icon('coin', 64) + '"><b>+' + r.coins + '</b></span><span><img alt="" src="' + ART.icon('sun', 64) + '"><b>+' + r.energy + '</b></span></div>' +
-      '<div class="moves-line">' + T('chest.back') + '</div>' +
-      '<div class="btns"><button class="btn stack" id="mChDouble" type="button" hidden>' + T('chest.double', { n: r.coins }) + '<span class="sub">' + T('chest.doubleAd') + '</span></button><button class="btn" id="mChOk" type="button">' + T('chest.ok') + '</button></div>');
-    card.classList.add('energy-card');
-    card.querySelector('#mChOk').onclick = () => { Sound.play('click'); closeModal(); askNotes(); };
-    let chestDoubled = false;
-    Ads.offerReward({
-      level: 0,
-      placement: 'chest_double_coins',
-      onAvailable(show) {
-        const b = card.querySelector('#mChDouble');
-        if (!b || chestDoubled) return;
-        b.hidden = false;
-        b.onclick = () => { if (chestDoubled) return; Sound.play('click'); b.disabled = true; show(); };
-      },
-      onReward() {
-        if (chestDoubled) return;
-        chestDoubled = true;
-        save.coins += r.coins; persist(); paintWallet();
-        const b = card.querySelector('#mChDouble'); if (b) b.remove();
-        const coinB = card.querySelector('.chest-loot b'); if (coinB) coinB.textContent = '+' + (r.coins * 2);
-        showPraise(T('chest.doubled', { n: r.coins }), 'info');
-      },
-      onSkip() { const b = card.querySelector('#mChDouble'); if (b && !chestDoubled) b.disabled = false; },
-    });
-    paintWallet(); paintEnergy(); scheduleNotes();
+    if (dr.last === yest && dr.day >= 1) {
+      const next = (dr.day % 7) + 1;
+      return { ready: true, claimedToday: false, currentDay: next, claimedUntil: next === 1 ? 0 : dr.day, broken: false, lostDay: 0, nextAt: 0 };
+    }
+    const lost = dr.last && dr.day >= 1 && dr.day < 7 ? dr.day : 0;
+    return { ready: true, claimedToday: false, currentDay: 1, claimedUntil: 0, broken: !!lost, lostDay: lost, nextAt: 0 };
   }
-  // ---------- mapa: energia (esquerda) e baú (abaixo das moedas) ----------
+  const chestReady = () => dailyRewardState().ready;
+  function drShopItem(id) { return SHOP.find((x) => x.id === id); }
+  function drSlotVisual(r) {
+    if (r.grand) return '<img class="dr-ic dr-ic-chest" alt="" src="assets/diaria/bau-dia7.webp" onerror="this.onerror=null;this.src=\'' + ART.icon('chest', 128) + '\'">';
+    if (r.item && !r.coins) {
+      const it = drShopItem(r.item);
+      return '<img class="dr-ic" alt="" src="' + (it ? itemImg(it, 80) : ART.icon('coin', 64)) + '">';
+    }
+    return '<img class="dr-ic" alt="" src="' + ART.icon('coin', 64) + '">';
+  }
+  function drRewardLabel(r) {
+    const parts = [];
+    const c = r.energy && !ENERGY_ON ? r.coins + 30 : r.coins;
+    if (c) parts.push('+' + c);
+    if (r.energy && ENERGY_ON) parts.push('+1 ⚡');
+    const fmtItem = (id, qty) => { const nm = T('item.' + id); return (qty === 1 && nm.startsWith('+')) ? nm : '+' + qty + ' ' + nm; };
+    if (r.item) parts.push(fmtItem(r.item, r.qty || 1));
+    if (r.item2) parts.push(fmtItem(r.item2, r.qty2 || 1));
+    return parts.join(' · ');
+  }
+  function drGrant(r, multCoins) {
+    const coins = (r.energy && !ENERGY_ON ? (r.coins || 0) + 30 : (r.coins || 0)) * (multCoins || 1);
+    if (coins) save.coins += coins;
+    if (r.energy && ENERGY_ON) { energyNow(); save.energy.n += r.energy; }
+    if (r.item) save.items[r.item] = (save.items[r.item] || 0) + (r.qty || 1);
+    if (r.item2) save.items[r.item2] = (save.items[r.item2] || 0) + (r.qty2 || 1);
+    return coins;
+  }
+  let dailyAutoShown = false;
+  function openDailyReward(auto) {
+    if (!auto) { Sound.init(); Sound.play('click'); }
+    const st = dailyRewardState();
+    const today = drDayKey(new Date()), yest = drDayKey(new Date(Date.now() - 864e5));
+    const slotsHtml = DAILY_REWARDS.map((r) => {
+      const claimed = r.day <= st.claimedUntil;
+      const active = st.ready && r.day === st.currentDay;
+      const cls = 'dr-slot' + (r.grand ? ' dr-day7' : '') + (claimed ? ' claimed' : '') + (active ? ' active' : '');
+      const lbl = r.grand
+        ? '<div class="dr-d7-body"><span class="dr-day-tag">' + T('dr.day', { n: r.day }) + ' · ' + T('dr.grand') + '</span><strong class="dr-lbl">' + drRewardLabel(r) + '</strong></div>'
+        : '<span class="dr-day-tag">' + T('dr.day', { n: r.day }) + '</span>' + drSlotVisual(r) + '<strong class="dr-lbl">' + drRewardLabel(r) + '</strong>';
+      const inner = r.grand ? drSlotVisual(r) + lbl : lbl;
+      const stamp = claimed ? '<img class="dr-stamp" alt="" src="assets/diaria/selo-resgatado.webp" onerror="this.style.display=\'none\'">' : '';
+      return '<div class="' + cls + '" data-day="' + r.day + '">' + inner + stamp + '</div>';
+    }).join('');
+    const subLine = st.ready
+      ? (st.broken ? T('dr.broken', { n: st.lostDay }) : T('dr.sub', { n: st.currentDay }))
+      : '<span id="drNext"></span>';
+    const card = openModal(
+      '<div class="eyebrow">' + T('dr.eyebrow') + '</div>' +
+      '<h2 class="metal">' + T('dr.title') + '</h2>' +
+      '<div class="moves-line dr-sub">' + subLine + '</div>' +
+      '<div class="dr-grid">' + slotsHtml + '</div>' +
+      '<div class="btns dr-btns">' +
+        (st.ready ? '<button class="btn" id="mDrClaim" type="button">' + T('dr.claim', { n: st.currentDay }) + '</button>' : '') +
+        (st.ready && st.broken ? '<button class="btn dark stack" id="mDrRecover" type="button" hidden>' + T('dr.recover', { n: st.lostDay + 1 }) + '<span class="sub">' + T('dr.adSub') + '</span></button>' : '') +
+        '<button class="btn stack" id="mDrDouble" type="button" hidden></button>' +
+        '<button class="btn dark small" id="mDrClose" type="button">' + T('close') + '</button>' +
+      '</div>'
+    );
+    card.classList.add('dr-card');
+    let iv = null;
+    if (!st.ready) {
+      const paintCd = () => {
+        if ($('modal').hidden || !card.isConnected) return clearInterval(iv);
+        const left = st.nextAt - Date.now();
+        if (left <= 0) { clearInterval(iv); return openDailyReward(true); }
+        const el = card.querySelector('#drNext');
+        if (el) el.textContent = T('dr.next', { t: clock(left) });
+      };
+      iv = setInterval(paintCd, 1000); paintCd();
+    }
+    card.querySelector('#mDrClose').onclick = () => { Sound.play('click'); if (iv) clearInterval(iv); closeModal(); };
+    if (st.ready && st.broken) {
+      Ads.offerReward({
+        level: 0,
+        placement: 'daily_reward_recover',
+        onAvailable(show) {
+          const b = card.querySelector('#mDrRecover');
+          if (!b) return;
+          b.hidden = false;
+          b.onclick = () => { Sound.play('click'); b.disabled = true; show(); };
+        },
+        onReward() {
+          save.dailyReward.last = yest;
+          save.dailyReward.day = st.lostDay;
+          persist();
+          showPraise(T('dr.recovered'), 'info');
+          openDailyReward(true);
+        },
+        onSkip() { const b = card.querySelector('#mDrRecover'); if (b) b.disabled = false; },
+      });
+    }
+    const claimBtn = card.querySelector('#mDrClaim');
+    if (claimBtn) {
+      let claimed = false, doubled = false;
+      claimBtn.onclick = () => {
+        if (claimed) return;
+        claimed = true;
+        Sound.init(); Sound.play('win'); buzz([20, 40, 60]);
+        const r = DAILY_REWARDS[st.currentDay - 1];
+        const dr = save.dailyReward;
+        dr.day = st.currentDay;
+        dr.last = today;
+        dr.streak = st.broken ? 1 : (dr.streak || 0) + 1;
+        const coinsGot = drGrant(r, 1);
+        persist();
+        track('chest_open', { streak: dr.day });
+        paintWallet(); paintEnergy(); paintMenu(); askNotes(); scheduleNotes();
+        showPraise(T('dr.got') + ' ' + drRewardLabel(r), 'info');
+        claimBtn.remove();
+        const rec = card.querySelector('#mDrRecover'); if (rec) rec.remove();
+        const slotEl = card.querySelector('.dr-slot[data-day="' + r.day + '"]');
+        if (slotEl) {
+          slotEl.classList.remove('active');
+          slotEl.classList.add('claimed');
+          slotEl.insertAdjacentHTML('beforeend', '<img class="dr-stamp" alt="" src="assets/diaria/selo-resgatado.webp" onerror="this.style.display=\'none\'">');
+        }
+        const subEl = card.querySelector('.dr-sub');
+        if (subEl) subEl.textContent = T('dr.back');
+        if (coinsGot > 0) {
+          Ads.offerReward({
+            level: 0,
+            placement: 'chest_double_coins',
+            onAvailable(show) {
+              const b = card.querySelector('#mDrDouble');
+              if (!b || doubled) return;
+              b.innerHTML = T('chest.double', { n: coinsGot }) + '<span class="sub">' + T('chest.doubleAd') + '</span>';
+              b.hidden = false;
+              b.onclick = () => { if (doubled) return; Sound.play('click'); b.disabled = true; show(); };
+            },
+            onReward() {
+              if (doubled) return;
+              doubled = true;
+              save.coins += coinsGot; persist(); paintWallet();
+              const b = card.querySelector('#mDrDouble'); if (b) b.remove();
+              showPraise(T('chest.doubled', { n: coinsGot }), 'info');
+            },
+            onSkip() { const b = card.querySelector('#mDrDouble'); if (b && !doubled) b.disabled = false; },
+          });
+        }
+      };
+    }
+  }
+  const openChest = () => openDailyReward(false);
+  // ---------- mapa: energia (esquerda) e recompensa diária (abaixo das moedas) ----------
   let mapTick = null;
   function paintEnergy() {
     const b = $('btnEnergy'), ch = $('btnChest');
-    if (!b || !ch) return;
-    b.hidden = ch.hidden = !ENERGY_ON;
-    if (!ENERGY_ON) return;
-    const n = energyNow(), left = energyNextIn();
-    $('mapEnergy').textContent = n + '/' + E_MAX;
-    $('mapEnergyT').textContent = left ? clock(left) : '';
-    const ready = chestReady();
-    ch.classList.toggle('ready', ready);
-    $('mapChestT').textContent = ready ? T('chest.open') : clock(save.chest.next - Date.now());
+    if (b) {
+      b.hidden = !ENERGY_ON;
+      if (ENERGY_ON) {
+        const n = energyNow(), left = energyNextIn();
+        $('mapEnergy').textContent = n + '/' + E_MAX;
+        $('mapEnergyT').textContent = left ? clock(left) : '';
+      }
+    }
+    if (ch) {
+      ch.hidden = false;
+      const st = dailyRewardState();
+      ch.classList.toggle('ready', st.ready);
+      $('mapChestT').textContent = st.ready ? T('chest.open') : clock(Math.max(0, st.nextAt - Date.now()));
+    }
   }
-  function startMapTick() { clearInterval(mapTick); paintEnergy(); if (ENERGY_ON) mapTick = setInterval(() => { if (scene === 'map') paintEnergy(); else clearInterval(mapTick); }, 1000); }
+  function startMapTick() { clearInterval(mapTick); paintEnergy(); mapTick = setInterval(() => { if (scene === 'map') paintEnergy(); else clearInterval(mapTick); }, 1000); }
 
   // ---------- conta Google opcional + progresso na nuvem (30/10, só no app) ----------
   // Na 1ª abertura pergunta: Entrar com Google ou Jogar sem login. Logado, o progresso sobe pro servidor
@@ -604,12 +726,15 @@
   }
   async function scheduleNotes() {
     const ln = LN();
-    if (!ln || !ENERGY_ON || !save.notesAsked) return;
+    if (!ln || !save.notesAsked) return;
     try {
       await ln.cancel({ notifications: [{ id: 101 }, { id: 102 }] });
-      const list = [], now = Date.now() + 60e3, full = energyFullAt();
-      if (save.chest.next > now) list.push({ id: 102, title: 'Lost Relics', body: T('note.chest'), schedule: { at: new Date(save.chest.next) }, isExactNotification: false });
-      if (full > now) list.push({ id: 101, title: 'Lost Relics', body: T('note.energy'), schedule: { at: new Date(full) }, isExactNotification: false });
+      const list = [], now = Date.now() + 60e3, full = ENERGY_ON ? energyFullAt() : 0;
+      const st = dailyRewardState();
+      const nextDayNum = (st.currentDay % 7) + 1;
+      const nextDailyAt = st.claimedToday ? Math.max(st.nextAt + 9 * 3600e3, Date.now() + 24 * 3600e3) : Date.now() + 24 * 3600e3;
+      if (nextDailyAt > now) list.push({ id: 102, title: 'Lost Relics', body: T('note.daily', { n: nextDayNum }), largeIcon: 'ic_notif_emerald', schedule: { at: new Date(nextDailyAt) }, isExactNotification: false });
+      if (full > now) list.push({ id: 101, title: 'Lost Relics', body: T('note.energy'), largeIcon: 'ic_notif_emerald', schedule: { at: new Date(full) }, isExactNotification: false });
       if (list.length) await ln.schedule({ notifications: list });
     } catch (e) {}
   }
@@ -3419,6 +3544,12 @@
   function paintMenu() {
     document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = T(el.dataset.t); });
     $('btnPlay').textContent = save.unlocked > 1 ? T('menu.continue') : T('menu.play');
+    const drBtn = $('btnDailyReward');
+    if (drBtn) {
+      const drSt = dailyRewardState();
+      drBtn.classList.toggle('ready', drSt.ready);
+      drBtn.textContent = T('dr.btn') + (drSt.ready ? ' !' : '');
+    }
     $('btnWeekly').textContent = T('weekly.btn');
     $('btnDaily').textContent = (save.daily && save.daily.date === todayKey() ? '✓ ' : '') + T('daily.btn');
     for (const [id, on, key] of [['btnSfx', Sound.sfx, 'menu.sound'], ['btnMusic', Sound.music, 'menu.music']]) {
@@ -3785,7 +3916,12 @@
     paintMenu();
     syncMapAttention();
     if (!menuReadySent) { menuReadySent = true; track('menu_ready'); }
+    if (!dailyAutoShown && save.unlocked > 1 && dailyRewardState().ready) {
+      dailyAutoShown = true;
+      setTimeout(() => { if (scene === 'menu' && $('modal').hidden && dailyRewardState().ready) openDailyReward(true); }, 350);
+    }
   }
+  if ($('btnDailyReward')) $('btnDailyReward').onclick = () => openDailyReward(false);
   $('btnPlay').onclick = () => {
     Sound.init(); Sound.play('click');
     track('play_tap', { level: save.unlocked || 1 });
@@ -4177,7 +4313,10 @@
     wp.onclick = () => goWorld(WI - 1); wx.onclick = () => { if (nextOpen) goWorld(WI + 1); };
     $('mapStarIc').src = ART.icon('star', 44);
     $('mapCoinIc').src = ART.icon('coin', 64);
-    $('mapEnergyIc').src = ART.icon('sun', 64); $('mapChestIc').src = ART.icon('chest', 128);
+    $('mapEnergyIc').src = ART.icon('sun', 64);
+    const mc = $('mapChestIc');
+    mc.onerror = () => { mc.onerror = null; mc.src = ART.icon('chest', 128); };
+    mc.src = 'assets/diaria/bau-dia7.webp';
     paintWallet();
     const mapa = $('screen-map');
     mapa.style.setProperty('--map-controls-width', w + 'px');

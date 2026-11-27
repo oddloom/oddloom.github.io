@@ -106,6 +106,7 @@
       'guide.8.t': 'Energia, moedas e Trilha', 'guide.8.d': 'Vitórias dão moedas e o Baú abre a cada 12 h. Vença fases seguidas para ganhar bônus na Trilha.',
       'guide.9.t': 'Mundos e desafios', 'guide.9.d': 'Explore 86 fases em 4 mundos, abra o Difícil ao vencer e teste Jogada do Dia, Expedição, Chefes e Maldição.',
       'guide.10.t': 'Ranking justo e conta', 'guide.10.d': 'No ranking não entram itens pagos. Com o login Google opcional, seu progresso salva na nuvem com um único nome.',
+      'dr.btn': 'RECOMPENSA DIÁRIA', 'dr.eyebrow': 'EXPEDIÇÃO DIÁRIA', 'dr.title': 'RECOMPENSA DIÁRIA', 'dr.sub': 'Volte todo dia para desbloquear o Grande Baú — Dia {n} de 7', 'dr.day': 'Dia {n}', 'dr.grand': 'Grande Baú', 'dr.claim': 'RESGATAR DIA {n}', 'dr.next': 'Próxima recompensa em {t}', 'dr.back': 'Volte amanhã para continuar sua sequência!', 'dr.got': 'Recebido:', 'dr.broken': 'Sequência pausada no Dia {n}. Recomece ou recupere abaixo!', 'dr.recover': 'RECUPERAR DIA {n}', 'dr.recovered': 'Sequência recuperada!', 'dr.adSub': 'ver anúncio', 'note.daily': 'Sua recompensa do Dia {n} está pronta! Não perca sua sequência.',
       'playstore.label': 'Disponível no Google Play', 'playstore.over': 'Disponível no', 'playstore.name': 'Google Play',
     },
     en: {
@@ -213,6 +214,7 @@
       'guide.8.t': 'Energy, coins & Trail', 'guide.8.d': 'Wins earn coins and the Chest opens every 12h. Win levels in a row to unlock free Explorer Trail boosts.',
       'guide.9.t': 'Worlds & game modes', 'guide.9.d': 'Beat 86 levels across 4 worlds, unlock Hard Mode, and try Daily Move, Expedition, Boss Rush, and Curse.',
       'guide.10.t': 'Fair ranking & account', 'guide.10.d': 'Paid items never enter rankings. Optional Google sign-in saves progress to the cloud under one nickname.',
+      'dr.btn': 'DAILY REWARD', 'dr.eyebrow': 'DAILY EXPEDITION', 'dr.title': 'DAILY REWARD', 'dr.sub': 'Return daily to unlock the Grand Chest — Day {n} of 7', 'dr.day': 'Day {n}', 'dr.grand': 'Grand Chest', 'dr.claim': 'CLAIM DAY {n}', 'dr.next': 'Next reward in {t}', 'dr.back': 'Come back tomorrow to keep your streak!', 'dr.got': 'Claimed:', 'dr.broken': 'Streak paused at Day {n}. Restart or recover below!', 'dr.recover': 'RECOVER DAY {n}', 'dr.recovered': 'Streak recovered!', 'dr.adSub': 'watch ad', 'note.daily': 'Your Day {n} reward is ready! Keep your streak alive.',
       'playstore.label': 'Get it on Google Play', 'playstore.over': 'Get it on', 'playstore.name': 'Google Play',
     },
     es: {
@@ -269,6 +271,7 @@
       'guide.8.t': 'Energía, monedas y Senda', 'guide.8.d': 'Ganar da monedas y el Cofre abre cada 12 h. Victorias seguidas activan ventajas gratis en la Senda.',
       'guide.9.t': 'Mundos y desafíos', 'guide.9.d': 'Supera 86 niveles en 4 mundos, abre Difícil y reta Jugada del Día, Expedición, Jefes y Maldición.',
       'guide.10.t': 'Ranking justo y cuenta', 'guide.10.d': 'Sin objetos pagos en el ranking. Con Google opcional guardas en la nube con un único nombre.', 'playstore.label': 'Disponible en Google Play', 'playstore.over': 'Disponible en', 'playstore.name': 'Google Play',
+      'dr.btn': 'RECOMPENSA DIARIA', 'dr.eyebrow': 'EXPEDICIÓN DIARIA', 'dr.title': 'RECOMPENSA DIARIA', 'dr.sub': 'Vuelve cada día para abrir el Gran Cofre — Día {n} de 7', 'dr.day': 'Día {n}', 'dr.grand': 'Gran Cofre', 'dr.claim': 'RECLAMAR DÍA {n}', 'dr.next': 'Próxima recompensa en {t}', 'dr.back': '¡Vuelve mañana para mantener tu racha!', 'dr.got': 'Recibido:', 'dr.broken': 'Racha pausada en el Día {n}. ¡Reinicia o recupérala abajo!', 'dr.recover': 'RECUPERAR DÍA {n}', 'dr.recovered': '¡Racha recuperada!', 'dr.adSub': 'ver anuncio', 'note.daily': '¡Tu recompensa del Día {n} está lista! No pierdas tu racha.',
     },
     fr: {
       'shop.info': 'À propos de {item}', 'map.next': 'MONDE SUIVANT', 'map.shop.label': 'Boutique : {n} pièces', 'title.sub': 'Une expédition de joyaux',
@@ -302,6 +305,7 @@
       'guide.8.t': 'Énergie, pièces et Sentier', 'guide.8.d': 'Gagner offre des pièces ; le Coffre s’ouvre toutes les 12 h. Enchaîner des victoires donne des bonus.',
       'guide.9.t': 'Mondes et défis', 'guide.9.d': 'Explorez 86 niveaux en 4 mondes, ouvrez le mode Difficile et testez Coup du Jour, Expédition et Défis.',
       'guide.10.t': 'Classement et compte', 'guide.10.d': 'Aucun bonus payant en classement. La connexion Google facultative sauve votre partie sous un seul pseudo.', 'playstore.label': 'Disponible sur Google Play',
+      'dr.btn': 'RÉCOMPENSE DU JOUR', 'dr.eyebrow': 'EXPÉDITION DU JOUR', 'dr.title': 'RÉCOMPENSE DU JOUR', 'dr.sub': 'Revenez chaque jour pour le Grand Coffre — Jour {n} sur 7', 'dr.day': 'Jour {n}', 'dr.grand': 'Grand Coffre', 'dr.claim': 'PRENDRE JOUR {n}', 'dr.next': 'Prochaine récompense dans {t}', 'dr.back': 'Revenez demain pour continuer votre série !', 'dr.got': 'Reçu :', 'dr.broken': 'Série arrêtée au Jour {n}. Recommencez ou récupérez-la !', 'dr.recover': 'RÉCUPÉRER JOUR {n}', 'dr.recovered': 'Série récupérée !', 'dr.adSub': 'voir une pub', 'note.daily': 'Votre récompense du Jour {n} est prête ! Ne perdez pas votre série.',
     },
     de: {
       'shop.info': 'Über {item}', 'map.next': 'NÄCHSTE WELT', 'map.shop.label': 'Shop: {n} Münzen', 'title.sub': 'Eine Juwelen-Expedition',
@@ -335,6 +339,7 @@
       'guide.8.t': 'Energie, Münzen & Pfad', 'guide.8.d': 'Siege geben Münzen; die Truhe öffnet alle 12 Std. Siegesserien schenken Gratis-Booster.',
       'guide.9.t': 'Welten & Modi', 'guide.9.d': '86 Level in 4 Welten, Schwer-Modus nach Sieg sowie Zug des Tages, Expedition, Bosse und Fluch.',
       'guide.10.t': 'Rangliste & Konto', 'guide.10.d': 'Keine Kauf-Items in der Rangliste. Optionales Google-Login sichert Spielstand und Namen in der Cloud.', 'playstore.label': 'Jetzt bei Google Play',
+      'dr.btn': 'TÄGLICHE BELOHNUNG', 'dr.eyebrow': 'TÄGLICHE EXPEDITION', 'dr.title': 'TÄGLICHE BELOHNUNG', 'dr.sub': 'Komm täglich zurück für die Große Truhe — Tag {n} von 7', 'dr.day': 'Tag {n}', 'dr.grand': 'Große Truhe', 'dr.claim': 'TAG {n} HOLEN', 'dr.next': 'Nächste Belohnung in {t}', 'dr.back': 'Komm morgen wieder für deine Serie!', 'dr.got': 'Erhalten:', 'dr.broken': 'Serie bei Tag {n} pausiert. Neu starten oder wiederherstellen!', 'dr.recover': 'TAG {n} RETTEN', 'dr.recovered': 'Serie wiederhergestellt!', 'dr.adSub': 'Werbung ansehen', 'note.daily': 'Deine Tag-{n}-Belohnung ist bereit! Halte deine Serie am Laufen.',
     },
     it: {
       'shop.info': 'Info su {item}', 'map.next': 'PROSSIMO MONDO', 'map.shop.label': 'Negozio: {n} monete', 'title.sub': 'Una spedizione di gioielli',
@@ -362,6 +367,7 @@
       'guide.8.t': 'Energia, monete e Sentiero', 'guide.8.d': 'Vincere dà monete e il Forziere apre ogni 12 ore. Vittorie di fila sbloccano booster gratis.',
       'guide.9.t': 'Mondi e sfide', 'guide.9.d': 'Supera 86 livelli in 4 mondi, sblocca Difficile e gioca Mossa del Giorno, Spedizione, Boss e Maledizione.',
       'guide.10.t': 'Classifica e account', 'guide.10.d': 'Niente oggetti a pagamento in classifica. Il login Google facoltativo salva su cloud con un solo nome.',
+      'dr.btn': 'PREMIO GIORNALIERO', 'dr.eyebrow': 'SPEDIZIONE GIORNALIERA', 'dr.title': 'PREMIO GIORNALIERO', 'dr.sub': 'Torna ogni giorno per il Grande Forziere — Giorno {n} di 7', 'dr.day': 'Giorno {n}', 'dr.grand': 'Grande Forziere', 'dr.claim': 'RISCATTA GIORNO {n}', 'dr.next': 'Prossimo premio tra {t}', 'dr.back': 'Torna domani per continuare la serie!', 'dr.got': 'Ricevuto:', 'dr.broken': 'Serie interrotta al Giorno {n}. Riparti o recuperala!', 'dr.recover': 'RECUPERA GIORNO {n}', 'dr.recovered': 'Serie recuperata!', 'dr.adSub': 'guarda annuncio', 'note.daily': 'Il tuo premio del Giorno {n} è pronto! Non perdere la serie.',
     },
     id: {
       'shop.info': 'Tentang {item}', 'map.next': 'DUNIA BERIKUTNYA', 'title.sub': 'Ekspedisi permata', 'daily.btn': 'LANGKAH HARIAN', 'daily.shareBtn': 'BAGIKAN', 'daily.retry': 'COBA LAGI', 'menu.back': 'MENU',
@@ -386,6 +392,7 @@
       'guide.8.t': 'Energi, koin & Jalur', 'guide.8.d': 'Menang memberi koin dan Peti dibuka tiap 12 jam. Menang beruntun memberi booster gratis.',
       'guide.9.t': 'Dunia & tantangan', 'guide.9.d': 'Taklukkan 86 level di 4 dunia, buka Mode Sulit, serta coba Langkah Harian, Ekspedisi, dan Bos.',
       'guide.10.t': 'Peringkat & akun', 'guide.10.d': 'Item berbayar dilarang di peringkat. Login Google opsional menyimpan progres cloud dengan satu nama.',
+      'dr.btn': 'HADIAH HARIAN', 'dr.eyebrow': 'EKSPEDISI HARIAN', 'dr.title': 'HADIAH HARIAN', 'dr.sub': 'Kembali tiap hari untuk Peti Besar — Hari {n} dari 7', 'dr.day': 'Hari {n}', 'dr.grand': 'Peti Besar', 'dr.claim': 'AMBIL HARI {n}', 'dr.next': 'Hadiah berikutnya dalam {t}', 'dr.back': 'Kembali besok untuk lanjutkan beruntunmu!', 'dr.got': 'Diterima:', 'dr.broken': 'Beruntun berhenti di Hari {n}. Mulai ulang atau pulihkan!', 'dr.recover': 'PULIHKAN HARI {n}', 'dr.recovered': 'Beruntun dipulihkan!', 'dr.adSub': 'tonton iklan', 'note.daily': 'Hadiah Hari {n} sudah siap! Jangan putus beruntunmu.',
     },
     ja: {
       'shop.info': '{item}について', 'map.next': '次のワールド', 'title.sub': '宝石の探検', 'daily.btn': '今日の一手', 'daily.shareBtn': '共有', 'daily.retry': 'もう一度', 'menu.back': 'メニュー',
@@ -410,6 +417,7 @@
       'guide.8.t': 'エネルギー・コイン・連勝', 'guide.8.d': '勝利でコイン獲得、宝箱は12時間ごとに開封。連勝すると無料アイテムが付きます。',
       'guide.9.t': 'ワールドと各モード', 'guide.9.d': '4ワールド全86面を攻略しハードを開放。今日の一手や無限探検・ボス戦も楽しめます。',
       'guide.10.t': '公平ランキングと連携', 'guide.10.d': 'ランキングは有料アイテム不可。任意のGoogle連携で記録の名前統一とクラウド保存が可能。',
+      'dr.btn': 'デイリー報酬', 'dr.eyebrow': '毎日の探検', 'dr.title': 'デイリー報酬', 'dr.sub': '毎日ログインして大宝箱を開けよう — {n}/7日目', 'dr.day': '{n}日目', 'dr.grand': '大宝箱', 'dr.claim': '{n}日目を受け取る', 'dr.next': '次の報酬まで {t}', 'dr.back': '明日も戻って連続ログインを続けよう！', 'dr.got': '獲得：', 'dr.broken': '{n}日目で連続記録が止まりました。再開または復旧できます！', 'dr.recover': '{n}日目を復旧', 'dr.recovered': '連続記録を復旧しました！', 'dr.adSub': '広告を見る', 'note.daily': '{n}日目のデイリー報酬が届いています！連続記録を守ろう。',
     },
   };
   const LANG_ORDER = ['pt', 'en', 'es', 'fr', 'de', 'it', 'id', 'ja'];
