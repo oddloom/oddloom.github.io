@@ -94,6 +94,7 @@
       'ad.tag': 'ANÚNCIO', 'ad.slot': 'Espaço do anúncio', 'ad.reward': 'recompensa: +5 movimentos', 'ad.next': 'entre fases',
       'ad.rewardIn': 'Recompensa em', 'ad.closeIn': 'Fechar em', 'ad.rewardOk': 'Recompensa liberada!', 'ad.skip': 'PULAR', 'ad.close': 'FECHAR',
       'loading': 'Abrindo o templo…',
+      'fb.later': 'AGORA NÃO', 'upd.title': 'NOVA VERSÃO', 'upd.msg': 'Há uma atualização do Lost Relics ({v}) disponível na Google Play com novidades e melhorias.', 'upd.btn': 'ATUALIZAR', 'upd.later': 'DEPOIS',
       'playstore.label': 'Disponível no Google Play', 'playstore.over': 'Disponível no', 'playstore.name': 'Google Play',
     },
     en: {
@@ -189,6 +190,7 @@
       'ad.tag': 'AD', 'ad.slot': 'Ad space', 'ad.reward': 'reward: +5 moves', 'ad.next': 'between levels',
       'ad.rewardIn': 'Reward in', 'ad.closeIn': 'Close in', 'ad.rewardOk': 'Reward unlocked!', 'ad.skip': 'SKIP', 'ad.close': 'CLOSE',
       'loading': 'Opening the temple…',
+      'fb.later': 'NOT NOW', 'upd.title': 'NEW VERSION', 'upd.msg': 'A Lost Relics update ({v}) is available on Google Play with new features and improvements.', 'upd.btn': 'UPDATE', 'upd.later': 'LATER',
       'playstore.label': 'Get it on Google Play', 'playstore.over': 'Get it on', 'playstore.name': 'Google Play',
     },
     es: {
@@ -233,7 +235,7 @@
       'rush': '¡Fiebre del Tesoro!', 'shuffle': 'Sin jugadas, mezclando…', 'praise.1': '¡Genial!', 'praise.2': '¡Increíble!', 'praise.3': '¡Legendario!', 'boss': 'NIVEL DE GUARDIÁN',
       'announce': 'Nivel {n}', 'announce.say': '¡Nivel {n}!', 'announce.boss': '¡Nivel de guardián!', 'announce.final': '¡Nivel final!',
       'ad.tag': 'ANUNCIO', 'ad.slot': 'Espacio publicitario', 'ad.reward': 'recompensa: +5 movimientos', 'ad.next': 'entre niveles', 'ad.rewardIn': 'Recompensa en', 'ad.closeIn': 'Cerrar en', 'ad.rewardOk': '¡Recompensa lista!', 'ad.skip': 'SALTAR', 'ad.close': 'CERRAR',
-      'loading': 'Abriendo el templo…', 'playstore.label': 'Disponible en Google Play', 'playstore.over': 'Disponible en', 'playstore.name': 'Google Play',
+      'loading': 'Abriendo el templo…', 'fb.later': 'AHORA NO', 'upd.title': 'NUEVA VERSIÓN', 'upd.msg': 'Hay una actualización de Lost Relics ({v}) disponible en Google Play.', 'upd.btn': 'ACTUALIZAR', 'upd.later': 'DESPUÉS', 'playstore.label': 'Disponible en Google Play', 'playstore.over': 'Disponible en', 'playstore.name': 'Google Play',
     },
     fr: {
       'shop.info': 'À propos de {item}', 'map.next': 'MONDE SUIVANT', 'map.shop.label': 'Boutique : {n} pièces', 'title.sub': 'Une expédition de joyaux',
@@ -255,7 +257,7 @@
       'win.title': 'Niveau terminé !', 'win.best': 'Record : {n}', 'win.new': 'Nouveau record !', 'win.double': '2× PIÈCES (+{n})', 'win.doubleAd': 'en regardant une pub', 'win.doubled': 'Pièces doublées ! +{n}', 'chest.double': '2× PIÈCES (+{n})', 'chest.doubleAd': 'en regardant une pub', 'chest.doubled': 'Coffre doublé ! +{n} pièces',
       'lose.title': 'Presque !', 'lose.left': 'Il reste :', 'lose.extra': '+5 COUPS', 'lose.extraAd': 'en regardant une pub',
       'rush': 'Ruée au Trésor !', 'shuffle': 'Aucun coup, mélange…', 'praise.1': 'Super !', 'praise.2': 'Incroyable !', 'praise.3': 'Légendaire !', 'boss': 'NIVEAU GARDIEN', 'announce': 'Niveau {n}',
-      'ad.tag': 'PUB', 'ad.skip': 'PASSER', 'ad.close': 'FERMER', 'loading': 'Ouverture du temple…', 'playstore.label': 'Disponible sur Google Play',
+      'ad.tag': 'PUB', 'ad.skip': 'PASSER', 'ad.close': 'FERMER', 'loading': 'Ouverture du temple…', 'fb.later': 'PLUS TARD', 'upd.title': 'NOUVELLE VERSION', 'upd.msg': 'Une mise à jour de Lost Relics ({v}) est disponible sur Google Play.', 'upd.btn': 'METTRE À JOUR', 'upd.later': 'PLUS TARD', 'playstore.label': 'Disponible sur Google Play',
     },
     de: {
       'shop.info': 'Über {item}', 'map.next': 'NÄCHSTE WELT', 'map.shop.label': 'Shop: {n} Münzen', 'title.sub': 'Eine Juwelen-Expedition',
@@ -277,7 +279,7 @@
       'win.title': 'Level geschafft!', 'win.best': 'Rekord: {n}', 'win.new': 'Neuer Rekord!', 'win.double': '2× MÜNZEN (+{n})', 'win.doubleAd': 'Werbung ansehen', 'win.doubled': 'Münzen verdoppelt! +{n}', 'chest.double': '2× MÜNZEN (+{n})', 'chest.doubleAd': 'Werbung ansehen', 'chest.doubled': 'Truhe verdoppelt! +{n} Münzen',
       'lose.title': 'Knapp daneben!', 'lose.left': 'Fehlt noch:', 'lose.extra': '+5 ZÜGE', 'lose.extraAd': 'Werbung ansehen',
       'rush': 'Schatzrausch!', 'shuffle': 'Keine Züge, mische…', 'praise.1': 'Super!', 'praise.2': 'Unglaublich!', 'praise.3': 'Legendär!', 'boss': 'WÄCHTER-LEVEL', 'announce': 'Level {n}',
-      'ad.tag': 'WERBUNG', 'ad.skip': 'ÜBERSPRINGEN', 'ad.close': 'SCHLIESSEN', 'loading': 'Tempel wird geöffnet…', 'playstore.label': 'Jetzt bei Google Play',
+      'ad.tag': 'WERBUNG', 'ad.skip': 'ÜBERSPRINGEN', 'ad.close': 'SCHLIESSEN', 'loading': 'Tempel wird geöffnet…', 'fb.later': 'SPÄTER', 'upd.title': 'NEUE VERSION', 'upd.msg': 'Ein Update für Lost Relics ({v}) ist bei Google Play verfügbar.', 'upd.btn': 'AKTUALISIEREN', 'upd.later': 'SPÄTER', 'playstore.label': 'Jetzt bei Google Play',
     },
     it: {
       'shop.info': 'Info su {item}', 'map.next': 'PROSSIMO MONDO', 'map.shop.label': 'Negozio: {n} monete', 'title.sub': 'Una spedizione di gioielli',
@@ -293,7 +295,7 @@
       'fb.btn': 'FEEDBACK / BUG', 'fb.title': 'FEEDBACK', 'fb.ask': 'Idee, consigli o bug? Scrivici:', 'fb.cat.idea': 'Idea', 'fb.cat.improve': 'Migliorare', 'fb.cat.bug': 'Bug', 'fb.send': 'INVIA', 'fb.reward': 'ottieni {n} monete', 'fb.thanks': 'Grazie per il feedback!', 'fb.thanksCoins': 'Grazie! +{n} monete',
       'energy.title': 'ENERGIA', 'energy.ad': '+1 ENERGIA', 'energy.adSub': 'guarda un annuncio', 'chest.title': 'TESORO', 'chest.open': 'APRI', 'chest.ok': 'PRENDI', 'pause': 'PAUSA', 'close': 'CHIUDI',
       'win.title': 'Livello completato!', 'win.double': '2× MONETE (+{n})', 'win.doubleAd': 'guardando un annuncio', 'lose.title': 'Quasi!', 'lose.extra': '+5 MOSSE', 'lose.extraAd': 'guardando un annuncio',
-      'praise.1': 'Ottimo!', 'praise.2': 'Incredibile!', 'praise.3': 'Leggendario!', 'announce': 'Livello {n}', 'loading': 'Apertura del tempio…',
+      'praise.1': 'Ottimo!', 'praise.2': 'Incredibile!', 'praise.3': 'Leggendario!', 'announce': 'Livello {n}', 'loading': 'Apertura del tempio…', 'fb.later': 'NON ORA', 'upd.title': 'NUOVA VERSIONE', 'upd.msg': 'È disponibile un aggiornamento di Lost Relics ({v}) su Google Play.', 'upd.btn': 'AGGIORNA', 'upd.later': 'DOPO',
     },
     id: {
       'shop.info': 'Tentang {item}', 'map.next': 'DUNIA BERIKUTNYA', 'title.sub': 'Ekspedisi permata', 'daily.btn': 'LANGKAH HARIAN', 'daily.shareBtn': 'BAGIKAN', 'daily.retry': 'COBA LAGI', 'menu.back': 'MENU',
@@ -306,7 +308,7 @@
       'fb.btn': 'MASUKAN / BUG', 'fb.title': 'MASUKAN', 'fb.ask': 'Ada saran atau menemukan bug? Beri tahu kami:', 'fb.cat.idea': 'Saran', 'fb.cat.improve': 'Perbaikan', 'fb.cat.bug': 'Bug', 'fb.send': 'KIRIM', 'fb.reward': 'dapat {n} koin', 'fb.thanks': 'Terima kasih!', 'fb.thanksCoins': 'Terima kasih! +{n} koin',
       'energy.title': 'ENERGI', 'energy.ad': '+1 ENERGI', 'energy.adSub': 'tonton iklan', 'chest.title': 'PETI', 'chest.open': 'BUKA', 'chest.ok': 'AMBIL', 'pause': 'JEDA', 'close': 'TUTUP',
       'win.title': 'Level selesai!', 'win.double': '2× KOIN (+{n})', 'win.doubleAd': 'tonton iklan', 'lose.title': 'Hampir berhasil!', 'lose.extra': '+5 LANGKAH', 'lose.extraAd': 'tonton iklan',
-      'praise.1': 'Hebat!', 'praise.2': 'Luar Biasa!', 'praise.3': 'Legendaris!', 'announce': 'Level {n}', 'loading': 'Membuka kuil…',
+      'praise.1': 'Hebat!', 'praise.2': 'Luar Biasa!', 'praise.3': 'Legendaris!', 'announce': 'Level {n}', 'loading': 'Membuka kuil…', 'fb.later': 'NANTI', 'upd.title': 'VERSI BARU', 'upd.msg': 'Pembaruan Lost Relics ({v}) tersedia di Google Play.', 'upd.btn': 'PERBARUI', 'upd.later': 'NANTI',
     },
     ja: {
       'shop.info': '{item}について', 'map.next': '次のワールド', 'title.sub': '宝石の探検', 'daily.btn': '今日の一手', 'daily.shareBtn': '共有', 'daily.retry': 'もう一度', 'menu.back': 'メニュー',
@@ -319,7 +321,7 @@
       'fb.btn': 'ご意見・バグ', 'fb.title': 'フィードバック', 'fb.ask': 'ご意見やバグがあれば教えてください：', 'fb.cat.idea': '提案', 'fb.cat.improve': '改善点', 'fb.cat.bug': 'バグ報告', 'fb.send': '送信', 'fb.reward': '{n}コイン獲得', 'fb.thanks': 'ご意見ありがとうございます！', 'fb.thanksCoins': 'ありがとう！ +{n}コイン',
       'energy.title': 'エネルギー', 'energy.ad': 'エネルギー +1', 'energy.adSub': '広告を見る', 'chest.title': '宝箱', 'chest.open': '開ける', 'chest.ok': '受け取る', 'pause': '一時停止', 'close': '閉じる',
       'win.title': 'ステージクリア！', 'win.double': 'コイン2倍 (+{n})', 'win.doubleAd': '広告を見る', 'lose.title': 'あと少し！', 'lose.extra': '+5手', 'lose.extraAd': '広告を見る',
-      'praise.1': 'グレート！', 'praise.2': 'すごい！', 'praise.3': 'レジェンド！', 'announce': 'ステージ {n}', 'loading': '神殿を開いています…',
+      'praise.1': 'グレート！', 'praise.2': 'すごい！', 'praise.3': 'レジェンド！', 'announce': 'ステージ {n}', 'loading': '神殿を開いています…', 'fb.later': 'あとで', 'upd.title': '新バージョン', 'upd.msg': 'Lost Relicsのアップデート（{v}）がGoogle Playで利用できます。', 'upd.btn': 'アップデート', 'upd.later': 'あとで',
     },
   };
   const LANG_ORDER = ['pt', 'en', 'es', 'fr', 'de', 'it', 'id', 'ja'];

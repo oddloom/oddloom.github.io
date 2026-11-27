@@ -383,6 +383,41 @@
     cloud = { session: MESA_ACCOUNT.session, name: MESA_ACCOUNT.name, source: 'mesa' };
     lsSet(CLOUD_KEY, JSON.stringify(cloud));
   }
+  if (Records && Records.attachSession) Records.attachSession(() => cloud && cloud.session);
+  if (window.Telemetry && Telemetry.setMetaProvider) {
+    Telemetry.setMetaProvider(() => ({
+      unlocked: save.unlocked || 1,
+      level: scene === 'play' && level && Number.isInteger(level.id) ? level.id : (save.unlocked || 1),
+      alias: (Records && Records.getName()) || '',
+    }));
+  }
+  // Aviso automático de nova versão no app Android (sem pacotes extras; consulta /app-version no Worker)
+  let updateChecked = false;
+  async function checkAppUpdate() {
+    if (updateChecked || !APP || !CLOUD_API || !window.LR_VERSION_CODE) return;
+    updateChecked = true;
+    try {
+      const r = await fetch(CLOUD_API + '/app-version', { cache: 'no-store' });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (!d || !(d.latestVersionCode > window.LR_VERSION_CODE)) return;
+      if (modalOpen()) return;
+      const ver = d.latestVersionName || ('v' + d.latestVersionCode);
+      const storeUrl = d.storeUrl || 'https://play.google.com/store/apps/details?id=io.github.oddloom.lostrelics';
+      const card = openModal(
+        '<h2 class="metal">' + T('upd.title') + '</h2><div class="orn"><i></i></div>' +
+        '<p class="save-summary">' + T('upd.msg', { v: ver }) + '</p>' +
+        '<div class="btns"><button class="btn" id="mUpdGo" type="button">' + T('upd.btn') + '</button>' +
+        '<button class="btn dark small" id="mUpdLater" type="button">' + T('upd.later') + '</button></div>');
+      card.classList.add('energy-card');
+      card.querySelector('#mUpdGo').onclick = () => {
+        Sound.play('click');
+        window.open(storeUrl, '_blank', 'noopener');
+        closeModal();
+      };
+      card.querySelector('#mUpdLater').onclick = () => { Sound.play('click'); closeModal(); };
+    } catch (e) {}
+  }
   let cloudTimer = null, socialReady = null;
   const progressOf = (s) => (s.unlocked || 0) * 1000 + Object.values(s.stars || {}).reduce((a, b) => a + (+b || 0), 0);
   async function cloudCall(route, body) {
@@ -511,7 +546,8 @@
     track('review_prompt', {});
     setTimeout(() => { ir.requestReview().catch(() => {}); }, 1800);
   }
-  function openFeedback(onBack) {
+  function openFeedback(onBack, opts) {
+    const auto = !!(opts && opts.auto);
     const on = ART.nodeImg('vstar') || ART.icon('star', 64), off = ART.nodeImg('vstar0') || ART.icon('star0', 64);
     let stars = 0, cat = 'improve';
     const cats = [['idea', T('fb.cat.idea')], ['improve', T('fb.cat.improve')], ['bug', T('fb.cat.bug')]];
@@ -521,7 +557,7 @@
       '<div class="fb-stars">' + [1, 2, 3, 4, 5].map((n) => '<button type="button" data-n="' + n + '" aria-label="' + n + '"><img alt="" src="' + off + '"></button>').join('') + '</div>' +
       '<textarea id="fbText" class="save-code fb-text" maxlength="460" placeholder="' + T('fb.placeholder') + '"></textarea>' +
       '<div class="btns"><button class="btn stack" id="mFbSend" type="button" disabled>' + T('fb.send') + (save.feedbackRewarded ? '' : '<span class="sub">' + T('fb.reward', { n: FEEDBACK_COINS }) + '</span>') + '</button>' +
-      '<button class="btn dark small" id="mFbBack" type="button">' + T('menu.back') + '</button></div>');
+      '<button class="btn dark small" id="mFbBack" type="button">' + T(auto ? 'fb.later' : 'menu.back') + '</button></div>');
     card.classList.add('energy-card');
     card.querySelectorAll('.fb-cat').forEach((b) => {
       b.onclick = () => {
@@ -552,6 +588,7 @@
         let msg = T('fb.thanks');
         if (!save.feedbackRewarded) { save.feedbackRewarded = 1; save.coins += FEEDBACK_COINS; persist(); paintWallet(); msg = T('fb.thanksCoins', { n: FEEDBACK_COINS }); }
         closeModal(); paintMenu(); showPraise(msg, 'info');
+        if (auto && onBack) onBack();
       } catch (e) { b.disabled = false; showPraise(T('fb.fail'), 'info'); }
     };
   }
@@ -2746,9 +2783,17 @@
         onSkip() { const b = card.querySelector('#mDouble'); if (b && !doubled) b.disabled = false; },
       });
     }
+    const maybeFbAfter8 = (after) => {
+      if (!hardMode && id >= 8 && !save.fbPrompted && !save.feedbackRewarded) {
+        save.fbPrompted = 1; persist();
+        openFeedback(after, { auto: true });
+        return;
+      }
+      after();
+    };
     if (next) next.onclick = () => {
       Sound.play('click'); closeModal();
-      const go = () => openPre(id + 1);
+      const go = () => maybeFbAfter8(() => openPre(id + 1));
       if (adDue(id)) Ads.interstitial(go, { level: id, placement: 'win_next' }); else go();
     };
     const share = card.querySelector('#mShare');
@@ -2768,7 +2813,7 @@
     };
     card.querySelector('#mMap').onclick = () => {
       Sound.play('click'); closeModal();
-      const go = () => wipe(openMap);
+      const go = () => maybeFbAfter8(() => wipe(openMap));
       if (adDue(id)) Ads.interstitial(go, { level: id, placement: 'win_map' }); else go();
     };
     if (hardMode) {
@@ -3241,7 +3286,7 @@
         if (!err) { err = document.createElement('p'); err.className = 'name-error'; input.after(err); }
         err.textContent = T('rank.nameRule'); input.focus(); return;
       }
-      Records.setName(input.value);
+      Records.rename(input.value);
       Sound.play('click'); closeModal();
       if (next) next(); else wipe(() => startLevel('weekly'));
     };
@@ -4137,7 +4182,7 @@
     else if (location.hash === '#derrotademo') { startLevel(1); setTimeout(() => { showLose(); const x = document.getElementById('mExtra'); if (x) x.hidden = false; }, 900); }
     else if (location.hash === '#pontosdemo') { startLevel(1); setTimeout(() => { state.score = 1290; renderHUD(); floats.push({ x: cellX(3), y: cellY(4), text: '+90', num: 90, color: '#ffe08a', t: 0, hold: true }); }, 900); }
     else if (location.hash === '#vitoriademo') { startLevel(1); setTimeout(() => { state.score = 16900; showWin(); }, 1200); setTimeout(() => document.querySelectorAll('.stars-big img').forEach((im, i) => { if (i < 2) { im.src = ART.nodeImg('vstar') || im.src; im.classList.add('on'); } }), 2600); }
-    else { if (MESA_ACCOUNT && MESA_ACCOUNT.data) applyCloud(MESA_ACCOUNT.data); openMenu(); takeResume(); iapInit(); if (cloud) cloudPush(true); if (APP && CLOUD_ON && !MESA_ACCOUNT && !cloud && !lsGet('lr.loginAsked')) { lsSet('lr.loginAsked', '1'); setTimeout(() => { if (!modalOpen()) openAccount(); }, 600); } }
+    else { if (MESA_ACCOUNT && MESA_ACCOUNT.data) applyCloud(MESA_ACCOUNT.data); openMenu(); takeResume(); iapInit(); if (cloud) cloudPush(true); if (APP && CLOUD_ON && !MESA_ACCOUNT && !cloud && !lsGet('lr.loginAsked')) { lsSet('lr.loginAsked', '1'); setTimeout(() => { if (!modalOpen()) openAccount(); }, 600); } setTimeout(() => checkAppUpdate(), 1200); }
     requestAnimationFrame(frame);
   }
   $('loadingTxt').textContent = T('loading');

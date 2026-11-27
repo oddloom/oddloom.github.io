@@ -21,7 +21,26 @@
     u.setUTCDate(u.getUTCDate() - ((u.getUTCDay() + 6) % 7));
     return u.toISOString().slice(0, 10);
   }
+  let sessionProvider = null;
+  const getSession = () => (typeof sessionProvider === 'function' ? sessionProvider() : null) || '';
+  function attachSession(fn) { sessionProvider = fn; }
   function setName(v) { data.name = cleanName(v); save(); return data.name; }
+  async function rename(v) {
+    const name = setName(v);
+    if (!validName(name)) return name;
+    for (const w in data.scores) if (data.scores[w] && data.scores[w].me) data.scores[w].me.name = name;
+    for (const w in data.levelScores) for (const id in data.levelScores[w]) if (data.levelScores[w][id]) data.levelScores[w][id].name = name;
+    save();
+    if (API && ((data.playerId && data.token) || getSession())) {
+      try {
+        const r = await request('/rename', { method: 'POST', body: JSON.stringify({
+          playerId: data.playerId, token: data.token, name, session: getSession() || undefined,
+        }) });
+        if (r && r.playerId && !data.playerId) { data.playerId = r.playerId; save(); }
+      } catch (e) { /* mantém local e sincroniza na próxima jogada */ }
+    }
+    return name;
+  }
   const getName = () => data.name || '';
   const localRows = (w) => Object.values(data.scores[w] || {}).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)).slice(0, 50);
   const localLevelRows = (w, levelId) => {
@@ -45,7 +64,7 @@
   }
   async function register() {
     if (!API || (data.playerId && data.token)) return;
-    const r = await request('/register', { method: 'POST', body: JSON.stringify({ name: data.name }) });
+    const r = await request('/register', { method: 'POST', body: JSON.stringify({ name: data.name, session: getSession() || undefined }) });
     data.playerId = r.playerId; data.token = r.token; save();
   }
   async function list(w) {
@@ -137,5 +156,5 @@
     } else status('local');
     return listLevel(id, w);
   }
-  root.Records = { online: !!API, week, getName, setName, validName, list, submit, listLevel, listLevelAll, submitLevel, featured, seasonKey, seasonRange, season, seasons };
+  root.Records = { online: !!API, week, getName, setName, rename, attachSession, validName, list, submit, listLevel, listLevelAll, submitLevel, featured, seasonKey, seasonRange, season, seasons };
 })(window);

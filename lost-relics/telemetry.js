@@ -84,10 +84,39 @@
     clearTimeout(timer); timer = setTimeout(() => flush(false), 1200);
   }
 
+  let activeMs = 0, visibleSince = document.hidden ? 0 : Date.now(), metaProvider = null, lastEndedAt = 0;
+  const currentDurationSec = () => {
+    const extra = visibleSince ? Math.max(0, Date.now() - visibleSince) : 0;
+    return Math.round((activeMs + extra) / 1000);
+  };
+  function recordSessionEnd(useBeacon) {
+    const now = Date.now();
+    if (now - lastEndedAt < 3000) return;
+    lastEndedAt = now;
+    const extra = typeof metaProvider === 'function' ? (metaProvider() || {}) : {};
+    const params = Object.assign({ durationSec: currentDurationSec() }, extra);
+    event('session_end', params);
+    flush(useBeacon);
+  }
   root.addEventListener('online', () => flush(false));
-  root.addEventListener('pagehide', () => flush(true));
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (visibleSince) { activeMs += Math.max(0, Date.now() - visibleSince); visibleSince = 0; }
+      recordSessionEnd(true);
+    } else {
+      visibleSince = Date.now();
+    }
+  });
+  root.addEventListener('pagehide', () => {
+    if (visibleSince) { activeMs += Math.max(0, Date.now() - visibleSince); visibleSince = 0; }
+    recordSessionEnd(true);
+  });
   root.addEventListener('error', (e) => event('client_error', { message: e.message, file: (e.filename || '').split('/').pop(), line: e.lineno || 0 }));
   root.addEventListener('unhandledrejection', (e) => event('client_error', { message: e.reason && (e.reason.message || String(e.reason)) }));
-  root.Telemetry = { event, flush, getCampaign: () => Object.assign({}, campaign), getAnonId: () => stored.anonId };
+  root.Telemetry = {
+    event, flush, getCampaign: () => Object.assign({}, campaign), getAnonId: () => stored.anonId,
+    setMetaProvider: (fn) => { metaProvider = fn; },
+    getDurationSec: currentDurationSec,
+  };
   event('session_start', { path: location.pathname, standalone: platform === 'pwa' });
 })(window);
