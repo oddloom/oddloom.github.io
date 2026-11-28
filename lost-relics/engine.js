@@ -1272,6 +1272,15 @@
     ['stars', 'best', 'hardBest', 'seals', 'relicsPaid', 'chalBought'].forEach((k) => { if (older[k] || newer[k]) maxMap(k); });
     ['unlocked', 'wins', 'altarPaid', 'expBest', 'rushBest', 'fogShown', 'tutorialDone', 'feedbackRewarded'].forEach((k) => { if (older[k] != null || newer[k] != null) out[k] = Math.max(+older[k] || 0, +newer[k] || 0); });
     out.owned = [...new Set([...(older.owned || []), ...(newer.owned || [])])];
+    if (older.skins || newer.skins) out.skins = Object.assign({}, older.skins, newer.skins);
+    if (older.iapDone || newer.iapDone) out.iapDone = Object.assign({}, older.iapDone, newer.iapDone);
+    if (newer.diamonds == null && older.diamonds != null) out.diamonds = Math.max(0, Math.floor(+older.diamonds || 0));
+    else if (out.diamonds != null) out.diamonds = Math.max(0, Math.floor(+out.diamonds || 0));
+    if (older.curseWeek && (!newer.curseWeek || String(older.curseWeek) > String(newer.curseWeek))) out.curseWeek = older.curseWeek;
+    if (older.daily && newer.daily) out.daily = (+older.daily.date || 0) > (+newer.daily.date || 0) ? older.daily : newer.daily;
+    if (older.dailyReward && newer.dailyReward) out.dailyReward = (+older.dailyReward.last || 0) > (+newer.dailyReward.last || 0) ? older.dailyReward : newer.dailyReward;
+    if (newer.avatar == null && older.avatar != null) out.avatar = older.avatar;
+    if (out.avatar != null && out.avatar !== '' && !/^(obsidian|gold|temple|solar):[0-5]$/.test(String(out.avatar))) out.avatar = '';
     return out;
   }
 

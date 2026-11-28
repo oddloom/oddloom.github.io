@@ -1493,3 +1493,258 @@ html.ev-anton .praise, html.ev-anton .announce span { letter-spacing: .04em; tex
 /* 27/11: Expedição Diária um pouco mais para baixo */
 .ui-kit .card.dr-card .eyebrow, .card.dr-card .eyebrow { margin-top: 7px; margin-bottom: -7px; }
 @media (max-height: 760px) { .ui-kit .card.dr-card .eyebrow, .card.dr-card .eyebrow { margin-top: 6px; margin-bottom: -4px; } }
+
+/* ===== 28/11 Loja em página inteira (substitui a janela .tshop) ===== */
+.modal:has(.card.shop-page) { padding: 0; background: #0b0f0e; }
+.ui-kit .card.shop-page, .card.shop-page { --cw: 100vw; width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; border: 0; border-image: none; border-radius: 0; box-shadow: none; filter: none; animation: none; overflow: hidden; display: flex; flex-direction: column; gap: 0;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) max(12px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(12px, env(safe-area-inset-left, 0px));
+  background: var(--tex-dark) 0 0 / 220px, radial-gradient(ellipse at 50% 0%, #1d3a31, #0b0f0e 70%); background-blend-mode: soft-light, normal; }
+.shop-page > * { width: 100%; max-width: 520px; margin-inline: auto; flex: none; }
+.sp-head { display: grid; grid-template-columns: 76px minmax(0, 1fr) 76px; align-items: center; gap: 4px; }
+.sp-back { justify-self: start; width: 46px; height: 46px; border: 1.5px solid #d4a84b; border-radius: 50%; background: #10251e; display: grid; place-items: center; padding: 0; cursor: pointer; }
+.sp-back svg { width: 20px; height: 20px; fill: #f7e2a1; }
+.ui-kit .card.shop-page .sp-head h2, .sp-head h2 { position: static; justify-self: center; width: 100%; max-width: 168px; aspect-ratio: 304 / 134; margin: 0; display: grid; place-items: center; background: center / contain no-repeat; }
+.sp-head h2 span { font: 900 clamp(15px, 5vw, 22px) var(--f-display); text-transform: uppercase; color: #3b2a12; text-shadow: 0 1px 0 rgba(255,245,220,.6); }
+.sp-wallet { justify-self: end; display: flex; flex-direction: column; align-items: center; font: 900 17px var(--f-display); color: #f7e2a1; }
+.sp-wallet img.coin { width: 30px; height: 30px; }
+.sp-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.sp-tabs button { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 66px; padding: 7px 2px 6px; cursor: pointer; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--bone-dim); font: 700 12px/1.1 var(--f-body); }
+.sp-tabs img { width: 34px; height: 34px; object-fit: contain; }
+.sp-tabs button.on { color: #f7e2a1; border-bottom-color: #3fd8cc; background: linear-gradient(180deg, transparent, rgba(63,216,204,.16)); }
+.ui-kit .card.shop-page .sp-help, .sp-help { margin: 10px auto 4px; font: 600 14px/1.35 var(--f-body); color: var(--bone); text-align: center; text-wrap: balance; }
+.shop-page > .sp-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 0 24px; scrollbar-width: none; }
+.sp-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ui-kit .card.shop-page .sp-sec, .sp-sec { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; font: 900 15px var(--f-display); letter-spacing: .05em; color: #f3d27a; }
+.sp-sec::before, .sp-sec::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(212,168,75,.65), transparent); }
+.sp-item { display: grid; grid-template-columns: 70px minmax(0, 1fr) 92px; align-items: center; gap: 8px; padding: 5px 7px; border: 8px solid transparent; border-image: url('assets/diaria/slot-normal.webp') 28 / 8px stretch; background: linear-gradient(180deg, #172229, #10171c) padding-box; text-align: left; }
+.sp-item.on { border-image-source: url('assets/diaria/slot-ativo.webp'); background: linear-gradient(180deg, #17412f, #0f291d) padding-box; }
+.sp-art { width: 70px; height: 74px; display: grid; place-items: center; background: center / contain no-repeat; }
+.sp-art img { width: 58%; height: 58%; object-fit: contain; }
+.sp-item.soon .sp-art { filter: grayscale(.8) brightness(.7); }
+.sp-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; overflow-wrap: break-word; }
+.sp-text b { font: 900 15px/1.15 var(--f-display); color: #f7e2a1; }
+.sp-text span { font: 500 13px/1.3 var(--f-body); color: var(--bone); }
+.sp-text small { font: 700 11.5px var(--f-body); color: #3fd8cc; }
+.sp-act { display: flex; flex-direction: column; align-items: stretch; gap: 4px; text-align: center; min-width: 0; }
+.sp-buy, .sp-use { min-height: 52px; padding: 4px; cursor: pointer; border-radius: 10px; border: 1.5px solid #f0d37e; background: linear-gradient(180deg, #e7c366, #a9792a); box-shadow: 0 3px 0 #4d350f; color: #2b1d0a; font: 800 12px var(--f-body); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.sp-buy b { display: flex; align-items: center; gap: 4px; font: 900 17px var(--f-display); }
+.sp-buy img.coin { width: 20px; height: 20px; }
+.sp-buy:active, .sp-use:active { transform: translateY(2px); box-shadow: 0 1px 0 #4d350f; }
+.sp-buy:disabled { cursor: not-allowed; background: #2b3032; border-color: #656a66; box-shadow: none; color: #c9c5b8; }
+.sp-miss { font: 700 11px/1.2 var(--f-body); color: #d9b98a; }
+.sp-state { font: 800 12px/1.2 var(--f-body); color: #6fe3a5; }
+.ui-kit .card.shop-page .sp-earn, .sp-earn { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 18px 0 0; font: 600 13px var(--f-body); color: var(--bone-dim); }
+.sp-earn img.coin { width: 24px; height: 24px; }
+@media (max-width: 359px) { .sp-item { grid-template-columns: 52px minmax(0, 1fr) 82px; gap: 6px; padding: 3px 3px; } .sp-art { width: 52px; height: 56px; } .sp-tabs button { font-size: 11px; } .sp-head { grid-template-columns: 64px minmax(0, 1fr) 64px; } }
+
+/* 28/11 (2): sem moldura quadrada na arte, botão só com ícone + valor, diamantes */
+.sp-art { background: none; }
+.sp-art img { width: 100%; height: 100%; max-height: 66px; }
+.sp-buy b { gap: 6px; }
+.sp-buy.gems { border-color: #8fe8ff; background: linear-gradient(180deg, #2a6f86, #133a4b); box-shadow: 0 3px 0 #07202a; color: #eafaff; }
+.sp-buy.gems:disabled { background: #2b3032; border-color: #656a66; box-shadow: none; color: #c9c5b8; }
+.sp-buy img.gem-ic { width: 24px; height: 24px; }
+.sp-miss img.coin { width: 14px; height: 14px; margin-left: 3px; vertical-align: -2px; }
+.sp-wallet { align-items: flex-end; gap: 6px; font-size: 15px; }
+.sp-wallet > * { display: flex; align-items: center; gap: 4px; }
+.sp-wallet img.coin { width: 22px; height: 22px; }
+.sp-gems { padding: 2px 0 2px 4px; min-height: 30px; border: 0; background: none; color: #d8f6ff; font: inherit; cursor: pointer; }
+.sp-gems i { font-style: normal; display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; border: 1px solid #8fe8ff; font: 800 13px/1 var(--f-body); }
+.sp-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+.sp-tabs button { font-size: 11px; }
+.sp-tabs span { max-width: 100%; overflow-wrap: anywhere; }
+@media (max-width: 359px) { .sp-tabs button { font-size: 9.5px; } .sp-tabs img { width: 28px; height: 28px; } }
+@media (max-width: 359px) { .sp-head { grid-template-columns: 74px minmax(0, 1fr) 74px; } .ui-kit .card.shop-page .sp-head h2, .sp-head h2 { max-width: 124px; } .sp-head h2 span { font-size: 15px; } }
+
+/* ===== 28/11 animação de espera: templo em degraus + joia, toda branca =====
+   Uso: <span class="lr-spin"><b><svg/></b><i></i><i></i><i></i><i></i></span> (.sm = pequena; .wait = só aparece após 300 ms).
+   Só anima transform/opacity em elementos HTML, para seguir rodando com a thread principal ocupada. */
+.lr-spin { position: relative; display: block; width: 76px; height: 78px; margin: 0 auto; flex: none; }
+.lr-spin i { position: absolute; left: 50%; height: 9px; border: 1.5px solid #fff; border-radius: 1px; transform: translateX(-50%); animation: lrStep 1.6s ease-in-out infinite both; }
+.lr-spin i:nth-of-type(1) { bottom: 0; width: 76px; animation-delay: 0s; }
+.lr-spin i:nth-of-type(2) { bottom: 11px; width: 58px; animation-delay: .14s; }
+.lr-spin i:nth-of-type(3) { bottom: 22px; width: 40px; animation-delay: .28s; }
+.lr-spin i:nth-of-type(4) { bottom: 33px; width: 22px; animation-delay: .42s; }
+.lr-spin b { position: absolute; left: calc(50% - 16px); top: 0; width: 32px; height: 29px; animation: lrGem 1.6s ease-in-out infinite both; }
+.lr-spin svg { width: 100%; height: 100%; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+@keyframes lrStep { 0%, 100% { opacity: .25; transform: translateX(-50%) scaleX(.9); } 40% { opacity: 1; transform: translateX(-50%) scaleX(1); } }
+@keyframes lrGem { 0%, 100% { opacity: .45; transform: translateY(2px) scale(.9); } 55% { opacity: 1; transform: translateY(-3px) scale(1.06); } }
+.lr-spin.sm { zoom: .5; margin-bottom: 8px; }
+.lr-spin.wait { animation: lrShow .2s .3s both; }
+@keyframes lrShow { from { opacity: 0; } to { opacity: 1; } }
+.weekly-status .lr-spin { margin-inline: auto; }
+.lr-wait { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(5,7,6,.55); animation: lrShow .2s .3s both; }
+@media (prefers-reduced-motion: reduce) { .lr-spin i, .lr-spin b { animation: none !important; opacity: 1; } }
+
+/* 28/11: títulos do tutorial legíveis (a Uncial confundia letras); serifa de pedra, mesmo dourado */
+#screen-tutorial #tutScreenTitle, #screen-tutorial #tutPageTitle { font-family: Georgia, 'Noto Serif', 'Times New Roman', serif; font-weight: 700; letter-spacing: .02em; }
+/* 28/11: o destaque da Recompensa Diária desenhava um retângulo atrás do botão; agora o brilho segue o contorno da arte */
+.ui-kit .btn.dr-menu-btn.ready, .btn.dr-menu-btn.ready { box-shadow: none; filter: drop-shadow(0 0 9px rgba(46,224,128,.6)) drop-shadow(0 8px 14px rgba(0,0,0,.6)); }
+
+/* 28/11: título sempre dentro da placa; palavra pintada da vitória na largura da placa */
+.ui-kit .card > h2.plaque-title { overflow: hidden; line-height: 1.25; }
+.ui-kit .card h2.win-word img { max-width: 64%; margin-inline: auto; display: block; }
+
+/* ===== 28/11 tutorial v2: figura quadrada grande com rótulos; Voltar/Próxima escritos ===== */
+#screen-tutorial .tut-stage { justify-content: center; }
+#screen-tutorial .tut-art { flex: 1 1 auto; min-height: 0; width: 100%; max-height: none; height: auto; display: grid; place-items: center; container-type: size; }
+#screen-tutorial .tut-fig { position: relative; width: min(100cqw, 100cqh); aspect-ratio: 1; }
+#screen-tutorial .tut-fig img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }
+.tut-labels { position: absolute; inset: 0; pointer-events: none; container-type: inline-size; }
+.tut-labels span { position: absolute; transform: translate(-50%, -50%); text-align: center; text-wrap: balance; font: 700 clamp(10px, 3.6cqw, 15px)/1.15 var(--f-body); color: #fff2c9; text-shadow: 0 1px 2px #000, 0 0 6px #000, 0 0 10px #000; overflow-wrap: break-word; }
+#screen-tutorial .tut-copy { flex: none; }
+#screen-tutorial .tut-orn { display: none; }
+#screen-tutorial .tut-foot { grid-template-columns: 1fr 1fr; gap: 10px; }
+#screen-tutorial .tut-dots { display: none; }
+#screen-tutorial .tut-right { display: flex; justify-content: flex-end; }
+.ui-kit #screen-tutorial .btn.tut-text, #screen-tutorial .btn.tut-text { --be: 24px; --be2: 22px; width: 100%; max-width: 190px; min-height: 48px; padding: 0 18px; font-size: 13px; letter-spacing: .03em; }
+#screen-tutorial #btnTutPrev:disabled { visibility: hidden; }
+#screen-tutorial .btn[hidden] { display: none; }
+
+/* 28/11 loja: sem saldo o botão continua tocável (apagado) e leva à compra; carteira com + nas duas moedas */
+.sp-buy[data-short] { filter: grayscale(.75) brightness(.78); }
+.sp-coins { padding: 2px 0 2px 4px; min-height: 30px; border: 0; background: none; color: #f7e2a1; font: inherit; cursor: pointer; }
+.sp-coins i { font-style: normal; display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; border: 1px solid #f0d37e; font: 800 13px/1 var(--f-body); }
+.ui-kit .card.shop-page .sp-help.short, .sp-help.short { color: #ffd98c; }
+.sp-list > ul + ul, .sp-list > ul { margin-top: 10px; }
+
+/* 28/11 Campeões (página inteira, mesmo cabeçalho da loja) */
+.ui-kit .card.champ-page .sp-head h2.ch-title, .champ-page .sp-head h2.ch-title { max-width: 200px; }
+.champ-page .sp-head h2.ch-title span { font-size: clamp(13px, 4vw, 18px); }
+.ch-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+.ch-tabs button { min-height: 44px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--bone-dim); font: 800 14px var(--f-body); cursor: pointer; }
+.ch-tabs button.on { color: #f7e2a1; border-bottom-color: #3fd8cc; background: linear-gradient(180deg, transparent, rgba(63,216,204,.16)); }
+.ch-list ol { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.ch-row { display: grid; width: 100%; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 9px; min-height: 50px; padding: 5px 10px; border: 2px solid rgba(212,168,75,.28); border-radius: 10px; background: linear-gradient(180deg, #172229, #10171c); font: inherit; color: inherit; text-align: left; }
+.ch-row.av { grid-template-columns: 32px 38px minmax(0, 1fr) auto; }
+button.ch-row { cursor: pointer; }
+/* pódio: moldura e medalha ouro, prata e bronze */
+.ch-row.t1 { border-color: #e8bd45; background: linear-gradient(180deg, #3a2f12, #17140b); box-shadow: 0 0 12px rgba(232,189,69,.3); }
+.ch-row.t2 { border-color: #c6d0d8; background: linear-gradient(180deg, #2a3138, #12171b); }
+.ch-row.t3 { border-color: #c8844a; background: linear-gradient(180deg, #33231a, #17100c); }
+.ch-row.me { outline: 2px solid #3fd8cc; outline-offset: 1px; }
+.ch-row .rk-pos { grid-area: auto; width: 30px; height: 30px; }
+.medal { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%; font: 900 14px var(--f-body); font-style: normal; border: 2px solid rgba(255,255,255,.45); box-shadow: 0 2px 5px rgba(0,0,0,.6), inset 0 0 0 3px rgba(0,0,0,.16); }
+.medal.m1 { background: radial-gradient(circle at 35% 30%, #fff0a8, #bd861c); color: #2b1d0a; }
+.medal.m2 { background: radial-gradient(circle at 35% 30%, #ffffff, #8d99a3); color: #1c2227; }
+.medal.m3 { background: radial-gradient(circle at 35% 30%, #f0b482, #8a4f22); color: #241204; }
+.ch-av { width: 38px; height: 38px; object-fit: contain; }
+.ch-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ch-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 15px var(--f-body); color: #fff2c9; }
+.ch-n { display: flex; flex-direction: column; align-items: flex-end; }
+.ch-n strong { font: 900 18px var(--f-display); color: #f7e2a1; }
+.ch-n small { font: 600 10px var(--f-body); color: var(--bone-dim); }
+.ch-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.ch-grid button { min-height: 62px; border: 2px solid rgba(212,168,75,.45); border-radius: 10px; background: linear-gradient(180deg, #172229, #10171c); color: #f7e2a1; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ch-grid small { font: 700 10px var(--f-body); color: var(--bone-dim); }
+.ch-grid b { font: 900 20px var(--f-display); }
+.pf-head { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 8px 0 14px; }
+.pf-head > img { width: 108px; height: 108px; object-fit: contain; padding: 12px; border-radius: 50%; border: 3px solid #d4a84b; background: radial-gradient(circle, #1d3a31, #0b0f0e); }
+.pf-head > b { font: 900 22px var(--f-body); color: #fff2c9; }
+.pf-flag { font: 600 14px var(--f-body); color: var(--bone); }
+.pf-count { display: flex; gap: 18px; }
+.pf-count span { display: flex; align-items: center; gap: 6px; font: 900 18px var(--f-body); color: #f7e2a1; }
+.ch-list .ch-play { display: block; margin: 14px auto 0; min-height: 48px; }
+.ch-empty { margin: 40px 16px; text-align: center; font: 600 15px/1.4 var(--f-body); color: var(--bone); }
+.ch-empty.small { margin: 16px; font-size: 13px; }
+.ch-foot { display: flex; flex-direction: column; gap: 8px; padding: 6px 0 10px; }
+.ui-kit .card.champ-page .ch-foot .btn { min-height: 44px; width: 100%; }
+.champ-page .season-strip { white-space: normal; }
+.ui-kit .card.champ-page .ch-list .ch-play, .champ-page .ch-list .ch-play { min-width: 220px; }
+
+/* 28/11 tutorial v3: figura em retrato, ocupa a altura livre */
+#screen-tutorial .tut-fig { width: min(100cqw, 80cqh); aspect-ratio: 4 / 5; }
+.tut-labels span { font-size: clamp(11px, 3.9cqw, 16px); }
+#screen-tutorial .tut-stage { padding-block: 2px; gap: 6px; }
+
+/* 28/11: botões principais do tutorial com letra clara (antes pareciam desativados); "Jogar agora" após o essencial */
+.ui-kit #screen-tutorial .btn.tut-text:not(.dark), #screen-tutorial .btn.tut-text:not(.dark) { color: #fffbe8; font-weight: 900; text-shadow: 0 1px 2px #000, 0 0 3px #000, 0 0 8px rgba(0,0,0,.9); filter: drop-shadow(0 0 7px rgba(255,214,110,.55)) brightness(1.08); }
+#screen-tutorial .tut-skip { display: flex; justify-content: center; flex: none; width: 100%; }
+#screen-tutorial .tut-skip:has(.btn[hidden]) { display: none; }
+.ui-kit #screen-tutorial .tut-skip .btn.tut-text, #screen-tutorial .tut-skip .btn.tut-text { max-width: 320px; min-height: 44px; font-size: 15px; }
+#screen-tutorial .tut-stage { padding-inline: 0; margin-inline: -6px; }
+.tut-labels span { font-size: clamp(12px, 4.2cqw, 17px); }
+
+/* 28/11: números alinhados (mesma fonte, mesma largura de algarismo, mesma coluna) e foto de perfil */
+.champ-page .rk-pos, .champ-page .medal, .champ-page .ch-n strong, .champ-page .ch-grid b, .champ-page .pf-count span, .champ-page .pf-points strong { font-family: var(--f-body); font-weight: 800; font-variant-numeric: lining-nums tabular-nums; line-height: 1; letter-spacing: 0; }
+.champ-page .rk-pos, .champ-page .medal { display: grid; place-items: center; width: 30px; height: 30px; margin: 0; padding: 0; font-size: 14px; font-style: normal; }
+.champ-page .rk-pos { border-radius: 50%; border: 1px solid rgba(212,168,75,.5); background: #0c1115; color: #f3d27a; }
+.champ-page .ch-n { min-width: 62px; align-items: center; justify-content: center; gap: 3px; }
+.champ-page .ch-n strong { font-size: 18px; }
+.ch-legend { display: flex; justify-content: center; flex-wrap: nowrap; gap: 4px; margin-block: 2px 4px; }
+.ch-legend span { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 46px; font: 700 11px var(--f-body); color: var(--bone); }
+.champ-page .ch-legend .medal, .champ-page .ch-legend .rk-pos { width: 24px; height: 24px; font-size: 12px; }
+.avatar { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 50%; border: 2px solid #d4a84b; background: radial-gradient(circle at 35% 28%, #2b5546, #0c1512 75%); box-shadow: inset 0 0 0 2px rgba(0,0,0,.45), 0 2px 5px rgba(0,0,0,.55); }
+.avatar b { font: 800 14px var(--f-body); color: #ffe9ae; letter-spacing: .02em; }
+.avatar img { width: 82%; height: 82%; object-fit: contain; }
+.avatar.big { width: 108px; height: 108px; border-width: 3px; }
+.avatar.big b { font-size: 36px; }
+.av-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.av-pick { position: relative; display: grid; place-items: center; padding: 3px 0; border: 2px solid transparent; border-radius: 12px; background: none; cursor: pointer; }
+.av-pick .avatar { width: 100%; max-width: 52px; height: auto; aspect-ratio: 1; }
+.av-pick.on { border-color: #3fd8cc; background: rgba(63,216,204,.16); }
+.av-pick.locked .avatar { filter: brightness(.34) saturate(.45); }
+.av-lock { position: absolute; width: 14px; height: 11px; left: calc(50% - 7px); top: calc(50% - 3px); border-radius: 2px; background: #e9d9a6; box-shadow: 0 1px 4px #000; }
+.av-lock::before { content: ''; position: absolute; left: 2px; bottom: 10px; width: 6px; height: 6px; border: 2px solid #e9d9a6; border-bottom: 0; border-radius: 6px 6px 0 0; }
+.av-shop { display: block; margin: 6px auto 0; min-height: 36px; padding: 0 16px; border: 1px solid rgba(212,168,75,.6); border-radius: 18px; background: rgba(0,0,0,.35); color: #f3d27a; font: 700 12px var(--f-body); cursor: pointer; }
+.pf-points { font: 700 14px var(--f-body); color: var(--bone); }
+.pf-points strong { font-size: 22px; color: #f7e2a1; }
+.champ-page .pf-count { gap: 12px; }
+
+/* ===== 28/11 identidade Lost Relics: peças pintadas (assets/ui-lr) na carteira, no ranking e no perfil ===== */
+.shop-page .sp-head { grid-template-columns: 52px minmax(0, 1fr) 104px; }
+.shop-page .sp-wallet { gap: 5px; align-items: stretch; width: 104px; }
+.ui-kit .card.shop-page .sp-wallet > button, .shop-page .sp-wallet > button { display: flex; align-items: center; justify-content: flex-start; gap: 5px; width: 100%; min-height: 34px; padding: 0; border: 7px solid transparent; border-width: 5px 13px; border-image: url('assets/ui-lr/placa-pedra.webp') 30 104 fill / 5px 13px stretch; background: none; cursor: pointer; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6)); }
+.shop-page .sp-wallet > button:active { transform: translateY(1px) scale(.97); }
+.shop-page .sp-wallet > button img.coin { width: 28px; height: 28px; margin: -5px 0 -5px -7px; object-fit: contain; }
+.shop-page .sp-wallet > button b { flex: 1; text-align: center; font: 800 14px var(--f-body); font-variant-numeric: lining-nums tabular-nums; }
+.sp-buy img.coin, .sp-buy img.gem-ic { width: 26px; height: 26px; object-fit: contain; }
+.sp-miss img.coin { width: 16px; height: 16px; object-fit: contain; }
+.champ-page .ch-list ol { gap: 8px; }
+.champ-page .ch-list li .ch-row { min-height: 56px; padding: 0 2px; gap: 7px; border-style: solid; border-color: transparent; border-width: 9px 24px; border-image: url('assets/ui-lr/placa-pedra.webp') 30 104 fill / 9px 30px stretch; border-radius: 0; background: none; box-shadow: none; outline: 0; filter: drop-shadow(0 4px 5px rgba(0,0,0,.55)); }
+.champ-page .ch-list li .ch-row.t1 { border-image-source: url('assets/ui-lr/placa-ouro.webp'); min-height: 64px; }
+.champ-page .ch-list li .ch-row.t2 { border-image-source: url('assets/ui-lr/placa-prata.webp'); }
+.champ-page .ch-list li .ch-row.t3 { border-image-source: url('assets/ui-lr/placa-bronze.webp'); }
+.champ-page .ch-list li .ch-row.me { filter: drop-shadow(0 0 7px rgba(63,216,204,.9)); }
+.champ-page .medal, .champ-page .rk-pos { width: 36px; height: 36px; margin: 0 0 0 -8px; border: 0; border-radius: 0; box-shadow: none; background: url('assets/ui-lr/medalha-pedra.webp') center / contain no-repeat; color: #f4efd8; font-size: 14px; text-shadow: 0 1px 2px #000, 0 0 3px #000; filter: none; }
+.champ-page .medal.m1 { background-image: url('assets/ui-lr/medalha-ouro.webp'); color: #ffe9a6; }
+.champ-page .medal.m2 { background-image: url('assets/ui-lr/medalha-prata.webp'); color: #ffffff; }
+.champ-page .medal.m3 { background-image: url('assets/ui-lr/medalha-bronze.webp'); color: #ffd2a8; }
+.champ-page .ch-legend { gap: 8px; }
+.champ-page .ch-legend .medal, .champ-page .ch-legend .rk-pos { width: 34px; height: 34px; margin: 0; font-size: 12px; }
+.champ-page .ch-row.av { grid-template-columns: 34px 44px minmax(0, 1fr) auto; }
+.champ-page .ch-n { min-width: 52px; }
+/* foto de perfil dentro do aro de pedra e ouro */
+.avatar { position: relative; border: 0; background: none; box-shadow: none; }
+.avatar::before { content: ''; position: absolute; inset: 17%; border-radius: 50%; background: radial-gradient(circle at 38% 30%, #2f5c4b, #0b1411 75%); }
+.avatar::after { content: ''; position: absolute; inset: -2%; background: url('assets/ui-lr/aro.webp') center / contain no-repeat; pointer-events: none; }
+.avatar img, .avatar b { position: relative; z-index: 1; }
+.avatar img { width: 58%; height: 58%; }
+.avatar b { font-size: 13px; text-shadow: 0 1px 2px #000; }
+.champ-page .ch-av, .ch-av.avatar { width: 44px; height: 44px; }
+.avatar.big { width: 132px; height: 132px; }
+.pf-head > .avatar.big { padding: 0; border: 0; background: none; }
+.avatar.big b { font-size: 34px; }
+.av-pick .avatar { max-width: 56px; }
+.av-pick.on { border-color: transparent; background: radial-gradient(circle, rgba(63,216,204,.55), rgba(63,216,204,0) 70%); }
+.av-pick.locked .avatar { filter: brightness(.42) saturate(.5); }
+.av-pick.locked .av-lock { width: 25px; height: 31px; left: calc(50% - 12px); top: calc(50% - 15px); z-index: 2; border-radius: 0; background: url('assets/ui-lr/cadeado.webp') center / contain no-repeat; box-shadow: none; filter: drop-shadow(0 2px 3px #000); }
+.av-pick.locked .av-lock::before { display: none; }
+/* abas, temporada e grade de fases com a mesma pedra entalhada */
+.champ-page .ch-tabs { gap: 8px; }
+.champ-page .ch-tabs button { min-height: 42px; border-style: solid; border-color: transparent; border-width: 7px 22px; border-image: url('assets/ui-lr/placa-pedra.webp') 30 104 fill / 7px 24px stretch; background: none; color: #c9c3ac; filter: brightness(.78); }
+.champ-page .ch-tabs button.on { border-image-source: url('assets/ui-lr/placa-ouro.webp'); background: none; color: #ffe9a6; filter: none; }
+.champ-page .ch-foot .season-strip { border-style: solid; border-color: transparent; border-width: 9px 28px; border-image: url('assets/ui-lr/placa-ouro.webp') 30 104 fill / 9px 30px stretch; border-radius: 0; background: none; box-shadow: none; }
+.champ-page .ch-grid button { aspect-ratio: 1; min-height: 0; border: 0; background: url('assets/ui-lr/medalha-pedra.webp') center / contain no-repeat; }
+.champ-page .ch-grid small { display: none; }
+.champ-page .ch-grid b { font-size: 19px; text-shadow: 0 1px 3px #000; }
+@media (max-width: 359px) { .shop-page .sp-head { grid-template-columns: 44px minmax(0, 1fr) 92px; } .shop-page .sp-wallet { width: 92px; } .champ-page .ch-row.av { grid-template-columns: 28px 36px minmax(0, 1fr) auto; } .champ-page .ch-av, .ch-av.avatar { width: 36px; height: 36px; } .champ-page .ch-list li .ch-row { border-width: 8px 18px; border-image-width: 8px 22px; gap: 4px; } .champ-page .medal, .champ-page .rk-pos { width: 30px; height: 30px; } .champ-page .ch-legend { gap: 3px; } }
+.shop-page .sp-wallet > button img.coin { width: 33px; height: 33px; margin: -8px 0 -8px -12px; position: relative; z-index: 1; filter: drop-shadow(0 2px 3px #000); }
+.av-pick.locked .av-lock { width: 29px; height: 36px; left: calc(50% - 14px); top: calc(50% - 17px); filter: brightness(1.25) drop-shadow(0 0 3px #000) drop-shadow(0 2px 3px #000); }
+
+/* 28/11 skins Joias Solares e Tabuleiro: 6 abas na loja e amostra das seis joias */
+.sp-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; }
+.sp-tabs button { font-size: 10px; letter-spacing: -.01em; }
+.sp-strip { display: flex; gap: 1px; margin-top: 2px; }
+.sp-strip img { width: 24px; height: 24px; object-fit: contain; }
+@media (max-width: 359px) { .sp-tabs button { font-size: 8.5px; } .sp-tabs img { width: 26px; height: 26px; } .sp-strip img { width: 17px; height: 17px; } .sp-text b { font-size: 13px; } }

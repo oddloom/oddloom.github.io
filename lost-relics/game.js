@@ -51,7 +51,8 @@
   }
   // skins compradas no Códice (16/10): owned = ids comprados; skins = a que está em uso em cada aba (null = a de fábrica)
   save.owned = save.owned || [];
-  save.skins = Object.assign({ gem: null, word: null, trail: null }, save.skins);
+  save.diamonds = Math.max(0, Math.floor(+save.diamonds || 0));
+  save.skins = Object.assign({ gem: null, word: null, trail: null, board: null }, save.skins);
   // O modo normal abre a jornada; vencer uma fase libera a versão difícil competitiva dela.
   save.hardBest = save.hardBest || {};
   save.hardWeekly = save.hardWeekly || { week: '', scores: {} };
@@ -62,6 +63,7 @@
   // moedas da fase = pontos / 100 (+10 por estrela na vitória)
   const coinsOf = (score) => Math.floor(score / 100);
   // art = ícone pintado (loja do Códice); icon = vetor de reserva
+  const COIN_IMG = 'assets/ui-lr/moeda.webp', DIAMOND_IMG = 'assets/ui-lr/diamante.webp';
   const SHOP = [
     { id: 'moves', price: 150, icon: 'hourglass', art: 'ixmoves' },
     { id: 'dyn', price: 200, icon: 'dynamite', art: 'ixarrow' },
@@ -71,8 +73,38 @@
   ];
   const itemImg = (it, size) => ART.nodeImg(it.art) || ART.icon(it.icon, size);
   // aplica as skins em uso (joia e rastro trocam a arte no art.js; palavra troca as imagens do anúncio e dos elogios)
-  const applySkins = () => ART.setSkins({ gem: save.skins.gem, fx: save.skins.trail });
+  const FILE_GEM_SKINS = ['solar'];
+  // tabuleiro de floresta: moldura em 9 fatias + uma pedra por casa. 'in' = borda interna da moldura na imagem
+  const FOREST = { in: [177,182,540,540], frame: null, tile: null, wait: null };
+  function loadForest() {
+    if (!FOREST.wait) FOREST.wait = Promise.all([['frame', 'floresta-moldura'], ['tile', 'floresta-casa']].map(([k, f]) => new Promise((ok) => {
+      const im = new Image(); im.onload = () => { FOREST[k] = im; ok(true); }; im.onerror = () => ok(false); im.src = 'assets/skins-lr/' + f + '.webp';
+    }))).then((r) => { const all = r.every(Boolean); if (!all) FOREST.wait = null; return all; });
+    return FOREST.wait;
+  }
+  // espera só o que está equipado (se um arquivo falhar, o visual padrão continua valendo)
+  const skinsReady = () => Promise.all([FILE_GEM_SKINS.includes(save.skins.gem) ? ART.loadSkinGems(save.skins.gem) : null, save.skins.board === 'forest' ? loadForest() : null]);
+  const applySkins = () => {
+    ART.setSkins({ gem: save.skins.gem, fx: save.skins.trail });
+    skinsReady().then(() => { if (state && scene === 'play') buildBoardLayer(); });
+  };
   const wordImg = (k) => (save.skins.word === 'rare' && ART.nodeImg('wr_' + k)) || ART.nodeImg(k);
+  // palavras pintadas por idioma, em arquivos separados (assets/palavras/<idioma>/): só baixa/decodifica o idioma em uso.
+  // Português segue no pacote de arte. Se a imagem não carregar, fica o texto de sempre.
+  const WORD_LANGS = { en: ['p1', 'p2', 'p3', 'rush'] }, wordFiles = {};
+  function loadWords() {
+    const lang = I18N.lang;
+    (WORD_LANGS[lang] || []).forEach((k) => {
+      const id = lang + '/' + k;
+      if (id in wordFiles) return;
+      wordFiles[id] = null;
+      const im = new Image();
+      im.onload = () => { wordFiles[id] = im.src; };
+      im.onerror = () => { delete wordFiles[id]; };
+      im.src = 'assets/palavras/' + id + '.webp';
+    });
+  }
+  const paintedWord = (k) => (I18N.lang === 'pt' ? (k === 'rush' ? ART.nodeImg('rush') : wordImg(k)) : wordFiles[I18N.lang + '/' + k] || null);
   const persist = () => { save.savedAt = Date.now(); try { LRStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof cloudPush === 'function') cloudPush(); };
   const hardWeeklyScores = () => {
     const week = Records.week();
@@ -214,7 +246,8 @@
   // ---------- compras com dinheiro real (03/11, só no app, pela Play) ----------
   // O preço vem sempre da loja. Sem produto criado no Console ou fora do app, nenhum botão aparece.
   // Ordem segura: entrega, grava e só então consome. Se o app fechar no meio, iapRecover entrega ao abrir de novo.
-  const IAP_ENERGY = { energy_5: 5, energy_15: 15 }, IAP_SKINS = {
+  const IAP_DIAMONDS_ENABLED = false; // só ligar após criar os produtos consumíveis na Play Console e com OK do Moa
+  const IAP_ENERGY = { energy_5: 5, energy_15: 15 }, IAP_DIAMONDS = { diamonds_50: 50, diamonds_120: 120, diamonds_300: 300 }, IAP_SKINS = {
     skin_temple: { id: 'gem.temple', slot: 'gem', value: 'temple' },
     skin_gold: { id: 'gem.gold', slot: 'gem', value: 'gold' },
     skin_word_rare: { id: 'word.rare', slot: 'word', value: 'rare' },
@@ -228,13 +261,15 @@
     if (key && save.iapDone[key]) return false; // a mesma compra nunca entrega duas vezes
     if (key) save.iapDone[key] = 1;
     if (IAP_ENERGY[sku]) { energyNow(); save.energy.n += IAP_ENERGY[sku]; }
+    if (IAP_DIAMONDS[sku]) { save.diamonds = (save.diamonds || 0) + IAP_DIAMONDS[sku]; }
     const sk = IAP_SKINS[sku];
     if (sk && !save.owned.includes(sk.id)) { save.owned.push(sk.id); save.skins[sk.slot] = sk.value; applySkins(); }
-    persist(); paintEnergy(); scheduleNotes();
-    track('energy_buy', { via: 'iap', result: sku });
+    persist(); paintWallet(); paintEnergy(); scheduleNotes();
+    if (IAP_DIAMONDS[sku]) cloudPush(true);
+    track(IAP_DIAMONDS[sku] ? 'diamonds_buy' : 'energy_buy', { via: 'iap', result: sku });
     return true;
   }
-  async function iapFinish(pl, sku, token) { if (IAP_ENERGY[sku] && token) await pl.consumePurchase({ purchaseToken: token }); else if (token) await pl.acknowledgePurchase({ purchaseToken: token }); }
+  async function iapFinish(pl, sku, token) { if ((IAP_ENERGY[sku] || IAP_DIAMONDS[sku]) && token) await pl.consumePurchase({ purchaseToken: token }); else if (token) await pl.acknowledgePurchase({ purchaseToken: token }); }
   async function iapBuy(sku) {
     const pl = IapPlugin();
     if (!pl) return false;
@@ -253,9 +288,9 @@
     const { purchases } = await pl.getPurchases({ productType: 'inapp' });
     for (const p of purchases || []) {
       const sku = p.productIdentifier, token = p.purchaseToken;
-      if (String(p.purchaseState) !== '1' || (!IAP_ENERGY[sku] && !IAP_SKINS[sku])) continue;
+      if (String(p.purchaseState) !== '1' || (!IAP_ENERGY[sku] && !IAP_SKINS[sku] && !IAP_DIAMONDS[sku])) continue;
       if (iapGrant(sku, token) && modalOpen()) showPraise(T('iap.recovered'), 'info');
-      if (IAP_ENERGY[sku] || p.isAcknowledged === false) await iapFinish(pl, sku, token).catch(() => {});
+      if (IAP_ENERGY[sku] || IAP_DIAMONDS[sku] || p.isAcknowledged === false) await iapFinish(pl, sku, token).catch(() => {});
     }
   }
   async function iapInit() {
@@ -264,7 +299,8 @@
     try {
       const { isBillingSupported } = await pl.isBillingSupported();
       if (!isBillingSupported) return;
-      const { products } = await pl.getProducts({ productIdentifiers: [...Object.keys(IAP_ENERGY), ...Object.keys(IAP_SKINS)], productType: 'inapp' });
+      const skus = [...Object.keys(IAP_ENERGY), ...Object.keys(IAP_SKINS), ...(IAP_DIAMONDS_ENABLED ? Object.keys(IAP_DIAMONDS) : [])];
+      const { products } = await pl.getProducts({ productIdentifiers: skus, productType: 'inapp' });
       for (const p of products || []) iapProducts[p.identifier] = p;
       await iapRecover(pl);
     } catch (e) {}
@@ -311,7 +347,7 @@
     { day: 4, item: 'dyn', qty: 1 },
     { day: 5, coins: 120, energy: 1 },
     { day: 6, item: 'seal', qty: 1, item2: 'moves', qty2: 1 },
-    { day: 7, coins: 250, item: 'orb', qty: 1, item2: 'hammer', qty2: 1, grand: true },
+    { day: 7, coins: 250, diamonds: 5, item: 'orb', qty: 1, item2: 'hammer', qty2: 1, grand: true },
   ];
   function dailyRewardState() {
     const dr = save.dailyReward || (save.dailyReward = { day: 0, last: 0, streak: 0 });
@@ -332,14 +368,15 @@
     if (r.grand) return '<img class="dr-ic dr-ic-chest" alt="" src="assets/diaria/bau-dia7.webp" onerror="this.onerror=null;this.src=\'' + ART.icon('chest', 128) + '\'">';
     if (r.item && !r.coins) {
       const it = drShopItem(r.item);
-      return '<img class="dr-ic" alt="" src="' + (it ? itemImg(it, 80) : ART.icon('coin', 64)) + '">';
+      return '<img class="dr-ic" alt="" src="' + (it ? itemImg(it, 80) : COIN_IMG) + '">';
     }
-    return '<img class="dr-ic" alt="" src="' + ART.icon('coin', 64) + '">';
+    return '<img class="dr-ic" alt="" src="' + COIN_IMG + '">';
   }
   function drRewardLabel(r) {
     const parts = [];
     const c = r.energy && !ENERGY_ON ? r.coins + 30 : r.coins;
     if (c) parts.push('+' + c);
+    if (r.diamonds) parts.push('+' + r.diamonds + ' 💎');
     if (r.energy && ENERGY_ON) parts.push('+1 ⚡');
     const fmtItem = (id, qty) => { const nm = T('item.' + id); return (qty === 1 && nm.startsWith('+')) ? nm : '+' + qty + ' ' + nm; };
     if (r.item) parts.push(fmtItem(r.item, r.qty || 1));
@@ -349,6 +386,7 @@
   function drGrant(r, multCoins) {
     const coins = (r.energy && !ENERGY_ON ? (r.coins || 0) + 30 : (r.coins || 0)) * (multCoins || 1);
     if (coins) save.coins += coins;
+    if (r.diamonds) save.diamonds = (save.diamonds || 0) + r.diamonds;
     if (r.energy && ENERGY_ON) { energyNow(); save.energy.n += r.energy; }
     if (r.item) save.items[r.item] = (save.items[r.item] || 0) + (r.qty || 1);
     if (r.item2) save.items[r.item2] = (save.items[r.item2] || 0) + (r.qty2 || 1);
@@ -557,10 +595,11 @@
   // a resposta do servidor já vem juntada com o outro aparelho: entra aqui sem recarregar a página
   function applyCloud(data) {
     if (!data || typeof data !== 'object') return;
-    const merged = LR.mergeSaves(save, data), before = progressOf(save), coins = save.coins;
+    const merged = LR.mergeSaves(save, data), before = progressOf(save), coins = save.coins, diamonds = save.diamonds || 0;
     Object.assign(save, merged);
+    save.diamonds = Math.max(0, Math.floor(+save.diamonds || 0));
     try { LRStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
-    if (progressOf(save) === before && save.coins === coins) return;
+    if (progressOf(save) === before && save.coins === coins && save.diamonds === diamonds) return;
     if (modalOpen()) return;
     if (scene === 'menu') paintMenu(); else if (scene === 'map') openMap();
   }
@@ -674,7 +713,7 @@
     const on = ART.nodeImg('vstar') || ART.icon('star', 64), off = ART.nodeImg('vstar0') || ART.icon('star0', 64);
     let stars = 0, cat = 'improve';
     const cats = [['idea', T('fb.cat.idea')], ['improve', T('fb.cat.improve')], ['bug', T('fb.cat.bug')]];
-    const card = openModal('<h2 class="metal">' + T('fb.title') + '</h2><div class="orn"><i></i></div>' +
+    const card = openModal('<h2 class="plaque-title">' + T('fb.title') + '</h2><div class="orn"><i></i></div>' +
       '<p class="save-summary">' + T('fb.ask') + '</p>' +
       '<div class="fb-cats">' + cats.map(([k, label]) => '<button type="button" class="fb-cat' + (k === cat ? ' on' : '') + '" data-cat="' + k + '">' + label + '</button>').join('') + '</div>' +
       '<div class="fb-stars">' + [1, 2, 3, 4, 5].map((n) => '<button type="button" data-n="' + n + '" aria-label="' + n + '"><img alt="" src="' + off + '"></button>').join('') + '</div>' +
@@ -810,10 +849,13 @@
 
   let runStats = { items: false, cascade: 0, left: 0 };
   async function startLevel(id, boosts, hard, charged) {
+    loadWords(); // sem esperar: não atrasa a fase
+    if (ART.whenReady) await withSpin(ART.whenReady()); // a animação só aparece se a espera passar de 300 ms
+    if (save.skins.gem === 'solar' || save.skins.board === 'forest') await withSpin(skinsReady());
     runCharged = !!charged;
     const hardAllowed = Number.isInteger(id) && !!hard && !!save.stars[id];
     const Ld = id === 'daily' ? dailyLevel() : id === 'weekly' ? weeklyLevel() : id === 'run' ? runLevel() : levelMode(id, hardAllowed);
-    if ((Ld.bossKind || Ld.scarab || Ld.portals || Ld.river) && !EXTRA.done) await extraReady();
+    if ((Ld.bossKind || Ld.scarab || Ld.portals || Ld.river) && !EXTRA.done) await withSpin(extraReady());
     level = Ld;
     runStartedAt = Date.now(); runEnded = false; tutorialMove = null;
     weeklyReplay = level.weekly || level.hard ? [] : weeklyReplay;
@@ -1793,7 +1835,7 @@
   async function treasureRush() {
     await wait(0.25);
     if (state.moves > 0) {
-      const rushArt = I18N.lang === 'pt' && ART.nodeImg('rush');
+      const rushArt = paintedWord('rush');
       showPraise(T('rush'), rushArt ? 'art rush' : 'banner', rushArt);
       Sound.play('rush');
       Sound.voice('rush', I18N.lang);
@@ -1864,7 +1906,7 @@
     if (n <= praiseLevel) return;
     praiseLevel = n;
     // em português: palavra pintada estilo Solar (Ótimo/Incrível/Lendário); senão, texto
-    const art = I18N.lang === 'pt' && wordImg('p' + n);
+    const art = paintedWord('p' + n);
     showPraise(T('praise.' + n), art ? 'art p' + n : '', art);
     Sound.voice('p' + n, I18N.lang);
   }
@@ -1940,8 +1982,33 @@
   const ruinPick = () => 0;
   function buildBoardLayer() {
     const G = window.ART_DATA && ART_DATA.boardGrid;
+    if (save.skins.board === 'forest' && FOREST.frame && FOREST.tile) return buildForestBoard();
     if (ART.board && G && state.W === 8 && state.H === 8) return buildPaintedBoard(G);
     buildCodeBoard();
+  }
+  // Tabuleiro da Floresta: mesmas casas e mesmo espaço do padrão. A moldura é recortada para nunca cobrir uma casa;
+  // areia, obstáculos, chefes e barra continuam desenhados por cima, como no tabuleiro padrão.
+  function buildForestBoard() {
+    const BW = state.W, BH = state.H, side = cs * .6, top = cs * .62, bot = cs * .68;
+    const iw = BW * cs + side * 2, ih = BH * cs + top + bot;
+    const cv = document.createElement('canvas'); cv.width = Math.round(iw * dpr); cv.height = Math.round(ih * dpr);
+    const g = cv.getContext('2d'); g.scale(dpr, dpr); g.imageSmoothingQuality = 'high';
+    const im = FOREST.frame, [l, t, r, b] = FOREST.in, W0 = im.naturalWidth, H0 = im.naturalHeight;
+    const sx = [0, l, r, W0], sy = [0, t, b, H0], dx = [0, side, side + BW * cs, iw], dy = [0, top, top + BH * cs, ih];
+    g.save(); g.shadowColor = 'rgba(0,0,0,.75)'; g.shadowBlur = cs * .45; g.shadowOffsetY = cs * .1;
+    g.fillStyle = '#0c1511'; g.fillRect(side * .5, top * .5, BW * cs + side, BH * cs + top); g.restore();
+    for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) if (i !== 1 || j !== 1) g.drawImage(im, sx[i], sy[j], sx[i + 1] - sx[i], sy[j + 1] - sy[j], dx[i], dy[j], dx[i + 1] - dx[i], dy[j + 1] - dy[j]);
+    g.clearRect(side, top, BW * cs, BH * cs); g.fillStyle = '#0c1511'; g.fillRect(side, top, BW * cs, BH * cs);
+    for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+      const X = side + x * cs, Y = top + y * cs;
+      if (state.mask[y][x]) {
+        g.drawImage(FOREST.tile, X + .5, Y + .5, cs - 1, cs - 1);
+        g.fillStyle = (x + y) % 2 ? 'rgba(3,10,7,.52)' : 'rgba(3,10,7,.40)'; g.fillRect(X + .5, Y + .5, cs - 1, cs - 1); // fundo escuro: as joias se destacam
+      } else {
+        const ruin = nodeImgObj(RUIN_KEYS[0]); if (ruin) g.drawImage(ruin, X, Y, cs, cs);
+      }
+    }
+    boardLayer = cv; boardLayerX = ox - side; boardLayerY = oy - top;
   }
   // tabuleiro pintado (IA): a imagem é esticada pra grade pintada cair exatamente nas casas do jogo
   function buildPaintedBoard(G) {
@@ -2637,7 +2704,7 @@
   const fxURLs = {};
   const fxURL = (k) => { if (fxURLs[k]) return fxURLs[k]; const o = ART.fx(k); if (!o) return ''; return (fxURLs[k] = o.toDataURL ? o.toDataURL('image/png') : o.src); };
   const walletHTML = () => (ART.nodeImg('s0')
-    ? '<span class="wallet-row"><img class="coin" alt="" src="' + ART.icon('coin', 64) + '"><span class="digits" aria-label="' + save.coins + '">' + digitsHTML(save.coins) + '</span></span>'
+    ? '<span class="wallet-row"><img class="coin" alt="" src="' + COIN_IMG + '"><span class="digits" aria-label="' + save.coins + '">' + digitsHTML(save.coins) + '</span></span>'
     : T('wallet', { n: save.coins.toLocaleString() }));
   const lastShown = {};
   function setNum(id, n) {
@@ -2653,7 +2720,7 @@
     setNum('moves', state.moves);
     mv.classList.toggle('low', state.moves <= 5 && state.moves > 0 && !LR.isWon(state));
     if (ART.nodeImg('n0') && ART.uiImages().coinbar) setNum('score', coinsOf(state.score));
-    else { lastShown.score = null; $('score').innerHTML = '<img class="coin" alt="" src="' + ART.icon('coin', 48) + '">' + coinsOf(state.score).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US'); }
+    else { lastShown.score = null; $('score').innerHTML = '<img class="coin" alt="" src="' + COIN_IMG + '">' + coinsOf(state.score).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US'); }
     updateHammerBtn();
     const top = level.stars[2];
     if (paintedBar()) {
@@ -2684,6 +2751,18 @@
   }
 
   // ---------- janelas ----------
+  // título da placa pintada nunca passa dela: diminui a fonte até caber (vale pros 8 idiomas)
+  function fitPlaque(card) {
+    const fit = () => {
+      const h = card.querySelector(':scope > h2.plaque-title');
+      if (!h || !h.isConnected || !h.clientWidth) return;
+      h.style.fontSize = '';
+      let px = parseFloat(getComputedStyle(h).fontSize);
+      while (h.scrollWidth > h.clientWidth + 1 && px > 9) { px -= .5; h.style.fontSize = px + 'px'; }
+    };
+    requestAnimationFrame(fit);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  }
   function openModal(html) {
     const card = $('modalCard');
     // 25/10: zera as classes a cada janela. Antes a classe "pre" (altura fixa + corte) vazava do card da fase
@@ -2692,6 +2771,7 @@
     card.innerHTML = html;
     $('modal').hidden = false;
     syncMapAttention();
+    fitPlaque(card);
     const first = card.querySelector('.btn');
     if (first) setTimeout(() => first.focus({ preventScroll: true }), 50);
     return card;
@@ -2789,7 +2869,7 @@
         (!hardMode ? sealLine(L) : '') +
         '<div class="goal-list">' + rows + '</div>' +
         '<div class="pre-moves">' + T('pre.moves', { n: '<b>' + L.moves + '</b>' }) + '</div>' +
-        (hardMode ? '<div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' : boostPicker()) +
+        (hardMode ? '<div class="weekly-list"><div class="weekly-status">' + SPIN + T('weekly.loading') + '</div></div>' : boostPicker()) +
       '</div><div class="pre-info">' + infoHTML + '</div></div>' +
       '<div class="btns"><button class="btn" id="mPlay" type="button">' + T('play') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('map') + '</button></div>');
@@ -2861,9 +2941,9 @@
       // moedas ganhas: mesma placa de moeda pintada do placar, número em dígitos Solar
       (ART.uiImages().coinbar && ART.nodeImg('s0')
         ? '<div class="final-score painted"><span id="mScore" class="digits"></span></div>'
-        : '<div class="final-score"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '">+<span id="mScore">0</span></div>') +
+        : '<div class="final-score"><img class="coin" alt="" src="' + COIN_IMG + '">+<span id="mScore">0</span></div>') +
       '<div class="best' + (isNew ? ' new' : '') + '">' + (isNew ? T('win.new') + ' · ' : '') + (hardMode ? T('mode.hard.score', { n: state.score.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') }) : walletHTML()) + '</div>' +
-      (hardMode ? '<div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' : '<div class="moves-line streak-up">' + T('streak.up', { n: save.streak }) + '</div>') +
+      (hardMode ? '<div class="weekly-list"><div class="weekly-status">' + SPIN + T('weekly.loading') + '</div></div>' : '<div class="moves-line streak-up">' + T('streak.up', { n: save.streak }) + '</div>') +
       (sealNew ? '<div class="seal-line on">' + T('seal.done', { c: SEAL_COINS }) + '</div>' : '') +
       (last ? '<p>' + T('map.soon') + '</p>' : '') +
       '<div class="btns">' + (!hardMode && earned > 0 ? '<button class="btn stack" id="mDouble" type="button" hidden>' + T('win.double', { n: earned }) + '<span class="sub">' + T('win.doubleAd') + '</span></button>' : '') + (last || hardMode ? '' : '<button class="btn" id="mNext" type="button">' + T('next') + '</button>') +
@@ -2982,7 +3062,7 @@
       '<div class="goal-row"><img alt="" src="' + goalIcon(g, 80) + '"><span>' + goalText(g) + '</span><b>' + (g.type === 'score' ? goalLeft(g).toLocaleString() : goalLeft(g)) + '</b></div>').join('');
     const card = openModal(
       '<div class="eyebrow">' + T('level') + ' ' + id + '</div>' +
-      '<h2 class="metal">' + T('lose.title') + '</h2><div class="orn"><i></i></div>' +
+      '<h2 class="plaque-title">' + T('lose.title') + '</h2><div class="orn"><i></i></div>' +
       (state.cursed ? '<p>' + T(state.escaped ? 'lose.escaped' : 'lose.cursed') + '</p>' : '') +
       '<div class="moves-line">' + T('lose.left') + '</div>' +
       '<div class="goal-list">' + rows + '</div>' +
@@ -3029,7 +3109,7 @@
     if (scene !== 'play' || modalOpen() || busy) return;
     Sound.play('click');
     const card = openModal(
-      '<h2 class="metal">' + T('pause') + '</h2><div class="orn"><i></i></div>' +
+      '<h2 class="plaque-title">' + T('pause') + '</h2><div class="orn"><i></i></div>' +
       '<div class="btns"><button class="btn" id="mResume" type="button">' + T('resume') + '</button>' +
       '<button class="btn dark" id="mRestart" type="button">' + T('restart') + '</button>' +
       '<button class="btn dark" id="mMap" type="button">' + T('map') + '</button>' +
@@ -3073,103 +3153,128 @@
     { id: 'gems', icon: 'skgold', slot: 'gem', skins: [
       { id: 'gem.classic', art: 'skclassic', value: null },
       { id: 'gem.obsidian', art: 'skobsidian', value: 'obsidian', price: 800 },
-      { id: 'gem.gold', art: 'skgold', value: 'gold', paid: 'skin_gold' },
-      // paga com dinheiro real: quem comprou com moedas antes continua dono
-      { id: 'gem.temple', art: 'sktemple', value: 'temple', paid: 'skin_temple' }] },
+      { id: 'gem.gold', art: 'skgold', value: 'gold', gems: 100 },
+      // gems = preço em diamantes. Quem já é dono (moedas ou compra antiga na Play) continua dono
+      { id: 'gem.temple', art: 'sktemple', value: 'temple', gems: 150 },
+      { id: 'gem.solar', art: 'assets/skins-lr/solar/topaz.webp', value: 'solar', gems: 150 }] },
     { id: 'words', icon: 'ixorb', slot: 'word', skins: [
       { id: 'word.solar', art: 'p3', value: null },
-      { id: 'word.rare', art: 'wr_p3', value: 'rare', paid: 'skin_word_rare' },
+      { id: 'word.rare', art: 'wr_p3', value: 'rare', gems: 100 },
       { id: 'word.goldgem', soon: true }] },
     { id: 'trail', icon: 'ixarrow', slot: 'trail', skins: [
       { id: 'trail.gold', art: 'ixarrow', value: null },
       { id: 'trail.jade', art: 'skjade', value: 'jade', price: 400 },
       { id: 'trail.fire', art: 'skfire', value: 'fire', price: 400 }] },
+    { id: 'board', icon: 'assets/skins-lr/mini-floresta.webp', slot: 'board', skins: [
+      { id: 'board.classic', art: 'assets/skins-lr/mini-padrao.webp', value: null },
+      { id: 'board.forest', art: 'assets/skins-lr/mini-floresta.webp', value: 'forest', gems: 120 }] },
   ];
-  // Loja do Templo (16/10, no formato do modelo que ele fez): placa com o título, abas, páginas com setas e,
-  // em cada página, 2 ofertas lado a lado (moldura grande com a arte + nome, descrição e botão COMPRAR embaixo).
-  // Peças pintadas que já existem: placa (cxplate), moldura (cxcard), seta (navarrow) e o botão do kit (.btn).
-  // Quando chegar o kit do Gemini no estilo do modelo, só troca a arte (classes ts-*).
+  // Loja em página inteira (28/11, pedido do Moa): abas com nome, uma frase explicando cada aba e todos os produtos
+  // numa lista com a descrição sempre visível, separados por faixa de preço (itens) ou forma de compra (skins).
+  const SHOP_CHEAP_MAX = 200;
+  // moedas compradas com diamantes (taxas provisórias, aguardando o OK do Moa)
+  const COIN_PACKS = [{ coins: 500, gems: 25 }, { coins: 1500, gems: 60 }, { coins: 4000, gems: 140 }];
+  const GEM_PACKS = [50, 120, 300]; // quantidades provisórias; a venda só liga quando os produtos existirem na Play
   function openShop(back, startTab) {
     if (!ART.nodeImg('cxcard')) return openShopList(back);
     Sound.play('click');
-    let tab = startTab || 'gems', page = 0;
-    const PER = 1; // 16/10, pedido dele: um item por página, centralizado
-    const coin = (n, sz) => '<img class="coin" alt="" src="' + ART.icon('coin', sz) + '">' + n;
-    const showInfo = (offer, trigger) => {
-      Sound.play('click');
-      const dialog = document.createElement('dialog');
-      dialog.className = 'shop-info-dialog';
-      dialog.setAttribute('aria-labelledby', 'shopInfoTitle');
-      dialog.setAttribute('aria-describedby', 'shopInfoText');
-      dialog.innerHTML = '<div class="card shop-info-card"><h2 id="shopInfoTitle"></h2><p id="shopInfoText"></p><div class="btns"><button type="button" class="btn dark small">' + T('close') + '</button></div></div>';
-      dialog.querySelector('h2').textContent = offer.name;
-      dialog.querySelector('p').textContent = offer.desc + (offer.btn === 'paid' && !iapPrice(offer.paid) ? ' ' + T('codex.paid.soon') + '.' : '');
-      dialog.querySelector('button').onclick = () => dialog.close();
-      dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
-      dialog.addEventListener('close', () => { dialog.remove(); if (trigger.isConnected) trigger.focus({ preventScroll: true }); }, { once: true });
-      document.body.appendChild(dialog);
-      dialog.showModal();
-    };
+    let tab = startTab || 'items', ret = null, short = null; // ret = aba de onde veio quando faltou saldo
+    const coin = (sz) => '<img class="coin" alt="" src="' + COIN_IMG + '">';
+    const gemIc = () => '<img class="coin gem-ic" alt="" src="' + DIAMOND_IMG + '">';
     const render = () => {
+      const old = $('modalCard').querySelector('.sp-list');
+      const keep = old && old.dataset.tab === tab ? old.scrollTop : 0;
       const T0 = CODEX_TABS.find((t) => t.id === tab);
+      const diamonds = save.diamonds || 0;
       const owns = (s) => s.value == null || save.owned.includes(s.id);
       const inUse = (s) => (save.skins[T0.slot] || null) === s.value;
-      const offers = tab === 'items'
+      // arte de skin vem no pacote extra: enquanto não chega, usa a do item (nunca imagem quebrada)
+      const art = (k) => (k && (k.startsWith('assets/') ? k : ART.nodeImg(k))) || ART.nodeImg('ixseal') || ART.icon('chest', 128);
+      const offers = tab === 'coins'
+        ? COIN_PACKS.map((k) => ({ key: 'coins' + k.coins, img: COIN_IMG, name: k.coins.toLocaleString(), desc: T('shop.coins'), note: '', btn: 'buy', price: k.gems, gems: true, pack: k, sec: '' }))
+        : tab === 'diamonds'
+        ? GEM_PACKS.map((n) => ({ key: 'pack' + n, sku: 'diamonds_' + n, img: DIAMOND_IMG, name: n.toLocaleString(), desc: T('shop.gems.unit'), note: '', btn: 'pack', sec: '' }))
+        : tab === 'items'
         ? SHOP.map((it) => ({ key: it.id, img: itemImg(it, 128), name: T('item.' + it.id), desc: T('item.' + it.id + '.d'),
-          note: T('shop.have', { n: save.items[it.id] }), btn: 'buy', price: it.price, it }))
-        : T0.skins.map((sk) => ({ key: sk.id, img: sk.art && ART.nodeImg(sk.art), sk,
-          name: T('codex.' + sk.id), desc: T(sk.soon ? 'codex.soon.d' : 'codex.' + tab + '.d'),
-          note: sk.soon ? T('codex.soon') : inUse(sk) ? T('codex.inuse') : owns(sk) ? T('codex.owned') : '',
-          btn: sk.soon || inUse(sk) ? null : owns(sk) ? 'use' : sk.paid ? 'paid' : 'buy', price: sk.price, paid: sk.paid }));
-      const pages = Math.max(1, Math.ceil(offers.length / PER));
-      page = Math.min(page, pages - 1);
-      const shown = offers.slice(page * PER, page * PER + PER);
-      const arrow = ART.nodeImg('navarrow');
-      // 25/10: X sempre à mão no canto; abas só com ícone (o nome da aba ativa vai na linha da página); sem nota de rodapé
+          note: T('shop.have', { n: save.items[it.id] || 0 }), btn: 'buy', price: it.price, it,
+          sec: it.price <= SHOP_CHEAP_MAX ? 'shop.sec.cheap' : 'shop.sec.top' }))
+        : T0.skins.map((sk) => ({ key: sk.id, img: art(sk.art), sk, strip: sk.value === 'solar',
+          name: T('codex.' + sk.id), desc: sk.soon ? T('codex.soon.d') : '',
+          note: !sk.soon && !inUse(sk) && owns(sk) ? T('codex.owned') : '',
+          btn: sk.soon ? 'soon' : inUse(sk) ? 'inuse' : owns(sk) ? 'use' : 'buy', price: sk.gems || sk.price, gems: !!sk.gems,
+          sec: sk.soon ? 'codex.soon' : '' }));
+      const order = ['shop.sec.cheap', 'shop.sec.top', '', 'codex.soon'];
+      const action = (o) => {
+        // só o ícone da moeda ou do diamante + o valor (28/11, pedido do Moa)
+        if (o.btn === 'buy') {
+          const miss = o.price - (o.gems ? diamonds : save.coins), ic = o.gems ? gemIc(48) : coin(48);
+          return '<button type="button" class="sp-buy' + (o.gems ? ' gems' : '') + '" data-k="' + o.key + '" aria-label="' + T('shop.buy') + ' ' + o.name + ' ' + o.price + ' ' + T(o.gems ? 'shop.tab.diamonds' : 'shop.coins') + '"' + (miss > 0 ? ' data-short="1"' : '') + '>' +
+            '<b>' + ic + o.price + '</b></button>' + (miss > 0 ? '<small class="sp-miss">' + T('shop.missing', { n: miss }) + ic + '</small>' : '');
+        }
+        if (o.btn === 'pack') {
+          const pr = IAP_DIAMONDS_ENABLED && o.sku ? iapPrice(o.sku) : '';
+          return pr ? '<button type="button" class="sp-buy gems" data-pack="' + o.sku + '"><b>' + pr + '</b></button>' : '<small class="sp-miss">' + T('codex.paid.soon') + '</small>';
+        }
+        if (o.btn === 'use') return '<button type="button" class="sp-use" data-k="' + o.key + '">' + T('codex.use') + '</button>';
+        if (o.btn === 'inuse') return '<strong class="sp-state">✓ ' + T('codex.inuse') + '</strong>';
+        return '';
+      };
+      const row = (o) => '<li class="sp-item' + (o.btn === 'soon' ? ' soon' : '') + (o.btn === 'inuse' ? ' on' : '') + '">' +
+        '<div class="sp-art"><img alt="" src="' + o.img + '"></div>' +
+        '<div class="sp-text"><b>' + o.name + '</b>' + (o.desc ? '<span>' + o.desc + '</span>' : '') +
+        (o.strip ? '<span class="sp-strip">' + ['ruby', 'emerald', 'sapphire', 'topaz', 'amethyst', 'diamond'].map((k) => '<img alt="" src="assets/skins-lr/solar/' + k + '.webp">').join('') + '</span>' : '') + (o.note ? '<small>' + o.note + '</small>' : '') + '</div>' +
+        '<div class="sp-act">' + action(o) + '</div></li>';
+      const list = order.map((sec) => {
+        const group = offers.filter((o) => o.sec === sec);
+        return group.length ? (sec ? '<h3 class="sp-sec">' + T(sec) + '</h3>' : '') + '<ul>' + group.map(row).join('') + '</ul>' : '';
+      }).join('');
       const card = openModal(
-        '<button type="button" class="card-x" id="mX" aria-label="' + T('close') + '">✕</button>' +
-        '<div class="ts-title" style="background-image:url(' + ART.nodeImg('cxplate') + ')"><span>' + T('shop.title') + '</span></div>' +
-        '<div class="wallet"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '"><b>' + save.coins.toLocaleString() + '</b></div>' +
-        '<div class="ts-tabs">' + CODEX_TABS.map((t) => '<button type="button" class="ts-tab' + (t.id === tab ? ' on' : '') + '" data-tab="' + t.id + '" aria-label="' + T('shop.tab.' + t.id) + '" aria-pressed="' + (t.id === tab) + '"><img alt="" src="' + ART.nodeImg(t.icon) + '"></button>').join('') + '</div>' +
-        '<div class="ts-pager">' + (pages > 1 ? '<button type="button" class="ts-prev"' + (page === 0 ? ' disabled' : '') + ' aria-label="<" style="background-image:url(' + arrow + ')"></button>' : '') +
-          '<span><b>' + T('shop.tab.' + tab) + '</b>' + (pages > 1 ? ' · ' + (page + 1) + '/' + pages : '') + '</span>' +
-          (pages > 1 ? '<button type="button" class="ts-next"' + (page >= pages - 1 ? ' disabled' : '') + ' aria-label=">" style="background-image:url(' + arrow + ')"></button>' : '') + '</div>' +
-        '<div class="ts-offers">' + shown.map((o) =>
-          '<div class="ts-offer' + (o.sk && o.sk.soon ? ' soon' : '') + '">' +
-            '<button type="button" class="ts-about" data-info="' + o.key + '" aria-haspopup="dialog" aria-label="' + T('shop.info', { item: o.name }) + '">i</button>' +
-            '<div class="ts-frame" style="background-image:url(' + ART.nodeImg('cxcard') + ')">' + (o.img ? '<img alt="" src="' + o.img + '">' : '<i>?</i>') + (o.it && save.items[o.it.id] ? '<em>×' + save.items[o.it.id] + '</em>' : '') + '</div>' +
-            '<div class="ts-info"><b>' + o.name + '</b>' + (o.note ? '<small>' + o.note + '</small>' : '') +
-              (o.btn === 'buy' ? '<button type="button" class="btn small ts-buy" data-k="' + o.key + '" aria-label="' + T('shop.buy') + ' ' + o.price + '"' + (save.coins < o.price ? ' disabled' : '') + '>' + coin(o.price, 48) + '</button>' // 16/10: só o preço (pedido dele)
-                : o.btn === 'use' ? '<button type="button" class="btn dark small ts-use" data-k="' + o.key + '">' + T('codex.use') + '</button>'
-                : o.btn === 'paid' ? (iapPrice(o.paid) ? '<button type="button" class="btn small ts-iap" data-sku="' + o.paid + '">' + iapPrice(o.paid) + '</button>' : '<button type="button" class="btn dark small" disabled>R$ 4,99</button>') : '') +
-            '</div></div>').join('') + '</div>' +
-        '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('close') + '</button></div>');
-      card.classList.add('tshop');
-      card.querySelector('#mX').onclick = () => card.querySelector('#mBack').click();
-      card.querySelectorAll('.ts-tab').forEach((b) => { b.onclick = () => { Sound.play('click'); tab = b.dataset.tab; page = 0; render(); }; });
-      const prev = card.querySelector('.ts-prev'), next = card.querySelector('.ts-next');
-      if (prev) prev.onclick = () => { Sound.play('click'); page--; render(); };
-      if (next) next.onclick = () => { Sound.play('click'); page++; render(); };
+        '<header class="sp-head">' +
+          '<button type="button" class="sp-back" id="mBack" aria-label="' + T('close') + '"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 3 5.5 10l7 7 1.6-1.6L8.7 10l5.4-5.4z"/></svg></button>' +
+          '<h2 style="background-image:url(' + ART.nodeImg('cxplate') + ')"><span>' + T('shop.title') + '</span></h2>' +
+          '<div class="sp-wallet"><button type="button" class="sp-coins" aria-label="' + T('shop.tab.coins') + ': ' + save.coins + '">' + coin(64) + '<b>' + save.coins.toLocaleString() + '</b></button>' +
+            '<button type="button" class="sp-gems" aria-label="' + T('shop.tab.diamonds') + ': ' + diamonds + '">' + gemIc(64) + '<b>' + diamonds.toLocaleString() + '</b></button></div></header>' +
+        '<nav class="sp-tabs">' + CODEX_TABS.concat({ id: 'diamonds' }).map((t) => '<button type="button" data-tab="' + t.id + '"' + (t.id === tab ? ' class="on"' : '') + ' aria-pressed="' + (t.id === tab) + '"><img alt="" src="' + (t.id === 'diamonds' ? DIAMOND_IMG : art(t.icon)) + '"><span>' + T('shop.tab.' + t.id) + '</span></button>').join('') + '</nav>' +
+        '<p class="sp-help' + (short ? ' short' : '') + '">' + (short ? T('shop.short.' + (tab === 'coins' ? 'coins' : 'gems'), { n: short }) : T('shop.help.' + tab)) + '</p>' +
+        '<div class="sp-list" data-tab="' + tab + '">' + list + (tab === 'diamonds' || tab === 'coins' ? '' : '<p class="sp-earn">' + coin(48) + T('shop.earn') + '</p>') + '</div>');
+      const openBank = (to, missing) => { if (tab === to) return; if (!ret) ret = tab; tab = to; short = missing || null; render(); };
+      card.querySelector('.sp-gems').onclick = () => { Sound.play('click'); openBank('diamonds'); };
+      card.querySelector('.sp-coins').onclick = () => { Sound.play('click'); openBank('coins'); };
+      card.classList.add('shop-page');
+      card.querySelector('.sp-list').scrollTop = keep;
+      card.querySelectorAll('.sp-tabs button').forEach((b) => { b.onclick = () => { if (tab === b.dataset.tab) return; Sound.play('click'); tab = b.dataset.tab; ret = short = null; render(); }; });
       const find = (k) => offers.find((o) => o.key === k);
-      card.querySelectorAll('.ts-about').forEach((b) => { b.onclick = () => { const offer = find(b.dataset.info); if (offer) showInfo(offer, b); }; });
-      card.querySelectorAll('.ts-buy').forEach((b) => { b.onclick = () => {
-        const o = find(b.dataset.k); if (!o || save.coins < o.price) return;
-        save.coins -= o.price;
-        if (o.it) save.items[o.it.id]++;
+      card.querySelectorAll('.sp-buy[data-k]').forEach((b) => { b.onclick = () => {
+        const o = find(b.dataset.k); if (!o) return;
+        const missing = o.price - (o.gems ? save.diamonds || 0 : save.coins);
+        if (missing > 0) { Sound.play('click'); openBank(o.gems ? 'diamonds' : 'coins', missing); return; }
+        if (o.gems) save.diamonds -= o.price; else save.coins -= o.price;
+        if (o.pack) save.coins += o.pack.coins;
+        else if (o.it) save.items[o.it.id] = (save.items[o.it.id] || 0) + 1;
         else { save.owned.push(o.sk.id); save.skins[T0.slot] = o.sk.value; applySkins(); }
         persist(); Sound.play('chest'); render(); paintWallet();
       }; });
-      card.querySelectorAll('.ts-iap').forEach((b) => { b.onclick = async () => { Sound.play('click'); b.disabled = true; if (await iapBuy(b.dataset.sku)) Sound.play('chest'); render(); }; });
-      card.querySelectorAll('.ts-use').forEach((b) => { b.onclick = () => {
+      card.querySelectorAll('.sp-buy[data-pack]').forEach((b) => { b.onclick = async () => {
+        if (!IAP_DIAMONDS_ENABLED) return;
+        const sku = b.dataset.pack; if (!IAP_DIAMONDS[sku]) return;
+        b.disabled = true; Sound.play('click');
+        const ok = await iapBuy(sku);
+        if (shopOpen()) render();
+        if (ok) paintWallet();
+      }; });
+      card.querySelectorAll('.sp-use').forEach((b) => { b.onclick = () => {
         const o = find(b.dataset.k); if (!o) return;
         save.skins[T0.slot] = o.sk.value; persist(); applySkins(); Sound.play('create'); render();
       }; });
-      card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); if (back) back(); };
+      // voltar: se veio por falta de saldo, volta pra aba onde estava
+      card.querySelector('#mBack').onclick = () => { Sound.play('click'); if (ret) { tab = ret; ret = short = null; render(); return; } closeModal(); if (back) back(); };
     };
     render();
     // prévias das skins vêm no pacote extra: se a loja abriu antes dele chegar, redesenha quando chegar
-    if (!EXTRA.done) extraReady().then(() => { if (modalOpen() && $('modalCard').classList.contains('tshop')) render(); });
+    if (!EXTRA.done) extraReady().then(() => { if (shopOpen()) render(); });
   }
+  const shopOpen = () => modalOpen() && $('modalCard').classList.contains('shop-page') && !$('modalCard').classList.contains('champ-page');
+  const pageOpen = () => modalOpen() && $('modalCard').classList.contains('shop-page'); // loja ou campeões: voltar do Android
   // loja antiga em lista (reserva se a arte do Códice não carregar)
   function openShopList(back) {
     Sound.play('click');
@@ -3177,10 +3282,10 @@
       const card = openModal(
         '<div class="eyebrow">' + T('shop.eyebrow') + '</div>' +
         '<h2 class="metal">' + T('shop.title') + '</h2><div class="orn"><i></i></div>' +
-        '<div class="wallet"><img class="coin" alt="" src="' + ART.icon('coin', 96) + '"><b>' + save.coins.toLocaleString() + '</b></div>' +
+        '<div class="wallet"><img class="coin" alt="" src="' + COIN_IMG + '"><b>' + save.coins.toLocaleString() + '</b></div>' +
         '<div class="shop-list">' + SHOP.map((it) =>
           '<div class="shop-item"><img alt="" src="' + itemImg(it, 96) + '"><div><b>' + T('item.' + it.id) + '</b><span>' + T('item.' + it.id + '.d') + '</span><small>' + T('shop.have', { n: save.items[it.id] }) + '</small></div>' +
-          '<button class="btn small buy" type="button" data-id="' + it.id + '"' + (save.coins < it.price ? ' disabled' : '') + '><img class="coin" alt="" src="' + ART.icon('coin', 48) + '">' + it.price + '</button></div>').join('') + '</div>' +
+          '<button class="btn small buy" type="button" data-id="' + it.id + '"' + (save.coins < it.price ? ' disabled' : '') + '><img class="coin" alt="" src="' + COIN_IMG + '">' + it.price + '</button></div>').join('') + '</div>' +
         '<p class="shop-note">' + T('shop.note') + '</p>' +
         '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('close') + '</button></div>');
       card.querySelectorAll('.buy').forEach((b) => { b.onclick = () => {
@@ -3293,8 +3398,9 @@
     Ads.gameplay(false);
     finishRun('win', { value: state.score });
     const best = level.best, sc = state.score, p = Math.min(100, Math.round((100 * sc) / best));
+    const DAILY_DIAMONDS = 1;
     const first = !save.daily || save.daily.date !== level.date;
-    if (first) { save.coins += 20; save.daily = { date: level.date, best: sc, tries: 1 }; }
+    if (first) { save.coins += 20; save.diamonds = (save.diamonds || 0) + DAILY_DIAMONDS; save.daily = { date: level.date, best: sc, tries: 1 }; }
     else { save.daily.best = Math.max(save.daily.best, sc); save.daily.tries++; }
     persist();
     Sound.play('win'); buzz([30, 60, 30]);
@@ -3307,7 +3413,7 @@
       '<div class="daily-score">' + n(sc) + '</div>' +
       '<div class="daily-stars">' + '★'.repeat(stars) + '<span>' + '★'.repeat(3 - stars) + '</span></div>' +
       '<p>' + T(msg) + '</p><div class="moves-line">' + T('daily.pct', { p }) + ' · ' + T('daily.best', { n: n(best) }) + '</div>' +
-      (first ? '<div class="moves-line streak-up">' + T('daily.coins', { n: 20 }) + '</div>' : '') +
+      (first ? '<div class="moves-line streak-up">' + T('daily.coins', { n: 20 }) + ' · +' + DAILY_DIAMONDS + ' 💎</div>' : '') +
       '<div class="btns"><button class="btn" id="mShare" type="button">' + T('daily.shareBtn') + '</button>' +
       '<button class="btn dark small" id="mRetry" type="button">' + T('daily.retry') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('menu.back') + '</button></div>');
@@ -3397,7 +3503,7 @@
       // 24/11: a linha "Recordista da fase" saiu; o 1º lugar agora já é a linha dourada com medalha, no topo da lista
       const holder = '';
       body.scrollTop = 0;
-      body.innerHTML = r ? holder + weeklyRowsHTML(r, tab === 'all' ? 'records.allEmpty' : 'weekly.empty') : '<div class="weekly-status">' + T('weekly.loading') + '</div>';
+      body.innerHTML = r ? holder + weeklyRowsHTML(r, tab === 'all' ? 'records.allEmpty' : 'weekly.empty') : '<div class="weekly-status">' + SPIN + T('weekly.loading') + '</div>';
     };
     tabsEl.querySelectorAll('button').forEach((b) => { b.onclick = () => { if (tab === b.dataset.t) return; Sound.play('click'); tab = b.dataset.t; render(); }; });
     render();
@@ -3434,7 +3540,7 @@
     const L = weeklyLevel(), local = !Records.online;
     const card = openModal(
       '<div class="eyebrow">' + T('weekly.week', { d: weeklyDate(L.week) }) + '</div><h2 class="metal">' + T('weekly.title') + '</h2><div class="orn"><i></i></div>' +
-      '<p class="weekly-rules">' + T('weekly.rules') + '</p><div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' +
+      '<p class="weekly-rules">' + T('weekly.rules') + '</p><div class="weekly-list"><div class="weekly-status">' + SPIN + T('weekly.loading') + '</div></div>' +
       '<div class="weekly-status">' + T(local ? 'weekly.local' : 'weekly.online') + '</div>' +
       '<div class="btns"><button class="btn" id="mWeeklyPlay" type="button">' + T('weekly.play') + '</button>' +
       '<button class="btn dark small" id="mWeeklyName" type="button">' + T('weekly.change') + '</button>' +
@@ -3444,85 +3550,114 @@
     card.querySelector('#mWeeklyName').onclick = () => { Sound.play('click'); closeModal(); askWeeklyName(openLegacyWeeklyHub); };
     card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); };
   }
-  function openRecordsHub() {
-    const week = Records.week(), scores = hardWeeklyScores();
-    const ids = LEVELS.map((L) => L.id).filter((id) => !!save.stars[id]);
-    // destaques sorteados sempre entre as fases 1–21: os mesmos 3 para todos os jogadores na semana
-    const featured = Records.featured(LEVELS.map((L) => L.id).filter((id) => id <= 21), week, 3);
-    const ordered = featured.concat(ids.filter((id) => !featured.includes(id)));
-    // 25/10: placa com o título, faixa da temporada e as fases (destaque = borda verde + ★, sem texto)
-    const tile = (id) => {
-      const locked = !save.stars[id];
-      return '<button type="button" class="record-level' + (featured.includes(id) ? ' featured' : '') + (locked ? ' locked' : '') + '" data-level="' + id + '"' + (locked ? ' disabled' : '') +
-        ' aria-label="' + T('level') + ' ' + id + (featured.includes(id) ? ' · ' + T('records.featured') : '') + '"><span>' + T('level') + ' ' + id + '</span><strong>' +
-        (locked ? T('records.lockedFeat', { n: id }) : scores[id] ? nf(scores[id]) : '—') + '</strong></button>';
+  // ---------- Campeões (28/11, no lugar de Recordes) ----------
+  // Telas: top 10 (mais 1º lugares no Difícil) | fases -> top 10 da fase | perfil de um campeão (1º, 2º e 3º lugares)
+  // pontos por fase no Difícil (28/11, regra do Moa): 1º=5, 2º=4, 3º=3, 4º=2, 5º=1; do 6º em diante não pontua
+  const champPoints = (pos) => (pos >= 1 && pos <= 5 ? 6 - pos : 0);
+  // foto de perfil: iniciais (grátis) ou uma joia de um conjunto comprado. Formato: '<conjunto>:<cor 0-5>'; vazio = iniciais
+  const AVATAR_SETS = ['obsidian', 'gold', 'temple', 'solar'];
+  const initialsOf = (n) => { const w = String(n || '?').trim().split(/\s+/); return ((w.length > 1 ? w[0][0] + w[w.length - 1][0] : w[0].slice(0, 2)) || '?').toLocaleUpperCase(); };
+  const avatarHTML = (av, name, cls) => {
+    const m = /^(obsidian|gold|temple|solar):([0-5])$/.exec(av || ''), src = m && ART.skinGem(+m[2], m[1]);
+    return '<span class="avatar ' + (cls || '') + '">' + (src ? '<img alt="" src="' + src + '">' : '<b>' + esc(initialsOf(name)) + '</b>') + '</span>';
+  };
+  const medalHTML = (pos) => (pos <= 3 ? '<i class="medal m' + pos + '">' + pos + '</i>' : '<i class="rk-pos">' + pos + '</i>');
+  const flagHTML = (cc) => {
+    if (!/^[A-Z]{2}$/.test(cc || '')) return '';
+    let nm = cc; try { nm = new Intl.DisplayNames([document.documentElement.lang || 'en'], { type: 'region' }).of(cc); } catch (e) {}
+    return '<div class="pf-flag"><span>' + String.fromCodePoint(...[...cc].map((ch) => 127397 + ch.charCodeAt(0))) + '</span> ' + esc(nm) + '</div>';
+  };
+  const posHTML = (i) => (i < 3 ? medalHTML(i + 1) : '<i class="rk-pos">' + (i + 1) + '</i>');
+  function openChampions(start) {
+    track('leaderboard_open', { mode: 'champions' });
+    let view = start && start.k === 'me' ? start : { k: 'top' };
+    const stack = view.k === 'me' ? [{ k: 'top' }] : [];
+    const forward = (v) => { Sound.play('click'); stack.push(view); view = v; render(); };
+    const render = () => {
+      const tabbed = view.k === 'top' || view.k === 'levels';
+      if ((view.k === 'me' || view.k === 'top') && !ART.skinGem(0, 'solar')) ART.loadSkinGems('solar').then((ok) => { if (ok && (view.k === 'me' || view.k === 'top') && modalOpen() && $('modalCard').classList.contains('champ-page')) render(); });
+      if (view.k === 'me' && !EXTRA.done) extraReady().then(() => { if (view.k === 'me' && modalOpen() && $('modalCard').classList.contains('champ-page')) render(); });
+      const title = view.k === 'level' ? T('level') + ' ' + view.id : view.k === 'profile' || view.k === 'me' ? T('champ.profile') : T('champ.title');
+      const card = openModal(
+        '<header class="sp-head">' +
+          '<button type="button" class="sp-back" id="mBack" aria-label="' + T('close') + '"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 3 5.5 10l7 7 1.6-1.6L8.7 10l5.4-5.4z"/></svg></button>' +
+          '<h2 class="ch-title" style="background-image:url(' + ART.nodeImg('cxplate') + ')"><span>' + title + '</span></h2><i></i></header>' +
+        (tabbed ? '<nav class="ch-tabs">' + ['top', 'levels'].map((k) => '<button type="button" data-v="' + k + '"' + (view.k === k ? ' class="on"' : '') + '>' + T(k === 'top' ? 'champ.rank' : 'champ.levels') + '</button>').join('') + '</nav>' +
+          '<p class="sp-help">' + T(view.k === 'top' ? 'champ.help' : 'champ.levels.help') + '</p>' +
+          (view.k === 'top' ? '<div class="ch-legend">' + [1, 2, 3, 4, 5].map((n) => '<span>' + medalHTML(n) + champPoints(n) + ' ' + T('champ.pt') + '</span>').join('') + '</div>' : '') : '') +
+        '<div class="sp-list ch-list"><div class="weekly-status">' + SPIN + T('weekly.loading') + '</div></div>' +
+        (view.k === 'top' ? '<div class="ch-foot"><button class="btn dark small" id="mProfile" type="button">' + T('champ.me') + '</button></div>' : ''));
+      card.classList.add('shop-page', 'champ-page');
+      card.querySelector('#mBack').onclick = () => { Sound.play('click'); if (stack.length) { view = stack.pop(); render(); return; } closeModal(); };
+      card.querySelectorAll('.ch-tabs button').forEach((b) => { b.onclick = () => { if (view.k === b.dataset.v) return; Sound.play('click'); view = { k: b.dataset.v }; render(); }; });
+      const box = card.querySelector('.ch-list'), mine = view;
+      const alive = () => box.isConnected && view === mine;
+      const empty = (k) => { box.innerHTML = '<p class="ch-empty">' + T(k) + '</p>'; };
+      if (view.k === 'top') {
+        card.querySelector('#mProfile').onclick = () => forward({ k: 'me' });
+        Records.champions().then((rows) => {
+          if (!alive()) return;
+          if (!rows || !rows.length) return empty(rows ? 'champ.empty' : 'champ.offline');
+          const list = rows.slice(0, 10);
+          box.innerHTML = '<ol>' + list.map((p, i) => '<li><button type="button" class="ch-row av' + (i < 3 ? ' t' + (i + 1) : '') + (p.me ? ' me' : '') + '" data-i="' + i + '">' + posHTML(i) +
+            avatarHTML(p.me ? save.avatar : p.avatar, p.name, 'ch-av') + '<span class="ch-name"><b>' + esc(p.name) + '</b>' + (p.me ? '<em class="rk-you">' + T('rank.you') + '</em>' : '') + '</span>' +
+            '<span class="ch-n"><strong>' + nf(p.points) + '</strong><small>' + T('champ.unit') + '</small></span></button></li>').join('') + '</ol>';
+          box.querySelectorAll('.ch-row').forEach((b) => { b.onclick = () => { const i = +b.dataset.i; forward({ k: 'profile', p: list[i], i }); }; });
+        });
+      } else if (view.k === 'levels') {
+        // só as fases que ESTE jogador já alcançou: a lista nunca entrega quantas fases existem
+        const ids = LEVELS.map((L) => L.id).filter((id) => id <= (save.unlocked || 1));
+        box.innerHTML = '<div class="ch-grid">' + ids.map((id) => '<button type="button" data-id="' + id + '"><small>' + T('level') + '</small><b>' + id + '</b></button>').join('') + '</div>';
+        box.querySelectorAll('[data-id]').forEach((b) => { b.onclick = () => forward({ k: 'level', id: +b.dataset.id }); });
+      } else if (view.k === 'level') {
+        Records.listLevelAll(view.id).then((rows) => {
+          if (!alive()) return;
+          const me = Records.getName().toLocaleLowerCase();
+          if (!rows || !rows.length) empty('records.allEmpty');
+          else box.innerHTML = '<ol>' + rows.slice(0, 10).map((p, i) => '<li><div class="ch-row' + (i < 3 ? ' t' + (i + 1) : '') + (isMeRow(p, me) ? ' me' : '') + '">' + posHTML(i) +
+            '<span class="ch-name"><b>' + esc(p.name) + '</b></span><span class="ch-n"><strong>' + nf(p.score) + '</strong>' + (i < 5 ? '<small>+' + champPoints(i + 1) + ' ' + T('champ.pt') + '</small>' : '') + '</span></div></li>').join('') + '</ol>';
+          if (save.stars[mine.id]) {
+            box.insertAdjacentHTML('beforeend', '<button type="button" class="btn small ch-play">' + T('champ.play') + '</button>');
+            box.querySelector('.ch-play').onclick = () => { Sound.play('click'); closeModal(); wipe(() => { openMap(); openPre(mine.id, true); }); };
+          }
+        });
+      } else if (view.k === 'me') {
+        const owned = (set) => save.owned.includes('gem.' + set), cur = save.avatar || '', myName = Records.getName();
+        const tile = (id, inner, locked, label) => '<button type="button" class="av-pick' + (cur === id ? ' on' : '') + (locked ? ' locked' : '') + '" data-av="' + id + '" aria-pressed="' + (cur === id) + '" aria-label="' + label + '">' + inner + (locked ? '<i class="av-lock" aria-hidden="true"></i>' : '') + '</button>';
+        box.innerHTML = '<div class="pf-head">' + avatarHTML(cur, myName, 'big') + '<b>' + esc(myName || T('weekly.placeholder')) + '</b>' +
+          '<button type="button" class="btn dark small ch-play" id="mWeeklyName">' + T('weekly.change') + '</button></div>' +
+          '<p class="sp-help">' + T('champ.photo.help') + '</p>' +
+          '<h3 class="sp-sec">' + T('champ.initials') + '</h3><div class="av-grid">' + tile('', avatarHTML('', myName), false, T('champ.initials')) + '</div>' +
+          AVATAR_SETS.map((set) => '<h3 class="sp-sec">' + T('codex.gem.' + set) + '</h3><div class="av-grid">' +
+            [0, 1, 2, 3, 4, 5].map((n) => { const src = ART.skinGem(n, set); return src ? tile(set + ':' + n, '<span class="avatar"><img alt="" src="' + src + '"></span>', !owned(set), T('codex.gem.' + set) + ' ' + (n + 1) + (owned(set) ? '' : ' · ' + T('champ.locked'))) : ''; }).join('') + '</div>' +
+            (owned(set) ? '' : '<button type="button" class="av-shop">' + T('champ.locked') + '</button>')).join('');
+        box.querySelector('#mWeeklyName').onclick = () => { Sound.play('click'); closeModal(); askWeeklyName(openChampions, openChampions); };
+        const toShop = () => { closeModal(); openShop(() => openChampions({ k: 'me' }), 'gems'); };
+        box.querySelectorAll('.av-shop').forEach((b) => { b.onclick = toShop; });
+        box.querySelectorAll('.av-pick').forEach((b) => { b.onclick = () => {
+          if (b.classList.contains('locked')) return toShop();
+          save.avatar = b.dataset.av; persist(); if (Records.setAvatar) Records.setAvatar(save.avatar); Sound.play('create'); const y = box.scrollTop; render(); $('modalCard').querySelector('.ch-list').scrollTop = y;
+        }; });
+      } else {
+        Records.champion(mine.p.id).then((d) => {
+          if (!alive()) return;
+          if (!d) return empty('champ.offline');
+          const recs = (d.records || []).filter((x) => x.pos >= 1 && x.pos <= 5).sort((x, y) => x.pos - y.pos || x.level - y.level);
+          const shown = recs.filter((x) => x.level <= (save.unlocked || 1)), hidden = recs.length - shown.length;
+          box.innerHTML = '<div class="pf-head">' + avatarHTML(mine.p.me ? save.avatar : d.avatar, d.name || mine.p.name, 'big') + '<b>' + esc(d.name || mine.p.name) + '</b>' + flagHTML(d.country) +
+            '<div class="pf-points"><strong>' + nf(recs.reduce((n, x) => n + champPoints(x.pos), 0)) + '</strong> ' + T('champ.unit') + '</div>' +
+            '<div class="pf-count">' + [1, 2, 3, 4, 5].map((n) => '<span>' + medalHTML(n) + recs.filter((x) => x.pos === n).length + '</span>').join('') + '</div></div>' +
+            '<ol>' + shown.map((x) => '<li><button type="button" class="ch-row t' + x.pos + '" data-id="' + x.level + '">' + medalHTML(x.pos) + '<span class="ch-name"><b>' + T('level') + ' ' + x.level + '</b></span><span class="ch-n"><strong>' + nf(x.score) + '</strong><small>+' + champPoints(x.pos) + ' ' + T('champ.pt') + '</small></span></button></li>').join('') + '</ol>' +
+            (hidden ? '<p class="ch-empty small">' + T('champ.hidden', { n: hidden }) + '</p>' : '');
+          box.querySelectorAll('[data-id]').forEach((b) => { b.onclick = () => forward({ k: 'level', id: +b.dataset.id }); });
+        });
+      }
     };
-    // dois grupos com título: os 3 destaques da semana e as demais fases já vencidas
-    const rows = '<div class="rk-label">' + T('records.featTitle') + '</div>' + featured.map(tile).join('') +
-      (ordered.length > featured.length ? '<div class="rk-label">' + T('records.yourLevels') + '</div>' + ordered.slice(featured.length).map(tile).join('') : '');
-    track('leaderboard_open', { mode: 'hard', value: ids.length });
-    const card = openModal(
-      '<h2 class="plaque-title">' + T('records.short') + '</h2>' +
-      '<button type="button" class="season-strip" id="mSeason"><span class="weekly-status">' + T('season.loading') + '</span></button>' +
-      (ids.length ? '' : '<p class="weekly-rules">' + T('records.empty') + '</p>') + '<div class="records-levels">' + rows + '</div>' +
-      '<div class="btns"><button class="btn dark small" id="mWeeklyName" type="button">' + T('weekly.change') + '</button>' +
-      '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
-    card.classList.add('records-hub');
-    card.querySelectorAll('.record-level:not(.locked)').forEach((button) => {
-      button.onclick = () => {
-        const id = +button.dataset.level;
-        Sound.play('click'); closeModal(); wipe(() => { openMap(); openPre(id, true); });
-      };
-    });
-    card.querySelector('#mWeeklyName').onclick = () => { Sound.play('click'); closeModal(); askWeeklyName(openRecordsHub, openRecordsHub); };
-    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); };
-    const strip = card.querySelector('#mSeason');
-    strip.onclick = () => { Sound.play('click'); closeModal(); openSeason(); };
-    Records.season().then((s) => { if (strip.isConnected) strip.innerHTML = seasonStripHTML(s); }).catch(() => {});
+    render();
   }
 
   // ---------- temporada (3 meses) ----------
   const nf = (n) => (+n || 0).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
-  const tierHTML = (t) => (t ? '<span class="tier tier-' + t + '">' + T('tier.' + t) + '</span>' : '');
-  function seasonName(key, withYear) {
-    const [from, to] = Records.seasonRange(key), loc = I18N.lang === 'pt' ? 'pt-BR' : 'en-US';
-    const end = new Date(to + 'T00:00:00Z'); end.setUTCDate(end.getUTCDate() - 1);
-    const m = (d) => d.toLocaleDateString(loc, { month: 'short', timeZone: 'UTC' }).replace('.', '');
-    return m(new Date(from + 'T00:00:00Z')) + '–' + m(end) + (withYear === false ? '' : ' ' + key.slice(0, 4));
-  }
-  const seasonDaysLeft = (s) => Math.max(0, Math.ceil((Date.parse(s.to + 'T00:00:00Z') - Date.now()) / 86400000));
-  // inside = dentro da própria tela da temporada (o nome já está no cabeçalho, e a faixa não é botão)
-  function seasonStripHTML(s, inside) {
-    const head = inside ? '' : '<span class="season-name">' + T('season.title') + ' · ' + seasonName(s.season, false) + ' ›</span>';
-    if (!s.me) return head + '<small>' + T('season.none') + '</small>';
-    return head + '<span class="season-me">' + tierHTML(s.me.tier) + '<b>' + T('season.pts', { n: nf(s.me.points) }) + '</b>' +
-      (s.me.pos ? '<i>' + T('season.pos', { p: s.me.pos, n: s.players }) + '</i>' : '') + '</span>';
-  }
-  function openSeason() {
-    const card = openModal(
-      '<h2 class="plaque-title">' + T('season.title') + '</h2>' +
-      '<div class="season-head"><b class="season-title">…</b><small class="season-left"></small></div>' +
-      '<div class="season-body"><div class="weekly-status">' + T('season.loading') + '</div></div>' +
-      '<div class="btns"><button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
-    card.classList.add('season-card');
-    card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); openRecordsHub(); };
-    track('season_open', { mode: 'hard' });
-    Promise.all([Records.season(), Records.seasons()]).then(([s, past]) => {
-      if (!card.isConnected) return;
-      card.querySelector('.season-title').textContent = seasonName(s.season);
-      card.querySelector('.season-left').textContent = T('season.ends', { n: seasonDaysLeft(s) });
-      const list = s.rows.length ? rankBoardHTML(s.rows, (r) => nf(r.points), (r) => (r.tier ? '<small class="rk-sub">' + tierHTML(r.tier) + '</small>' : ''))
-        : '<div class="weekly-status">' + T('season.none') + '</div>';
-      const champs = past.length ? past.map((p) => '<div class="champ"><span>' + seasonName(p.season) + '</span>' +
-        p.top.map((r, i) => '<b class="podium p' + (i + 1) + '"><i class="rk-pos">' + (i + 1) + '</i><span>' + esc(r.name) + '</span><u>' + nf(r.points) + '</u></b>').join('') + '</div>').join('')
-        : '<div class="weekly-status">' + T('season.noChamps') + '</div>';
-      // sem servidor só aparece a própria linha (a liga depende dos outros); nada de aviso técnico na tela
-      card.querySelector('.season-body').innerHTML =
-        (s.me ? '<div class="season-strip static">' + seasonStripHTML(s, true) + '</div>' : '') + list +
-        '<p class="season-rule">' + T('season.rules') + '</p>' +
-        '<div class="champs-title">' + T('season.champs') + '</div>' + champs;
-    });
-  }
   function showWeekly() {
     Ads.gameplay(false);
     finishRun('win', { value: state.score });
@@ -3532,7 +3667,7 @@
       '<div class="eyebrow">' + T('weekly.week', { d: weeklyDate(L.week) }) + '</div><h2 class="metal">' + T('weekly.title') + '</h2><div class="orn"><i></i></div>' +
       '<div class="daily-score">' + sc.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') + '</div>' +
       '<div class="moves-line">' + T('weekly.score', { n: sc.toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US') }) + '</div>' +
-      '<div class="weekly-list"><div class="weekly-status">' + T('weekly.loading') + '</div></div>' +
+      '<div class="weekly-list"><div class="weekly-status">' + SPIN + T('weekly.loading') + '</div></div>' +
       '<div class="btns"><button class="btn" id="mRetry" type="button">' + T('weekly.retry') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('menu.back') + '</button></div>');
     loadWeeklyRows(card, Records.submit(sc, { week: L.week, seed: L.seed, moves: 20, replay: weeklyReplay.slice() }));
@@ -3591,12 +3726,14 @@
     return { relics, altars, coins: relics.length * RELIC_COINS + altars * ALTAR_COINS };
   }
   async function openRelics() {
-    if (!EXTRA.done) await extraReady();
-    const list = relicLevels(), got = list.filter((L) => save.stars[L.id]).length;
+    if (!EXTRA.done) await withSpin(extraReady());
+    const all = relicLevels(), got = all.filter((L) => save.stars[L.id]).length;
+    // só as conquistadas + a próxima (sem números de fase nem o total)
+    const next = all.find((L) => !save.stars[L.id]), list = all.filter((L) => save.stars[L.id] || L === next);
     const stars = totalStars(), fill = stars % ALTAR_STARS, pend = relicPending();
     const card = openModal('<h2 class="plaque-title">' + T('relic.title') + '</h2><div class="orn"><i></i></div>' +
-      '<p class="relic-line">' + T('relic.count', { n: got, m: list.length }) + '</p>' +
-      '<div class="relic-grid">' + list.map((L) => '<div class="relic' + (save.stars[L.id] ? ' on' : '') + (save.relicOn === L.id ? ' worn' : '') + '" data-id="' + L.id + '"><img alt="" src="' + (ART.nodeImg('rl' + RELIC_ART[L.id]) || ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) + '"><span>' + L.id + '</span></div>').join('') + '</div>' +
+      '<p class="relic-line">' + T('relic.count', { n: got }) + '</p>' +
+      '<div class="relic-grid">' + list.map((L) => '<div class="relic' + (save.stars[L.id] ? ' on' : '') + (save.relicOn === L.id ? ' worn' : '') + '" data-id="' + L.id + '"><img alt="" src="' + (ART.nodeImg('rl' + RELIC_ART[L.id]) || ART.nodeImg(BOSS_SPR[bossKindOf(L)].idle)) + '"></div>').join('') + '</div>' +
       '<p class="relic-line small">' + (save.relicOn && save.stars[save.relicOn] ? T('relic.worn', { p: T('relic.power.' + RELIC_POWER[save.relicOn]) }) : T('relic.pick')) + '</p>' +
       '<p class="relic-line">' + T('relic.altar', { n: fill, m: ALTAR_STARS, c: ALTAR_COINS }) + '</p>' +
       '<div class="relic-bar"><i style="width:' + Math.round(100 * fill / ALTAR_STARS) + '%"></i></div>' +
@@ -3642,7 +3779,7 @@
   // ---------- aba Desafios (02/11): libera ao chegar na fase ou comprando com moedas ----------
   const CHAL = { curse: { fase: 15, cost: 600 }, exp: { fase: 22, cost: 1500 }, rush: { fase: 27, cost: 1000 } };
   const chalOpen = (k) => save.unlocked >= CHAL[k].fase || !!(save.chalBought || {})[k];
-  const chalRecord = (k) => (k === 'exp' ? T('chal.best.exp', { n: save.expBest || 0 }) : k === 'rush' ? T('chal.best.rush', { n: Math.min(save.rushBest || 0, rushLevels().length), m: rushLevels().length }) : T(curseDoneThisWeek() ? 'chal.best.curseDone' : 'chal.best.curse', { c: CURSE_COINS }));
+  const chalRecord = (k) => (k === 'exp' ? T('chal.best.exp', { n: save.expBest || 0 }) : k === 'rush' ? T('chal.best.rush', { n: Math.min(save.rushBest || 0, rushLevels().length), m: rushLevels().length }) : T(curseDoneThisWeek() ? 'chal.best.curseDone' : 'chal.best.curse', { c: CURSE_COINS }) + (curseDoneThisWeek() ? '' : ' · +' + CURSE_DIAMONDS + ' 💎'));
   function openChallenges() {
     const pend = relicPending();
     const rows = Object.keys(CHAL).map((k) => {
@@ -3651,9 +3788,9 @@
       return '<div class="chal' + (open ? '' : ' locked') + '">' + (icon ? '<img alt="" src="' + icon + '">' : '') +
         '<div class="chal-txt"><b>' + T('chal.' + k) + '</b><span>' + desc + '</span><small>' + (open ? chalRecord(k) : T('chal.unlock', { n: c.fase })) + '</small></div>' +
         (open ? '<button class="btn dark small" type="button" data-play="' + k + '">' + T('play') + '</button>'
-          : '<button class="btn dark small" type="button" data-buy="' + k + '"' + (save.coins < c.cost ? ' disabled' : '') + '><img class="coin" alt="" src="' + ART.icon('coin', 48) + '">' + c.cost + '</button>') + '</div>';
+          : '<button class="btn dark small" type="button" data-buy="' + k + '"' + (save.coins < c.cost ? ' disabled' : '') + '><img class="coin" alt="" src="' + COIN_IMG + '">' + c.cost + '</button>') + '</div>';
     }).join('');
-    const card = openModal('<h2 class="plaque-title">' + T('chal.title') + '</h2><div class="orn"><i></i></div>' + '<div class="wallet chal-wallet"><img class="coin" alt="" src="' + ART.icon('coin', 48) + '"><b>' + save.coins.toLocaleString() + '</b></div>' +
+    const card = openModal('<h2 class="plaque-title">' + T('chal.title') + '</h2><div class="orn"><i></i></div>' + '<div class="wallet chal-wallet"><img class="coin" alt="" src="' + COIN_IMG + '"><b>' + save.coins.toLocaleString() + '</b></div>' +
       '<div class="chal-list">' + rows + '</div>' +
       '<div class="btns"><button class="btn dark small" id="mRelics" type="button">' + T('relic.btn') + (pend.coins ? ' !' : '') + '</button>' +
       '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
@@ -3669,7 +3806,7 @@
   }
 
   // Maldição da Semana: uma fase e uma regra extra sorteadas pela semana, iguais pra todos
-  const CURSE_COINS = 150;
+  const CURSE_COINS = 150, CURSE_DIAMONDS = 3;
   const CURSES = [
     { k: 'noline', on: (L) => { L.noLine = true; } },
     { k: 'color', on: (L) => { L.colors = 6; } },
@@ -3689,7 +3826,7 @@
   let run = null;
   const POWERS = ['moves', 'dyn', 'seal', 'orb', 'coins'];
   function startRun(type) {
-    run = { type, stage: 0, carry: 0, coins: 0, boost: {}, used: [], extra: false, moves: 42, list: rushLevels().map((L) => L.id) };
+    run = { type, stage: 0, carry: 0, coins: 0, diamonds: 0, boost: {}, used: [], extra: false, moves: 42, list: rushLevels().map((L) => L.id) };
     nextRunStage();
   }
   function nextRunStage() {
@@ -3725,7 +3862,7 @@
   function runStageWon() {
     Ads.gameplay(false); finishRun('win'); Sound.play('win'); buzz([30, 60, 30]);
     if (run.type === 'curse') {
-      if (!curseDoneThisWeek()) { save.curseWeek = Records.week(); run.coins += CURSE_COINS; }
+      if (!curseDoneThisWeek()) { save.curseWeek = Records.week(); run.coins += CURSE_COINS; run.diamonds += CURSE_DIAMONDS; }
       return runFinish(true);
     }
     if (run.type === 'rush') {
@@ -3771,16 +3908,37 @@
     });
   }
   function runFinish(won) {
-    save.coins += run.coins; persist();
-    const type = run.type, stage = won ? run.stage : run.stage - 1, coins = run.coins;
+    save.coins += run.coins;
+    if (run.diamonds) save.diamonds = (save.diamonds || 0) + run.diamonds;
+    persist();
+    const type = run.type, stage = won ? run.stage : run.stage - 1, coins = run.coins, dems = run.diamonds || 0;
     const card = openModal('<h2 class="plaque-title">' + T('chal.short.' + type) + '</h2><div class="orn"><i></i></div>' +
-      '<p class="save-summary">' + (type === 'curse' ? T(won ? 'run.curse.won' : 'run.curse.lost') : T('run.result', { n: Math.max(0, stage) })) + (coins ? ' ' + T('run.coins', { c: coins }) : '') + '</p>' +
+      '<p class="save-summary">' + (type === 'curse' ? T(won ? 'run.curse.won' : 'run.curse.lost') : T('run.result', { n: Math.max(0, stage) })) + (coins ? ' ' + T('run.coins', { c: coins }) : '') + (dems ? ' · +' + dems + ' 💎' : '') + '</p>' +
       '<div class="btns"><button class="btn" id="mAgain" type="button">' + T('retry') + '</button><button class="btn dark small" id="mBack" type="button">' + T('chal.btn') + '</button></div>');
     card.querySelector('#mAgain').onclick = () => { Sound.play('click'); closeModal(); Ads.interstitial(() => startRun(type), { level: 0, placement: 'run_again' }); };
     card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); run = null; Ads.interstitial(() => wipe(() => { openMenu(); openChallenges(); }), { level: 0, placement: 'run_back' }); };
   }
   let menuReadySent = false;
-  const TUT_TOTAL = 10;
+  const TUT_TOTAL = 16, TUT_OPTIONAL = 14, TUT_SKIP = 7; // TUT_SKIP: fim do essencial // da página 14 em diante é opcional (modos, ranking e conta)
+  // rótulos por cima das figuras: [x%, y%, chave, largura%]. As imagens não têm texto, servem pros 8 idiomas
+  const TUT_LABELS = [
+    [[28.5,3,'tgl.before',24],[27.1,38.8,'tgl.match',24],[27.1,77.9,'tgl.gone',24]],
+    [[28.1,67.5,'tgl.moves',26],[60.9,32.5,'tgl.goal',20],[81.8,32.5,'tgl.score',22],[79.8,67.5,'tgl.stars',26]],
+    [[42.2,2.7,'tgl.make4',67],[75.7,34.1,'tgl.arrow',29],[70.8,72.9,'tgl.fxcol',40]],
+    [[13,19.6,'tgl.makeL',26],[84.5,48.9,'item.seal',31],[52.2,100,'tgl.fxaround',88]],
+    [[49.4,3.7,'tgl.make5',79],[84.4,37.1,'tgl.orb',31],[49.4,101.5,'tgl.fxorb',90]],
+    [[50,8,'tgl.make6',70],[80.9,35,'tgl.sun',28],[50,92,'tgl.fxsun',80]],
+    [[26.2,2.9,'tgl.before',24],[26.2,54.6,'tgl.after',24]],
+    [[23.1,43.5,'tgl.rock',44],[76.9,43.5,'tgl.sand',44],[23.1,89.5,'tgl.sand2',44],[76.9,89.5,'tgl.moss',44]],
+    [[24,43.5,'tgl.vine',48],[76,43.5,'tgl.chest',48],[24,89.5,'tgl.bomb',48],[76,89.5,'tgl.beside',48]],
+    [[18.5,63.5,'tgl.hit',37],[77.5,63.5,'tgl.hpdown',45]],
+    [[12.8,41.5,'item.moves',23],[37.6,41.5,'item.dyn',23],[62.4,41.5,'item.seal',23],[87.2,41.5,'item.orb',23],[20.1,78.6,'item.hammer',30],[68.6,78.6,'tgl.tapgem',40]],
+    [[50,38.5,'tgl.emax',60],[50,78.8,'tgl.eregen',70]],
+    [[22.5,48.2,'tgl.coins',41],[77.5,48.2,'tgl.chest12',41],[50,84.2,'tgl.trail',90]],
+    [[21.5,89.2,'mode.normal',30],[78.5,89.2,'mode.hard',30]],
+    [[50.2,86.3,'tgl.records',88]],
+    [[75.5,53.5,'tgl.cloud',49]],
+  ];
   const tutState = { open: false, page: 0, completed: false, pushed: false, uiBound: false, preloaded: false, swipeX: 0, swipeY: 0, swiping: false };
   const tutImgSrc = (i) => 'assets/tutorial/p' + (i + 1 < 10 ? '0' : '') + (i + 1) + '.webp';
   function markTutDone() {
@@ -3808,7 +3966,7 @@
     $('btnTutExit').onclick = () => { Sound.play('click'); closeTutorial(false); };
     $('btnTutPrev').onclick = () => { Sound.play('click'); tutStep(-1); };
     $('btnTutNext').onclick = () => { Sound.play('click'); tutStep(1); };
-    $('btnTutDone').onclick = () => { Sound.play('click'); markTutDone(); closeTutorial(false); };
+    $('btnTutDone').onclick = $('btnTutSkip').onclick = () => { Sound.play('click'); markTutDone(); closeTutorial(false, true); };
     const imgEl = $('tutImg');
     if (imgEl) {
       imgEl.draggable = false;
@@ -3846,19 +4004,23 @@
     const n = p + 1;
     $('tutScreenTitle').textContent = T('guide.title');
     $('btnTutExit').setAttribute('aria-label', T('guide.exit'));
-    $('btnTutPrev').setAttribute('aria-label', T('guide.prev'));
-    $('btnTutNext').setAttribute('aria-label', T('guide.next'));
-    $('btnTutDone').textContent = T('guide.done');
+    $('btnTutPrev').textContent = T('guide.back');
+    $('btnTutNext').textContent = T('guide.fwd');
+    $('btnTutDone').textContent = T('guide.play');
     $('tutCounter').textContent = n + '/' + TUT_TOTAL;
-    $('tutPageTitle').textContent = T('guide.' + n + '.t');
-    $('tutPageBody').textContent = T('guide.' + n + '.d');
+    $('tutScreenTitle').textContent = T(n >= TUT_OPTIONAL ? 'guide.optional' : 'guide.title');
+    $('tutLabels').innerHTML = TUT_LABELS[p].map(([x, y, k, w]) => '<span style="left:' + x + '%;top:' + y + '%;width:' + (w || 20) + '%">' + T(k) + '</span>').join('');
+    $('tutPageTitle').textContent = T('tg.' + n + '.t');
+    $('tutPageBody').textContent = T('tg.' + n + '.d');
     const imgEl = $('tutImg');
-    imgEl.alt = T('guide.' + n + '.t');
+    imgEl.alt = T('tg.' + n + '.t');
     imgEl.src = tutImgSrc(p);
     $('btnTutPrev').disabled = p === 0;
     const last = p === TUT_TOTAL - 1;
     $('btnTutNext').hidden = last;
     $('btnTutDone').hidden = !last;
+    $('btnTutSkip').textContent = T('guide.play');
+    $('btnTutSkip').hidden = last || n < TUT_SKIP;
     if (last) markTutDone();
     const dotsEl = $('tutDots');
     if (dotsEl) {
@@ -3875,7 +4037,7 @@
       stageEl.classList.add(dir > 0 ? 'anim-next' : 'anim-prev');
     }
   }
-  function closeTutorial(fromPop) {
+  function closeTutorial(fromPop, toGame) {
     if (!tutState.open) return;
     tutState.open = false;
     markTutDone();
@@ -3885,7 +4047,8 @@
     }
     const scr = $('screen-tutorial');
     if (scr) scr.hidden = true;
-    if (fromPop || REDUCED) openMenu(); else wipe(openMenu);
+    const go = toGame ? openMap : openMenu;
+    if (fromPop || REDUCED) go(); else wipe(go);
   }
   function openTutorial(startPage = 0, immediate = false) {
     if (modalOpen()) closeModal();
@@ -3928,7 +4091,7 @@
     wipe(() => { openMap(); if (save.unlocked === 1 && !save.stars[1]) openPre(1); });
   };
   $('btnDaily').onclick = () => { Sound.init(); Sound.play('click'); wipe(() => startLevel('daily')); };
-  $('btnWeekly').onclick = () => { Sound.init(); Sound.play('click'); openRecordsHub(); };
+  $('btnWeekly').onclick = () => { Sound.init(); Sound.play('click'); openChampions(); };
   $('btnAccount').onclick = () => { Sound.init(); Sound.play('click'); openAccount(); };
   $('btnChallenges').onclick = () => { Sound.init(); Sound.play('click'); openChallenges(); };
   if ($('btnTutorial')) $('btnTutorial').onclick = () => { Sound.init(); Sound.play('click'); openTutorial(); };
@@ -3958,6 +4121,15 @@
   // montados um por vez. Fase com chefe/bicho aberta antes disso espera o pacote terminar.
   const EXTRA = { done: false, wait: [] };
   const extraReady = () => (EXTRA.done ? Promise.resolve() : new Promise((r) => EXTRA.wait.push(r)));
+  // animação branca de espera (28/11): some da vista se a espera for curta (o CSS só mostra depois de 300 ms) e não atrasa nada
+  const SPIN = '<span class="lr-spin sm wait" aria-hidden="true"><b><svg viewBox="0 0 40 36"><path d="M11 3h18l8 10-17 20L3 13z M3 13h34 M11 3l4 10 5-10 5 10 4-10 M15 13l5 20 5-20"/></svg></b><i></i><i></i><i></i><i></i></span>';
+  function withSpin(p) {
+    const el = document.createElement('div');
+    el.className = 'lr-wait'; el.setAttribute('role', 'status'); el.setAttribute('aria-label', '…');
+    el.innerHTML = SPIN.replace(' sm wait', '');
+    document.body.appendChild(el);
+    return p.finally(() => el.remove());
+  }
   function loadExtra() {
     const finish = () => { EXTRA.done = true; EXTRA.wait.splice(0).forEach((r) => r()); };
     const cacheExtra = (url) => {
@@ -4283,7 +4455,7 @@
       MAP3.lastT = 0; MAP3.lastTop = getTop();
       if (!MAP3.raf) MAP3.raf = requestAnimationFrame(mapGLFrame);
     }
-    $('mapStars').textContent = totalStars + '/' + n * 3;
+    $('mapStars').textContent = totalStars; // sem o total do mundo: ele entrega quantas fases existem
     let wn = $('mapWorlds');
     if (!wn) { wn = document.createElement('div'); wn.id = 'mapWorlds'; wn.innerHTML = '<button type="button" class="wprev"></button><button type="button" class="wnext"></button>'; $('screen-map').appendChild(wn); }
     const [wp, wx] = wn.querySelectorAll('button'), arw = ART.nodeImg('navarrow');
@@ -4312,7 +4484,7 @@
     const goWorld = (k) => { Sound.play('click'); mapWorld = k; wipe(buildMap); };
     wp.onclick = () => goWorld(WI - 1); wx.onclick = () => { if (nextOpen) goWorld(WI + 1); };
     $('mapStarIc').src = ART.icon('star', 44);
-    $('mapCoinIc').src = ART.icon('coin', 64);
+    $('mapCoinIc').src = COIN_IMG;
     $('mapEnergyIc').src = ART.icon('sun', 64);
     const mc = $('mapChestIc');
     mc.onerror = () => { mc.onerror = null; mc.src = ART.icon('chest', 128); };
@@ -4388,24 +4560,25 @@
     },
     swap(a, b) { if (!busy) trySwap(a, b); },
     get state() { return state; }, get busy() { return busy; }, get scene() { return scene; },
-    get save() { return save; }, get tutorialMove() { return tutorialMove; }, openPre, startLevel, openRelics, openChallenges, startRun, openRecordsHub, openShop, openTutorial, closeTutorial,
+    get save() { return save; }, get tutorialMove() { return tutorialMove; }, openPre, startLevel, openRelics, openChallenges, startRun, openChampions, openShop, openTutorial, closeTutorial,
     findMove() { return state && LR.findMove(state); },
   };
 
   function boot() {
     applySkins();
     layout();
-    TEX.applyCss();
-    // kit de interface pintado: cada peça vira variável CSS (--ui-btn, --ui-frame...)
-    const UIK = ART.uiImages();
-    for (const k in UIK) { const im = UIK[k]; const url = im.toDataURL ? im.toDataURL('image/png') : im.src; document.documentElement.style.setProperty('--ui-' + k, 'url(' + url + ')'); }
-    if (Object.keys(UIK).length) document.documentElement.classList.add('ui-kit');
+    // kit de interface pintado: usa URLs blob/webp prontas fora da main thread (evita toDataURL PNG sincrono no boot)
+    const UIK = ART.uiImages(), UIU = ART.uiUrls ? ART.uiUrls() : {};
+    const hasUiKit = Object.keys(UIK).length > 0;
+    for (const k in UIK) { const im = UIK[k]; const url = UIU[k] || (im.toDataURL ? im.toDataURL('image/webp', 0.92) : im.src); document.documentElement.style.setProperty('--ui-' + k, 'url(' + url + ')'); }
+    if (hasUiKit) { document.documentElement.classList.add('ui-kit'); setTimeout(() => TEX.applyCss(), 250); }
+    else TEX.applyCss();
     const navArt = ART.nodeImg('navarrow');
     if (navArt && $('screen-tutorial')) $('screen-tutorial').style.setProperty('--tut-arrow', 'url(' + navArt + ')');
     else document.querySelectorAll('.tut-nav').forEach((b) => b.classList.add('no-art'));
     try {
       const capApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
-      if (capApp && capApp.addListener) capApp.addListener('backButton', () => { if (tutState.open) closeTutorial(false); });
+      if (capApp && capApp.addListener) capApp.addListener('backButton', () => { if (tutState.open) closeTutorial(false); else if (pageOpen()) $('mBack').click(); });
     } catch (e) {}
     UIART.applyCorners();
     // martelo pintado (15/10): botão de pedra redondo, martelo (aceso quando armado) e selo de pedra com o contador
@@ -4420,7 +4593,8 @@
     ART.clearCache();
     const ld = $('loading'); ld.classList.add('done'); setTimeout(() => ld.remove(), 700);
     Ads.loading(false);
-    setTimeout(loadExtra, 300);
+    setTimeout(loadExtra, 900);
+    setTimeout(loadWords, 1200);
     const hardLink = /^#dificil(\d+)$/.exec(location.hash || '');
     const m = /^#fase(\d+)$/.exec(location.hash || '');
     if (hardLink && LEVELS[+hardLink[1] - 1]) { openMap(); openPre(+hardLink[1], !!save.stars[+hardLink[1]]); }
@@ -4488,6 +4662,7 @@
     requestAnimationFrame(frame);
   }
   $('loadingTxt').textContent = T('loading');
-  const fontsReady = document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1500))]) : Promise.resolve();
-  fontsReady.then(() => ART.loadAI(boot));
+  const fontsReady = document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 600))]) : Promise.resolve();
+  const aiReady = new Promise((r) => ART.loadAI(r));
+  Promise.all([fontsReady, aiReady]).then(boot);
 })();

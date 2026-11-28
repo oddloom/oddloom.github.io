@@ -153,58 +153,174 @@
   }
 
   // ---------- arte de IA (art-data.js): joias e fundo. Se não existir, usa a arte desenhada aqui ----------
-  const AI = { gems: {}, pieces: {}, ui: {}, nodes: {}, fx: {}, bg: null, board: null, ready: false };
+  const AI = { gems: {}, pieces: {}, ui: {}, uiUrls: {}, nodes: {}, nodeCanvas: {}, fx: {}, bg: null, board: null, ready: false, playReady: false };
+  const IS_LE = new Uint8Array(new Uint32Array([0x11223344]).buffer)[0] === 0x44;
+  let maskCv = null, maskCtx = null;
+  const joinQ = [];
+  let joinScheduled = false;
+  function drainJoin() {
+    joinScheduled = false;
+    const t0 = performance.now();
+    while (joinQ.length) {
+      joinQ.shift()();
+      if (performance.now() - t0 >= 8) break;
+    }
+    if (joinQ.length) { joinScheduled = true; setTimeout(drainJoin, 0); }
+  }
+  function enqueueJoin(fn) {
+    joinQ.push(fn);
+    if (!joinScheduled) { joinScheduled = true; setTimeout(drainJoin, 0); }
+  }
+  function canvasToUrl(im, cb) {
+    if (!im) { cb(null); return; }
+    if (typeof im === 'string') { cb(im); return; }
+    if (!im.toBlob) { cb(im.toDataURL ? im.toDataURL('image/png') : im.src); return; }
+    im.toBlob((blob) => {
+      if (blob && typeof URL !== 'undefined' && URL.createObjectURL) cb(URL.createObjectURL(blob));
+      else cb(im.toDataURL ? im.toDataURL('image/png') : im.src);
+    }, 'image/webp', 0.92);
+  }
+  const playWaiters = [];
+  function markPlayReady() {
+    if (AI.playReady) return;
+    AI.playReady = true;
+    while (playWaiters.length) playWaiters.shift()();
+  }
+  function whenReady() {
+    return AI.playReady ? Promise.resolve() : new Promise((r) => playWaiters.push(r));
+  }
+  // skin em arquivos (assets/skins-lr/<nome>/<joia>.webp): baixa só quando equipada ou vista na loja
+  const fileSkins = {};
+  function loadSkinGems(skin) {
+    if (!fileSkins[skin]) fileSkins[skin] = Promise.all(GEMS.map((g) => new Promise((ok) => {
+      const im = new Image(); im.onload = () => { AI.gems[g.key + '@' + skin] = im; ok(true); }; im.onerror = () => ok(false);
+      im.src = 'assets/skins-lr/' + skin + '/' + g.key + '.webp';
+    }))).then((r) => { cache = new Map(); cacheSize = 0; const all = r.every(Boolean); if (!all) delete fileSkins[skin]; return all; });
+    return fileSkins[skin];
+  }
+  const skinGemUrls = {};
+  function skinGem(i, skin) {
+    const k = GEMS[i] && GEMS[i].key + '@' + skin, im = k && AI.gems[k];
+    if (!im) return null;
+    if (!skinGemUrls[k]) { const cv = mkCanvas(160, 160); cv.getContext('2d').drawImage(im, 0, 0, 160, 160); skinGemUrls[k] = cv.toDataURL('image/png'); }
+    return skinGemUrls[k];
+  }
+  function nodeImg(k) {
+    if (AI.nodes[k]) return AI.nodes[k];
+    const cv = AI.nodeCanvas[k];
+    if (!cv) return null;
+    const u = cv.toDataURL ? cv.toDataURL('image/webp', 0.92) : cv.src;
+    AI.nodes[k] = u;
+    delete AI.nodeCanvas[k];
+    return u;
+  }
+  const BOOT_NODES = ['navarrow', 'hbtn', 'hbadge', 'hham', 'hhamon'];
   function loadAI(onReady) {
     const D = root.ART_DATA;
-    if (!D) { if (onReady) onReady(); return; }
+    if (!D) { AI.ready = true; markPlayReady(); if (onReady) onReady(); return; }
+    // Fase 1 (essencial do menu e boot): bg, gems, ui (com blob URL assincrona) e 5 nodes do boot
     let left = 0;
-    const done = () => { if (--left === 0) { AI.ready = true; if (onReady) onReady(); } };
+    const startBg = () => {
+      const playItems = [];
+      if (D.board) playItems.push(['board', D.board, (im) => { AI.board = im; }]);
+      for (const k in D.pieces || {}) playItems.push(['p', D.pieces[k], (im) => { AI.pieces[k] = im; cache = new Map(); cacheSize = 0; }]);
+      for (const k in D.fx || {}) playItems.push(['f', D.fx[k], (im) => { AI.fx[k] = im; cache = new Map(); cacheSize = 0; }]);
+      let pLeft = playItems.length;
+      const pDone = () => { if (--pLeft <= 0) markPlayReady(); };
+      if (!pLeft) markPlayReady();
+      const bootSet = new Set(BOOT_NODES);
+      const nodeEntries = Object.entries(D.nodes || {}).filter(([k]) => !bootSet.has(k));
+      let pi = 0, ni = 0;
+      const stepBg = () => {
+        if (pi < playItems.length) {
+          const [, src, set] = playItems[pi++];
+          loadSrc(src, set, () => { pDone(); setTimeout(stepBg, 0); });
+          return;
+        }
+        if (ni < nodeEntries.length) {
+          const [k, src] = nodeEntries[ni++];
+          loadSrc(src, (im) => {
+            AI.nodeCanvas[k] = im;
+            canvasToUrl(im, (u) => { if (u) { AI.nodes[k] = u; delete AI.nodeCanvas[k]; } });
+          }, () => setTimeout(stepBg, 8));
+        }
+      };
+      setTimeout(stepBg, 0);
+    };
+    const done = () => {
+      if (--left === 0) {
+        AI.ready = true;
+        if (onReady) onReady();
+        startBg();
+      }
+    };
     const load = (src, set) => { left++; loadSrc(src, set, done); };
-    for (const k in D.gems) load(D.gems[k], (im) => { AI.gems[k] = im; });
-    for (const k in D.pieces || {}) load(D.pieces[k], (im) => { AI.pieces[k] = im; });
-    for (const k in D.ui || {}) load(D.ui[k], (im) => { AI.ui[k] = im; });
-    for (const k in D.fx || {}) load(D.fx[k], (im) => { AI.fx[k] = im; });
-    for (const k in D.nodes || {}) load(D.nodes[k], (im) => { AI.nodes[k] = im.toDataURL ? im.toDataURL('image/png') : im.src; });
     if (D.bg) load(D.bg, (im) => { AI.bg = im; });
-    if (D.board) load(D.board, (im) => { AI.board = im; });
-    if (!left) { AI.ready = true; if (onReady) onReady(); }
+    for (const k in D.gems) load(D.gems[k], (im) => { AI.gems[k] = im; });
+    for (const k in D.ui || {}) {
+      left++;
+      loadSrc(D.ui[k], (im) => {
+        AI.ui[k] = im;
+        canvasToUrl(im, (u) => { if (u) AI.uiUrls[k] = u; done(); });
+      }, () => {});
+    }
+    for (const k of BOOT_NODES) {
+      if (!D.nodes || !D.nodes[k]) continue;
+      left++;
+      loadSrc(D.nodes[k], (im) => {
+        AI.nodeCanvas[k] = im;
+        canvasToUrl(im, (u) => { if (u) { AI.nodes[k] = u; delete AI.nodeCanvas[k]; } done(); });
+      }, () => {});
+    }
+    if (!left) { AI.ready = true; if (onReady) onReady(); startBg(); }
   }
   // pacote extra (art-extra.js, 15/10): chefes, bichos e barra de vida montados depois da abertura,
-  // um por vez nos intervalos do navegador, pra não travar o menu
+  // um por vez nos intervalos do navegador, sem converter para PNG dataURL sincrono na main thread
   function loadExtra(E, onReady) {
-    // nodes viram dataURL; gems e fx (skins da loja, 16/10) ficam como imagem, igual ao pacote principal
     const keys = [];
-    for (const set of ['nodes', 'gems', 'fx']) for (const k in (E && E[set]) || {}) keys.push([set, k]);
+    for (const set of ['gems', 'fx', 'nodes']) for (const k in (E && E[set]) || {}) keys.push([set, k]);
     let i = 0;
     const next = () => {
       if (i >= keys.length) { if (onReady) onReady(); return; }
       const [set, k] = keys[i++];
       loadSrc(E[set][k], (im) => {
-        if (set === 'nodes') AI.nodes[k] = im.toDataURL ? im.toDataURL('image/png') : im.src;
-        else { AI[set][k] = im; cache = new Map(); cacheSize = 0; }
-      }, () => setTimeout(next, 0));
+        if (set === 'nodes') {
+          AI.nodeCanvas[k] = im;
+          canvasToUrl(im, (u) => { if (u) { AI.nodes[k] = u; delete AI.nodeCanvas[k]; } });
+        } else { AI[set][k] = im; cache = new Map(); cacheSize = 0; }
+      }, () => setTimeout(next, 16));
     };
     next();
   }
   // src pode ser uma URL simples ou { c: JPEG da cor, a: PNG cinza da transparência } (junta as duas num canvas)
   function loadSrc(src, set, done) {
-    {
-      if (typeof src === 'string') { const im = new Image(); im.onload = () => { set(im); done(); }; im.onerror = done; im.src = src; return; }
-      const c = new Image(), a = new Image(); let got = 0;
-      const join = () => {
-        if (++got < 2) return;
-        const w = c.naturalWidth, h = c.naturalHeight, cv = mkCanvas(w, h), x = cv.getContext('2d', { willReadFrequently: true });
-        x.drawImage(a, 0, 0, w, h);
-        const m = x.getImageData(0, 0, w, h);
-        x.clearRect(0, 0, w, h); x.drawImage(c, 0, 0);
+    if (typeof src === 'string') { const im = new Image(); im.onload = () => { set(im); done(); }; im.onerror = done; im.src = src; return; }
+    const c = new Image(), a = new Image(); let got = 0;
+    const join = () => {
+      if (++got < 2) return;
+      enqueueJoin(() => {
+        const w = c.naturalWidth, h = c.naturalHeight;
+        if (!w || !h) { done(); return; }
+        const cv = mkCanvas(w, h), x = cv.getContext('2d', { willReadFrequently: true });
+        if (!maskCv) { maskCv = mkCanvas(w, h); maskCtx = maskCv.getContext('2d', { willReadFrequently: true }); }
+        if (maskCv.width < w || maskCv.height < h) { maskCv.width = Math.max(maskCv.width, w); maskCv.height = Math.max(maskCv.height, h); }
+        maskCtx.clearRect(0, 0, w, h);
+        maskCtx.drawImage(a, 0, 0, w, h);
+        const m = maskCtx.getImageData(0, 0, w, h);
+        x.drawImage(c, 0, 0, w, h);
         const p = x.getImageData(0, 0, w, h);
-        for (let i = 0; i < p.data.length; i += 4) p.data[i + 3] = m.data[i];
+        if (IS_LE) {
+          const p32 = new Uint32Array(p.data.buffer), m32 = new Uint32Array(m.data.buffer);
+          for (let i = 0; i < p32.length; i++) p32[i] = (p32[i] & 0x00ffffff) | ((m32[i] & 0xff) << 24);
+        } else {
+          for (let i = 0; i < p.data.length; i += 4) p.data[i + 3] = m.data[i];
+        }
         x.putImageData(p, 0, 0);
         set(cv); done();
-      };
-      c.onload = a.onload = join; c.onerror = a.onerror = done;
-      c.src = src.c; a.src = src.a;
-    }
+      });
+    };
+    c.onload = a.onload = join; c.onerror = a.onerror = done;
+    c.src = src.c; a.src = src.a;
   }
 
   // skins da loja (16/10): joia 'ruby@gold' e efeito 'dart@jade' substituem a base quando a skin está em uso
@@ -727,5 +843,5 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     return c;
   }
-  root.ART = { loadAI, loadExtra, setSkins, fx: (k) => (SKIN.fx && AI.fx[k + '@' + SKIN.fx]) || AI.fx[k] || null, uiImages: () => AI.ui, nodeImg: (k) => AI.nodes[k] || null, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { for (const k in AI.gems) return true; return false; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
+  root.ART = { loadAI, loadExtra, setSkins, fx: (k) => (SKIN.fx && AI.fx[k + '@' + SKIN.fx]) || AI.fx[k] || null, uiImages: () => AI.ui, uiUrls: () => AI.uiUrls, nodeImg, skinGem, loadSkinGems, whenReady, pieceImage: (k) => AI.pieces[k] || null, get board() { return AI.board; }, get hasAI() { for (const k in AI.gems) return true; return false; }, clearCache() { cache = new Map(); cacheSize = 0; for (const k in iconCache) delete iconCache[k]; }, GEMS, pieceSprite, gemSprite, vineSprite, sandSprite, icon, drawBackdrop, fusePoint, hsl, roundRect, sparkle };
 })(window);

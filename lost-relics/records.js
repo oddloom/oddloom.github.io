@@ -131,6 +131,29 @@
     try { return await request('/season?season=' + k + (data.playerId ? '&player=' + encodeURIComponent(data.playerId) : '')); }
     catch (e) { return localSeason(k); }
   }
+  // Campeões: GET /champions?player= -> { rows: [{ id (público), name, avatar, points, me }] }; 1º=5, 2º=4, 3º=3, 4º=2, 5º=1. null = não carregou.
+  async function champions() {
+    if (!API) return null;
+    try { return (await request('/champions' + (data.playerId ? '?player=' + encodeURIComponent(data.playerId) : ''))).rows || []; }
+    catch (e) { return null; }
+  }
+  // Perfil: GET /champion?id= -> { name, avatar, country, records: [{ level, pos (1 a 5), score }] }
+  async function champion(id) {
+    if (!API) return null;
+    try { return await request('/champion?id=' + encodeURIComponent(id)); }
+    catch (e) { return null; }
+  }
+  async function setAvatar(avatar) {
+    const val = typeof avatar === 'string' ? avatar.trim() : '';
+    if (val !== '' && !/^(obsidian|gold|temple|solar):[0-5]$/.test(val)) return false;
+    if (!API || ((!data.playerId || !data.token) && !getSession())) return false;
+    try {
+      await request('/avatar', { method: 'POST', body: JSON.stringify({
+        playerId: data.playerId, token: data.token, avatar: val, session: getSession() || undefined,
+      }) });
+      return true;
+    } catch (e) { return false; }
+  }
   async function seasons() {
     if (!API) return [];
     try { return (await request('/seasons')).seasons || []; } catch (e) { return []; }
@@ -156,5 +179,5 @@
     } else status('local');
     return listLevel(id, w);
   }
-  root.Records = { online: !!API, week, getName, setName, rename, attachSession, validName, list, submit, listLevel, listLevelAll, submitLevel, featured, seasonKey, seasonRange, season, seasons };
+  root.Records = { online: !!API, week, getName, setName, rename, attachSession, validName, list, submit, listLevel, listLevelAll, submitLevel, featured, seasonKey, seasonRange, season, seasons, champions, champion, setAvatar };
 })(window);

@@ -25,7 +25,7 @@
     const maxLevel = root.LEVELS ? LEVELS.length : 999;
     const unlocked = Math.floor(+p.game.unlocked || 0);
     if (unlocked < 1 || unlocked > maxLevel + 1 || JSON.stringify(p.game).length > 100000) throw new Error('invalid');
-    return { payload: p, summary: { unlocked, stars: Object.keys(p.game.stars || {}).length, coins: Math.max(0, Math.floor(+p.game.coins || 0)), createdAt: p.createdAt } };
+    return { payload: p, summary: { unlocked, stars: Object.keys(p.game.stars || {}).length, coins: Math.max(0, Math.floor(+p.game.coins || 0)), diamonds: Math.max(0, Math.floor(+p.game.diamonds || 0)), createdAt: p.createdAt } };
   }
   async function importCode(code) {
     const checked = await inspect(code), p = checked.payload;
