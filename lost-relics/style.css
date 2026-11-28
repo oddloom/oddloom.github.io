@@ -1748,3 +1748,25 @@ button.ch-row { cursor: pointer; }
 .sp-strip { display: flex; gap: 1px; margin-top: 2px; }
 .sp-strip img { width: 24px; height: 24px; object-fit: contain; }
 @media (max-width: 359px) { .sp-tabs button { font-size: 8.5px; } .sp-tabs img { width: 26px; height: 26px; } .sp-strip img { width: 17px; height: 17px; } .sp-text b { font-size: 13px; } }
+/* 28/11: pontuação dentro da área escura da moldura e número no centro do círculo das medalhas */
+.champ-page .ch-list li .ch-row { padding-right: 16px; }
+@media (max-width: 359px) { .champ-page .ch-list li .ch-row { padding-right: 13px; } }
+.champ-page .medal, .champ-page .rk-pos { box-sizing: border-box; padding: 0 0 .5px; }
+.champ-page .ch-legend .medal, .champ-page .ch-legend .rk-pos { padding: 0 0 1.5px; }
+/* 28/11: letreiro de início de fase em placa do templo */
+.announce.plaque, .announce.plaque:has(.ann-art) { width: min(90vw, 400px); max-width: none; display: flex; flex-direction: column; align-items: center; animation: anPlaque 2.2s cubic-bezier(.2,.9,.25,1) forwards; }
+.announce.plaque::before { display: none; }
+.announce.plaque .an-board { position: relative; box-sizing: border-box; width: 100%; min-height: 104px; display: grid; place-items: center; padding: 8px 0 4px; border-style: solid; border-color: transparent; border-width: 16px 46px; border-image: url('assets/ui-lr/placa-ouro.webp') 30 104 fill / 16px 52px stretch; filter: drop-shadow(0 10px 14px rgba(0,0,0,.75)) drop-shadow(0 0 22px rgba(255,185,70,.4)); }
+.announce.plaque .an-board:not(:has(img, b)) { background: #0b1612; }
+.announce.plaque .an-sun { position: absolute; left: 50%; top: -42px; width: 56px; height: 56px; transform: translateX(-50%); background: radial-gradient(circle, #b8fff0 0 5%, #2fc4a8 12%, #0d5c4e 20%, transparent 23%), url('assets/ui-lr/medalha-ouro.webp') center / contain no-repeat; animation: anSun 2.2s ease-out both; }
+.announce.plaque .an-title { width: 100%; min-width: 0; }
+.announce.plaque .an-title b { display: block; overflow: hidden; white-space: nowrap; padding: 2px 0 6px; font: 900 clamp(30px, 10.5vw, 50px)/1.15 Georgia, 'Noto Serif', 'Times New Roman', serif; font-variant-numeric: lining-nums; letter-spacing: .02em; color: transparent; background: linear-gradient(180deg, #fffbe0 18%, #ffd75a 46%, #d08a14 58%, #ffe27a 78%, #b8720f) text; -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 2px 0 #3a2004) drop-shadow(0 4px 3px rgba(0,0,0,.85)); }
+html:lang(ja) .announce.plaque .an-title b, html:lang(ja) .announce.plaque .an-sub { font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', 'Noto Serif CJK JP', serif; }
+.announce.plaque .ann-art { --L: min(34px, 8.5vw); filter: drop-shadow(0 3px 0 rgba(40,18,0,.75)); }
+.announce.plaque .an-sub { box-sizing: border-box; max-width: 86%; min-width: 62%; margin-top: -6px; position: relative; overflow: hidden; white-space: nowrap; padding: 0 2px; border-style: solid; border-color: transparent; border-width: 9px 28px; border-image: url('assets/ui-lr/placa-pedra.webp') 30 104 fill / 9px 30px stretch; font: 700 clamp(13px, 4vw, 17px)/1.5 Georgia, 'Noto Serif', 'Times New Roman', serif; letter-spacing: .08em; text-transform: uppercase; color: #9ff2df; text-shadow: 0 2px 2px #000, 0 0 8px rgba(47,196,168,.55); filter: drop-shadow(0 6px 8px rgba(0,0,0,.7)); animation: anSub 2.2s ease-out both; }
+.gfx-lite .announce.plaque .an-board, .gfx-lite .announce.plaque .an-sub { filter: none; }
+@keyframes anPlaque { 0% { opacity: 0; transform: translate(-50%,-50%) scale(1.35); } 12% { opacity: 1; transform: translate(-50%,-50%) scale(.95); } 19% { transform: translate(-50%,-50%) scale(1.02); } 25%, 80% { opacity: 1; transform: translate(-50%,-50%) scale(1); } 100% { opacity: 0; transform: translate(-50%,-84%) scale(.96); } }
+@keyframes anSun { 0%, 8% { opacity: 0; transform: translateX(-50%) rotate(-120deg) scale(.4); } 30%, 100% { opacity: 1; transform: translateX(-50%) rotate(0) scale(1); } }
+@keyframes anSub { 0%, 14% { opacity: 0; transform: translateY(-16px); } 28%, 100% { opacity: 1; transform: none; } }
+@keyframes anFade { 0% { opacity: 0; } 12%, 82% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .announce.plaque, .announce.plaque:has(.ann-art) { animation: anFade 2.2s linear forwards; } .announce.plaque .an-sun, .announce.plaque .an-sub { animation: none; } }

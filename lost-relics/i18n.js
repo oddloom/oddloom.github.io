@@ -2,6 +2,7 @@
 (function (root) {
   const STRINGS = {
     pt: {
+      'bossname.scarab': 'Escaravelho Dourado', 'bossname.jaguar': 'Onça de Jade', 'bossname.statue': 'Ídolo de Pedra', 'bossname.frog': 'Sapo', 'bossname.onca': 'Onça', 'bossname.spider': 'Aranha-tecelã', 'bossname.bat': 'Morcego', 'bossname.mummy': 'Rei Múmia', 'bossname.monkey': 'Macaco', 'bossname.boa': 'Jiboia', 'bossname.serpent': 'Kukulkán',
       'shop.info': 'Informações de {item}',
       'acct.mesaManaged': 'Esta conta é gerenciada pelo Mesa. Para trocar de conta, volte ao Mesa.',
       'acct.mesaReconnect': 'A conexão com sua conta expirou. Volte ao Mesa e abra o jogo novamente.',
@@ -106,10 +107,11 @@
       
       
       
-      'dr.btn': 'RECOMPENSA DIÁRIA', 'dr.eyebrow': 'EXPEDIÇÃO DIÁRIA', 'dr.title': 'RECOMPENSA DIÁRIA', 'dr.sub': 'Volte todo dia para desbloquear o Grande Baú — Dia {n} de 7', 'dr.day': 'Dia {n}', 'dr.grand': 'Grande Baú', 'dr.claim': 'RESGATAR DIA {n}', 'dr.next': 'Próxima recompensa em {t}', 'dr.back': 'Volte amanhã para continuar sua sequência!', 'dr.got': 'Recebido:', 'dr.broken': 'Sequência pausada no Dia {n}. Recomece ou recupere abaixo!', 'dr.recover': 'RECUPERAR DIA {n}', 'dr.recovered': 'Sequência recuperada!', 'dr.adSub': 'ver anúncio', 'note.daily': 'Sua recompensa do Dia {n} está pronta! Não perca sua sequência.',
+      'dr.btn': 'RECOMPENSA DIÁRIA', 'dr.eyebrow': 'EXPEDIÇÃO DIÁRIA', 'dr.title': 'RECOMPENSA DIÁRIA', 'dr.sub': 'Volte diariamente para desbloquear recompensas', 'dr.day': 'Dia {n}', 'dr.grand': 'Grande Baú', 'dr.claim': 'RESGATAR DIA {n}', 'dr.next': 'Próxima recompensa em {t}', 'dr.back': 'Volte amanhã para continuar sua sequência!', 'dr.got': 'Recebido:', 'dr.broken': 'Sequência pausada no Dia {n}. Recomece ou recupere abaixo!', 'dr.recover': 'RECUPERAR DIA {n}', 'dr.recovered': 'Sequência recuperada!', 'dr.adSub': 'ver anúncio', 'note.daily': 'Sua recompensa do Dia {n} está pronta! Não perca sua sequência.',
       'playstore.label': 'Disponível no Google Play', 'playstore.over': 'Disponível no', 'playstore.name': 'Google Play',
     },
     en: {
+      'bossname.scarab': 'Golden Scarab', 'bossname.jaguar': 'Jade Jaguar', 'bossname.statue': 'Stone Idol', 'bossname.frog': 'Frog', 'bossname.onca': 'Jaguar', 'bossname.spider': 'Weaver Spider', 'bossname.bat': 'Bat', 'bossname.mummy': 'Mummy King', 'bossname.monkey': 'Monkey', 'bossname.boa': 'Boa', 'bossname.serpent': 'Kukulkan',
       'shop.info': 'About {item}',
       'acct.mesaManaged': 'This account is managed by Mesa. To switch accounts, return to Mesa.',
       'acct.mesaReconnect': 'Your account connection expired. Return to Mesa and reopen the game.',
@@ -214,10 +216,11 @@
       
       
       
-      'dr.btn': 'DAILY REWARD', 'dr.eyebrow': 'DAILY EXPEDITION', 'dr.title': 'DAILY REWARD', 'dr.sub': 'Return daily to unlock the Grand Chest — Day {n} of 7', 'dr.day': 'Day {n}', 'dr.grand': 'Grand Chest', 'dr.claim': 'CLAIM DAY {n}', 'dr.next': 'Next reward in {t}', 'dr.back': 'Come back tomorrow to keep your streak!', 'dr.got': 'Claimed:', 'dr.broken': 'Streak paused at Day {n}. Restart or recover below!', 'dr.recover': 'RECOVER DAY {n}', 'dr.recovered': 'Streak recovered!', 'dr.adSub': 'watch ad', 'note.daily': 'Your Day {n} reward is ready! Keep your streak alive.',
+      'dr.btn': 'DAILY REWARD', 'dr.eyebrow': 'DAILY EXPEDITION', 'dr.title': 'DAILY REWARD', 'dr.sub': 'Return daily to unlock rewards', 'dr.day': 'Day {n}', 'dr.grand': 'Grand Chest', 'dr.claim': 'CLAIM DAY {n}', 'dr.next': 'Next reward in {t}', 'dr.back': 'Come back tomorrow to keep your streak!', 'dr.got': 'Claimed:', 'dr.broken': 'Streak paused at Day {n}. Restart or recover below!', 'dr.recover': 'RECOVER DAY {n}', 'dr.recovered': 'Streak recovered!', 'dr.adSub': 'watch ad', 'note.daily': 'Your Day {n} reward is ready! Keep your streak alive.',
       'playstore.label': 'Get it on Google Play', 'playstore.over': 'Get it on', 'playstore.name': 'Google Play',
     },
     es: {
+      'bossname.scarab': 'Escarabajo Dorado', 'bossname.jaguar': 'Jaguar de Jade', 'bossname.statue': 'Ídolo de Piedra', 'bossname.frog': 'Sapo', 'bossname.onca': 'Jaguar', 'bossname.spider': 'Araña Tejedora', 'bossname.bat': 'Murciélago', 'bossname.mummy': 'Rey Momia', 'bossname.monkey': 'Mono', 'bossname.boa': 'Boa', 'bossname.serpent': 'Kukulkán',
       'shop.info': 'Sobre {item}', 'acct.mesaManaged': 'Esta cuenta es administrada por Mesa.', 'acct.mesaReconnect': 'Tu conexión expiró. Vuelve a Mesa y abre el juego.', 'acct.mesaOn': 'CUENTA MESA ✓', 'acct.mesaRetry': 'RECONECTAR POR MESA',
       'map.next': 'SIGUIENTE MUNDO', 'map.next.label': 'Ir a {world}', 'map.next.locked': 'Supera el nivel {level} para abrir el siguiente mundo', 'map.shop.label': 'Tienda: {n} monedas',
       'title.sub': 'Una expedición de joyas', 'daily.btn': 'JUGADA DEL DÍA', 'daily.title': 'JUGADA DEL DÍA', 'daily.hint': 'UNA SOLA JUGADA. ¡ENCUENTRA LA MEJOR!', 'daily.perfect': '¡PERFECTO! Encontraste la mejor jugada.', 'daily.close': '¡Casi! Puedes lograr más.', 'daily.low': 'Hay una jugada mucho mejor... ¡inténtalo de nuevo!',
@@ -271,9 +274,10 @@
       
       
       'playstore.label': 'Disponible en Google Play', 'playstore.over': 'Disponible en', 'playstore.name': 'Google Play',
-      'dr.btn': 'RECOMPENSA DIARIA', 'dr.eyebrow': 'EXPEDICIÓN DIARIA', 'dr.title': 'RECOMPENSA DIARIA', 'dr.sub': 'Vuelve cada día para abrir el Gran Cofre — Día {n} de 7', 'dr.day': 'Día {n}', 'dr.grand': 'Gran Cofre', 'dr.claim': 'RECLAMAR DÍA {n}', 'dr.next': 'Próxima recompensa en {t}', 'dr.back': '¡Vuelve mañana para mantener tu racha!', 'dr.got': 'Recibido:', 'dr.broken': 'Racha pausada en el Día {n}. ¡Reinicia o recupérala abajo!', 'dr.recover': 'RECUPERAR DÍA {n}', 'dr.recovered': '¡Racha recuperada!', 'dr.adSub': 'ver anuncio', 'note.daily': '¡Tu recompensa del Día {n} está lista! No pierdas tu racha.',
+      'dr.btn': 'RECOMPENSA DIARIA', 'dr.eyebrow': 'EXPEDICIÓN DIARIA', 'dr.title': 'RECOMPENSA DIARIA', 'dr.sub': 'Vuelve a diario para desbloquear recompensas', 'dr.day': 'Día {n}', 'dr.grand': 'Gran Cofre', 'dr.claim': 'RECLAMAR DÍA {n}', 'dr.next': 'Próxima recompensa en {t}', 'dr.back': '¡Vuelve mañana para mantener tu racha!', 'dr.got': 'Recibido:', 'dr.broken': 'Racha pausada en el Día {n}. ¡Reinicia o recupérala abajo!', 'dr.recover': 'RECUPERAR DÍA {n}', 'dr.recovered': '¡Racha recuperada!', 'dr.adSub': 'ver anuncio', 'note.daily': '¡Tu recompensa del Día {n} está lista! No pierdas tu racha.',
     },
     fr: {
+      'bossname.scarab': 'Scarabée Doré', 'bossname.jaguar': 'Jaguar de Jade', 'bossname.statue': 'Idole de Pierre', 'bossname.frog': 'Grenouille', 'bossname.onca': 'Jaguar', 'bossname.spider': 'Araignée Tisseuse', 'bossname.bat': 'Chauve-souris', 'bossname.mummy': 'Roi Momie', 'bossname.monkey': 'Singe', 'bossname.boa': 'Boa', 'bossname.serpent': 'Kukulkan',
       'shop.info': 'À propos de {item}', 'map.next': 'MONDE SUIVANT', 'map.shop.label': 'Boutique : {n} pièces', 'title.sub': 'Une expédition de joyaux',
       'daily.btn': 'COUP DU JOUR', 'daily.title': 'COUP DU JOUR', 'daily.hint': 'UN SEUL COUP. TROUVEZ LE MEILLEUR !', 'daily.shareBtn': 'PARTAGER', 'daily.retry': 'RÉESSAYER', 'menu.back': 'MENU',
       'weekly.btn': "CHAMPIONS", 'weekly.title': 'RECORD HEBDO', 'mode.normal': 'NORMAL', 'mode.hard': 'DIFFICILE', 'records.title': 'RECORDS DIFFICILES', 'rank.you': 'VOUS',
@@ -305,9 +309,10 @@
       
       
       'playstore.label': 'Disponible sur Google Play',
-      'dr.btn': 'RÉCOMPENSE DU JOUR', 'dr.eyebrow': 'EXPÉDITION DU JOUR', 'dr.title': 'RÉCOMPENSE DU JOUR', 'dr.sub': 'Revenez chaque jour pour le Grand Coffre — Jour {n} sur 7', 'dr.day': 'Jour {n}', 'dr.grand': 'Grand Coffre', 'dr.claim': 'PRENDRE JOUR {n}', 'dr.next': 'Prochaine récompense dans {t}', 'dr.back': 'Revenez demain pour continuer votre série !', 'dr.got': 'Reçu :', 'dr.broken': 'Série arrêtée au Jour {n}. Recommencez ou récupérez-la !', 'dr.recover': 'RÉCUPÉRER JOUR {n}', 'dr.recovered': 'Série récupérée !', 'dr.adSub': 'voir une pub', 'note.daily': 'Votre récompense du Jour {n} est prête ! Ne perdez pas votre série.',
+      'dr.btn': 'RÉCOMPENSE DU JOUR', 'dr.eyebrow': 'EXPÉDITION DU JOUR', 'dr.title': 'RÉCOMPENSE DU JOUR', 'dr.sub': 'Revenez chaque jour pour débloquer des récompenses', 'dr.day': 'Jour {n}', 'dr.grand': 'Grand Coffre', 'dr.claim': 'PRENDRE JOUR {n}', 'dr.next': 'Prochaine récompense dans {t}', 'dr.back': 'Revenez demain pour continuer votre série !', 'dr.got': 'Reçu :', 'dr.broken': 'Série arrêtée au Jour {n}. Recommencez ou récupérez-la !', 'dr.recover': 'RÉCUPÉRER JOUR {n}', 'dr.recovered': 'Série récupérée !', 'dr.adSub': 'voir une pub', 'note.daily': 'Votre récompense du Jour {n} est prête ! Ne perdez pas votre série.',
     },
     de: {
+      'bossname.scarab': 'Goldener Skarabäus', 'bossname.jaguar': 'Jade-Jaguar', 'bossname.statue': 'Stein-Idol', 'bossname.frog': 'Frosch', 'bossname.onca': 'Jaguar', 'bossname.spider': 'Webspinne', 'bossname.bat': 'Fledermaus', 'bossname.mummy': 'Mumienkönig', 'bossname.monkey': 'Affe', 'bossname.boa': 'Boa', 'bossname.serpent': 'Kukulkan',
       'shop.info': 'Über {item}', 'map.next': 'NÄCHSTE WELT', 'map.shop.label': 'Shop: {n} Münzen', 'title.sub': 'Eine Juwelen-Expedition',
       'daily.btn': 'ZUG DES TAGES', 'daily.title': 'ZUG DES TAGES', 'daily.hint': 'NUR EIN ZUG. FINDE DEN BESTEN!', 'daily.shareBtn': 'TEILEN', 'daily.retry': 'NOCHMAL', 'menu.back': 'MENÜ',
       'weekly.btn': "CHAMPIONS", 'weekly.title': 'WOCHENREKORD', 'mode.normal': 'NORMAL', 'mode.hard': 'SCHWER', 'records.title': 'SCHWERE REKORDE', 'rank.you': 'DU',
@@ -339,9 +344,10 @@
       
       
       'playstore.label': 'Jetzt bei Google Play',
-      'dr.btn': 'TÄGLICHE BELOHNUNG', 'dr.eyebrow': 'TÄGLICHE EXPEDITION', 'dr.title': 'TÄGLICHE BELOHNUNG', 'dr.sub': 'Komm täglich zurück für die Große Truhe — Tag {n} von 7', 'dr.day': 'Tag {n}', 'dr.grand': 'Große Truhe', 'dr.claim': 'TAG {n} HOLEN', 'dr.next': 'Nächste Belohnung in {t}', 'dr.back': 'Komm morgen wieder für deine Serie!', 'dr.got': 'Erhalten:', 'dr.broken': 'Serie bei Tag {n} pausiert. Neu starten oder wiederherstellen!', 'dr.recover': 'TAG {n} RETTEN', 'dr.recovered': 'Serie wiederhergestellt!', 'dr.adSub': 'Werbung ansehen', 'note.daily': 'Deine Tag-{n}-Belohnung ist bereit! Halte deine Serie am Laufen.',
+      'dr.btn': 'TÄGLICHE BELOHNUNG', 'dr.eyebrow': 'TÄGLICHE EXPEDITION', 'dr.title': 'TÄGLICHE BELOHNUNG', 'dr.sub': 'Komm täglich zurück, um Belohnungen freizuschalten', 'dr.day': 'Tag {n}', 'dr.grand': 'Große Truhe', 'dr.claim': 'TAG {n} HOLEN', 'dr.next': 'Nächste Belohnung in {t}', 'dr.back': 'Komm morgen wieder für deine Serie!', 'dr.got': 'Erhalten:', 'dr.broken': 'Serie bei Tag {n} pausiert. Neu starten oder wiederherstellen!', 'dr.recover': 'TAG {n} RETTEN', 'dr.recovered': 'Serie wiederhergestellt!', 'dr.adSub': 'Werbung ansehen', 'note.daily': 'Deine Tag-{n}-Belohnung ist bereit! Halte deine Serie am Laufen.',
     },
     it: {
+      'bossname.scarab': 'Scarabeo Dorato', 'bossname.jaguar': 'Giaguaro di Giada', 'bossname.statue': 'Idolo di Pietra', 'bossname.frog': 'Rana', 'bossname.onca': 'Giaguaro', 'bossname.spider': 'Ragno Tessitore', 'bossname.bat': 'Pipistrello', 'bossname.mummy': 'Re Mummia', 'bossname.monkey': 'Scimmia', 'bossname.boa': 'Boa', 'bossname.serpent': 'Kukulkan',
       'shop.info': 'Info su {item}', 'map.next': 'PROSSIMO MONDO', 'map.shop.label': 'Negozio: {n} monete', 'title.sub': 'Una spedizione di gioielli',
       'daily.btn': 'MOSSA DEL GIORNO', 'daily.title': 'MOSSA DEL GIORNO', 'daily.shareBtn': 'CONDIVIDI', 'daily.retry': 'RIPROVA', 'menu.back': 'MENU',
       'weekly.btn': "CAMPIONI", 'mode.normal': 'NORMALE', 'mode.hard': 'DIFFICILE', 'rank.you': 'TU',
@@ -367,9 +373,10 @@
       
       
       
-      'dr.btn': 'PREMIO GIORNALIERO', 'dr.eyebrow': 'SPEDIZIONE GIORNALIERA', 'dr.title': 'PREMIO GIORNALIERO', 'dr.sub': 'Torna ogni giorno per il Grande Forziere — Giorno {n} di 7', 'dr.day': 'Giorno {n}', 'dr.grand': 'Grande Forziere', 'dr.claim': 'RISCATTA GIORNO {n}', 'dr.next': 'Prossimo premio tra {t}', 'dr.back': 'Torna domani per continuare la serie!', 'dr.got': 'Ricevuto:', 'dr.broken': 'Serie interrotta al Giorno {n}. Riparti o recuperala!', 'dr.recover': 'RECUPERA GIORNO {n}', 'dr.recovered': 'Serie recuperata!', 'dr.adSub': 'guarda annuncio', 'note.daily': 'Il tuo premio del Giorno {n} è pronto! Non perdere la serie.',
+      'dr.btn': 'PREMIO GIORNALIERO', 'dr.eyebrow': 'SPEDIZIONE GIORNALIERA', 'dr.title': 'PREMIO GIORNALIERO', 'dr.sub': 'Torna ogni giorno per sbloccare ricompense', 'dr.day': 'Giorno {n}', 'dr.grand': 'Grande Forziere', 'dr.claim': 'RISCATTA GIORNO {n}', 'dr.next': 'Prossimo premio tra {t}', 'dr.back': 'Torna domani per continuare la serie!', 'dr.got': 'Ricevuto:', 'dr.broken': 'Serie interrotta al Giorno {n}. Riparti o recuperala!', 'dr.recover': 'RECUPERA GIORNO {n}', 'dr.recovered': 'Serie recuperata!', 'dr.adSub': 'guarda annuncio', 'note.daily': 'Il tuo premio del Giorno {n} è pronto! Non perdere la serie.',
     },
     id: {
+      'bossname.scarab': 'Kumbang Emas', 'bossname.jaguar': 'Jaguar Giok', 'bossname.statue': 'Idol Batu', 'bossname.frog': 'Katak', 'bossname.onca': 'Jaguar', 'bossname.spider': 'Laba-laba Penenun', 'bossname.bat': 'Kelelawar', 'bossname.mummy': 'Raja Mumi', 'bossname.monkey': 'Kera', 'bossname.boa': 'Ular Boa', 'bossname.serpent': 'Kukulkan',
       'shop.info': 'Tentang {item}', 'map.next': 'DUNIA BERIKUTNYA', 'title.sub': 'Ekspedisi permata', 'daily.btn': 'LANGKAH HARIAN', 'daily.shareBtn': 'BAGIKAN', 'daily.retry': 'COBA LAGI', 'menu.back': 'MENU',
       'weekly.btn': "JUARA", 'mode.normal': 'NORMAL', 'mode.hard': 'SULIT', 'rank.you': 'KAMU',
       'menu.play': 'MAIN', 'menu.continue': 'LANJUT', 'menu.sound': 'SUARA', 'menu.music': 'MUSIK', 'on': 'NYALA', 'off': 'MATI', 'lang': 'INDONESIA',
@@ -392,9 +399,10 @@
       
       
       
-      'dr.btn': 'HADIAH HARIAN', 'dr.eyebrow': 'EKSPEDISI HARIAN', 'dr.title': 'HADIAH HARIAN', 'dr.sub': 'Kembali tiap hari untuk Peti Besar — Hari {n} dari 7', 'dr.day': 'Hari {n}', 'dr.grand': 'Peti Besar', 'dr.claim': 'AMBIL HARI {n}', 'dr.next': 'Hadiah berikutnya dalam {t}', 'dr.back': 'Kembali besok untuk lanjutkan beruntunmu!', 'dr.got': 'Diterima:', 'dr.broken': 'Beruntun berhenti di Hari {n}. Mulai ulang atau pulihkan!', 'dr.recover': 'PULIHKAN HARI {n}', 'dr.recovered': 'Beruntun dipulihkan!', 'dr.adSub': 'tonton iklan', 'note.daily': 'Hadiah Hari {n} sudah siap! Jangan putus beruntunmu.',
+      'dr.btn': 'HADIAH HARIAN', 'dr.eyebrow': 'EKSPEDISI HARIAN', 'dr.title': 'HADIAH HARIAN', 'dr.sub': 'Kembali setiap hari untuk membuka hadiah', 'dr.day': 'Hari {n}', 'dr.grand': 'Peti Besar', 'dr.claim': 'AMBIL HARI {n}', 'dr.next': 'Hadiah berikutnya dalam {t}', 'dr.back': 'Kembali besok untuk lanjutkan beruntunmu!', 'dr.got': 'Diterima:', 'dr.broken': 'Beruntun berhenti di Hari {n}. Mulai ulang atau pulihkan!', 'dr.recover': 'PULIHKAN HARI {n}', 'dr.recovered': 'Beruntun dipulihkan!', 'dr.adSub': 'tonton iklan', 'note.daily': 'Hadiah Hari {n} sudah siap! Jangan putus beruntunmu.',
     },
     ja: {
+      'bossname.scarab': '黄金のスカラベ', 'bossname.jaguar': '翡翠のジャガー', 'bossname.statue': '石像', 'bossname.frog': 'カエル', 'bossname.onca': 'ジャガー', 'bossname.spider': 'ツチグモ', 'bossname.bat': 'コウモリ', 'bossname.mummy': 'マミーキング', 'bossname.monkey': 'サル', 'bossname.boa': 'ボア', 'bossname.serpent': 'ククルカン',
       'shop.info': '{item}について', 'map.next': '次のワールド', 'title.sub': '宝石の探検', 'daily.btn': '今日の一手', 'daily.shareBtn': '共有', 'daily.retry': 'もう一度', 'menu.back': 'メニュー',
       'weekly.btn': "王者", 'mode.normal': 'ノーマル', 'mode.hard': 'ハード', 'rank.you': 'あなた',
       'menu.play': 'プレイ', 'menu.continue': 'つづきから', 'menu.sound': '効果音', 'menu.music': '音楽', 'on': 'オン', 'off': 'オフ', 'lang': '日本語',
@@ -417,7 +425,7 @@
       
       
       
-      'dr.btn': 'デイリー報酬', 'dr.eyebrow': '毎日の探検', 'dr.title': 'デイリー報酬', 'dr.sub': '毎日ログインして大宝箱を開けよう — {n}/7日目', 'dr.day': '{n}日目', 'dr.grand': '大宝箱', 'dr.claim': '{n}日目を受け取る', 'dr.next': '次の報酬まで {t}', 'dr.back': '明日も戻って連続ログインを続けよう！', 'dr.got': '獲得：', 'dr.broken': '{n}日目で連続記録が止まりました。再開または復旧できます！', 'dr.recover': '{n}日目を復旧', 'dr.recovered': '連続記録を復旧しました！', 'dr.adSub': '広告を見る', 'note.daily': '{n}日目のデイリー報酬が届いています！連続記録を守ろう。',
+      'dr.btn': 'デイリー報酬', 'dr.eyebrow': '毎日の探検', 'dr.title': 'デイリー報酬', 'dr.sub': '毎日ログインして報酬を手に入れよう', 'dr.day': '{n}日目', 'dr.grand': '大宝箱', 'dr.claim': '{n}日目を受け取る', 'dr.next': '次の報酬まで {t}', 'dr.back': '明日も戻って連続ログインを続けよう！', 'dr.got': '獲得：', 'dr.broken': '{n}日目で連続記録が止まりました。再開または復旧できます！', 'dr.recover': '{n}日目を復旧', 'dr.recovered': '連続記録を復旧しました！', 'dr.adSub': '広告を見る', 'note.daily': '{n}日目のデイリー報酬が届いています！連続記録を守ろう。',
     },
   };
   const LANG_ORDER = ['pt', 'en', 'es', 'fr', 'de', 'it', 'id', 'ja'];

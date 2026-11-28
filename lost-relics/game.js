@@ -954,14 +954,18 @@
     announcedAt = performance.now();
     const el = document.createElement('div');
     el.className = 'announce' + (L.boss ? ' boss' : '');
-    // em português: "FASE" + número pintados (estilo Solar); senão, texto
+    // letreiro em placa do templo (28/11): moldura, disco solar e pedra são imagens que o jogo já tem; o texto é escrito pelo jogo,
+    // então vale pra qualquer número e idioma. Em português o título segue com as letras pintadas (respeita a skin de palavras).
     const painted = I18N.lang === 'pt' && ART.nodeImg('fase') && ART.nodeImg('n0');
     const word = painted
       ? '<div class="ann-art"><img class="ann-fase" alt="" src="' + wordImg('fase') + '">' + String(L.id).split('').map((d) => '<img class="ann-num" alt="" src="' + wordImg('n' + d) + '">').join('') + '</div>'
-      : '<span class="metal">' + T('announce', { n: L.id }) + '</span>';
-    el.innerHTML = word + (L.boss ? '<small>' + T('boss') + '</small>' : '');
+      : '<div class="an-title"><b>' + T('announce', { n: L.id }).toLocaleUpperCase(I18N.lang) + '</b></div>';
+    el.className += ' plaque';
+    el.innerHTML = '<div class="an-board"><i class="an-sun"></i>' + word + '</div>' + (L.boss ? '<div class="an-sub">' + T('boss') + '</div>' : '');
     if (painted) el.setAttribute('aria-label', T('announce', { n: L.id }));
     document.body.appendChild(el);
+    // texto comprido em tela estreita: encolhe até caber na placa
+    el.querySelectorAll('.an-title b, .an-sub').forEach((t) => { let px = parseFloat(getComputedStyle(t).fontSize); while (t.scrollWidth > t.clientWidth + 1 && px > 11) t.style.fontSize = (px -= 1) + 'px'; });
     setTimeout(() => el.remove(), 2300);
     Sound.play('announce');
     later(0.18, () => addShake(0.45));
@@ -1442,7 +1446,7 @@
       ctx.restore();
     }
     // nome do chefe pintado (Solar) sobre a faixa de glifos de cima da moldura
-    const nm = nodeImgObj('name_' + (state.bosses[0].kind || 'scarab'));
+    const nm = I18N.lang === 'pt' && nodeImgObj('name_' + (state.bosses[0].kind || 'scarab'));
     if (nm) {
       let nh = cs * 0.46, nw = nh * nm.naturalWidth / nm.naturalHeight;
       const maxW = chW * 0.95; if (nw > maxW) { nh *= maxW / nw; nw = maxW; }
@@ -1451,13 +1455,8 @@
       ctx.restore();
     }
     else {
-      // chefe sem nome pintado (aranha): escreve o nome em dourado, no mesmo lugar
-      const kd = state.bosses[0].kind, gt = T('goal.' + kd), nm0 = gt && gt !== 'goal.' + kd ? gt.replace(/^[^ ]+ (os |as |o |a |the )?/i, '').toUpperCase() : '';
-      if (nm0) {
-        ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '900 ' + Math.round(cs * 0.34) + 'px ' + (getComputedStyle(document.body).getPropertyValue('--f-display') || 'serif');
-        ctx.lineWidth = cs * 0.08; ctx.strokeStyle = '#2a1a02'; ctx.fillStyle = '#ffe6a0'; ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = cs * 0.12;
-        const ty = by + HPB.cy0 * k * 0.42; ctx.strokeText(nm0, chX + chW / 2, ty, chW * 0.9); ctx.fillText(nm0, chX + chW / 2, ty, chW * 0.9); ctx.restore();
-      }
+      // outros idiomas (ou sem arte): o jogo escreve o nome em ouro, no mesmo lugar, sem imagem nova
+      drawBossName(state.bosses[0].kind || 'scarab', chX + chW / 2, by + HPB.cy0 * k * 0.42, cs * 0.38, chW * 0.95);
     }
     // racha no ponto onde a vida caiu
     if (hitQ > 0 && crack) {
@@ -1528,11 +1527,11 @@
       if (im) { const w = bw * 0.7 * pop * out, h = w * im.naturalHeight / im.naturalWidth; ctx.drawImage(im, -w / 2, -h / 2, w, h); }
     }
     ctx.restore();
-    const nm = nodeImgObj('name_' + kind);
-    if (!nm && T('goal.' + kind) !== 'goal.' + kind) {
-      const nq0 = Math.min(1, Math.max(0, (q - 0.1) / 0.2));
-      ctx.save(); ctx.globalAlpha = nq0 * vis1; ctx.textAlign = 'center'; ctx.font = '900 ' + Math.round(cs * 0.85) + 'px ' + (getComputedStyle(document.body).getPropertyValue('--f-display') || 'serif'); ctx.fillStyle = '#ffe6a0'; ctx.strokeStyle = '#3a2504'; ctx.lineWidth = cs * 0.12;
-      const nm0 = T('goal.' + kind).replace(/^[^ ]+ (os |as |o |a )?/i, '').toUpperCase(); ctx.strokeText(nm0, W / 2, H * 0.62); ctx.fillText(nm0, W / 2, H * 0.62); ctx.restore();
+    const nm = I18N.lang === 'pt' && nodeImgObj('name_' + kind);
+    if (!nm) {
+      ctx.save(); ctx.globalAlpha = Math.min(1, Math.max(0, (q - 0.1) / 0.2)) * vis1;
+      drawBossName(kind, W / 2, H * 0.62, cs * 0.9, Math.min(W * 0.86, 480));
+      ctx.restore();
     }
     if (nm) {
       const nq = Math.min(1, Math.max(0, (q - 0.1) / 0.2)), nw = Math.min(W * 0.8, 460) * (1.3 - 0.3 * nq), nh = nw * nm.naturalHeight / nm.naturalWidth;
@@ -2690,6 +2689,25 @@
   }
   // dígitos Solar sem halo como imagem, pra desenhar no canvas (pontos que sobem do tabuleiro)
   const nodeImgs = {};
+  // nome do chefe em ouro entalhado, desenhado com a fonte do jogo (acentos e japonês sempre corretos)
+  function drawBossName(kind, x, y, size, maxW) {
+    const text = T('bossname.' + kind).toLocaleUpperCase(I18N.lang);
+    const font = I18N.lang === 'ja' ? '"Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", "Noto Serif CJK JP", serif' : 'Georgia, "Noto Serif", "Times New Roman", serif';
+    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    ctx.font = '900 ' + Math.round(size) + 'px ' + font;
+    const wide = ctx.measureText(text).width;
+    if (wide > maxW) { size *= maxW / wide; ctx.font = '900 ' + Math.floor(size) + 'px ' + font; }
+    ctx.shadowColor = 'rgba(255,170,50,0.65)'; ctx.shadowBlur = size * 0.35;
+    ctx.lineWidth = size * 0.17; ctx.strokeStyle = '#2a1500'; ctx.strokeText(text, x, y);
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = '#7a4a0c'; ctx.fillText(text, x, y + size * 0.055);
+    const gold = ctx.createLinearGradient(0, y - size * 0.45, 0, y + size * 0.45);
+    [[0, '#fffbe0'], [0.42, '#ffd75a'], [0.56, '#d98f16'], [0.8, '#ffe27a'], [1, '#b8720f']].forEach(([o, c]) => gold.addColorStop(o, c));
+    ctx.fillStyle = gold; ctx.fillText(text, x, y);
+    ctx.lineWidth = Math.max(0.5, size * 0.018); ctx.strokeStyle = 'rgba(255,248,205,0.8)'; ctx.strokeText(text, x, y - size * 0.012);
+    ctx.restore();
+  }
+
   function nodeImgObj(key) {
     let im = nodeImgs[key];
     if (!im) { const src = ART.nodeImg(key); if (!src) return null; im = nodeImgs[key] = new Image(); im.src = src; }
@@ -3209,7 +3227,7 @@
         if (o.btn === 'buy') {
           const miss = o.price - (o.gems ? diamonds : save.coins), ic = o.gems ? gemIc(48) : coin(48);
           return '<button type="button" class="sp-buy' + (o.gems ? ' gems' : '') + '" data-k="' + o.key + '" aria-label="' + T('shop.buy') + ' ' + o.name + ' ' + o.price + ' ' + T(o.gems ? 'shop.tab.diamonds' : 'shop.coins') + '"' + (miss > 0 ? ' data-short="1"' : '') + '>' +
-            '<b>' + ic + o.price + '</b></button>' + (miss > 0 ? '<small class="sp-miss">' + T('shop.missing', { n: miss }) + ic + '</small>' : '');
+            '<b>' + ic + o.price + '</b></button>';
         }
         if (o.btn === 'pack') {
           const pr = IAP_DIAMONDS_ENABLED && o.sku ? iapPrice(o.sku) : '';
@@ -3615,7 +3633,7 @@
           const me = Records.getName().toLocaleLowerCase();
           if (!rows || !rows.length) empty('records.allEmpty');
           else box.innerHTML = '<ol>' + rows.slice(0, 10).map((p, i) => '<li><div class="ch-row' + (i < 3 ? ' t' + (i + 1) : '') + (isMeRow(p, me) ? ' me' : '') + '">' + posHTML(i) +
-            '<span class="ch-name"><b>' + esc(p.name) + '</b></span><span class="ch-n"><strong>' + nf(p.score) + '</strong>' + (i < 5 ? '<small>+' + champPoints(i + 1) + ' ' + T('champ.pt') + '</small>' : '') + '</span></div></li>').join('') + '</ol>';
+            '<span class="ch-name"><b>' + esc(p.name) + '</b></span><span class="ch-n"><strong>' + nf(p.score) + '</strong></span></div></li>').join('') + '</ol>';
           if (save.stars[mine.id]) {
             box.insertAdjacentHTML('beforeend', '<button type="button" class="btn small ch-play">' + T('champ.play') + '</button>');
             box.querySelector('.ch-play').onclick = () => { Sound.play('click'); closeModal(); wipe(() => { openMap(); openPre(mine.id, true); }); };
