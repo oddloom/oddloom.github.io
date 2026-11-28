@@ -2920,7 +2920,7 @@
       }, () => openPre(id, hardMode));
     };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); if (scene !== 'map') openMap(); };
-    if (hardMode) loadLevelBoards(card, id, Records.listLevel(id, L.week));
+    if (hardMode) loadLevelBoards(card, id, Records.listLevel(id, L.week), L.week);
   }
 
   // anúncio entre fases: fases 1–3 livres (onboarding), depois elegível a cada 2 vitórias (filtrado pelo cooldown de 90s em ads.js)
@@ -3063,7 +3063,7 @@
             statusEl.innerHTML = T('rank.fail') + ' <button type="button" class="rank-retry">' + T('rank.retry') + '</button>';
             statusEl.querySelector('.rank-retry').onclick = () => { Sound.play('click'); send(); };
           } else statusEl.textContent = s === 'ok' ? T('rank.ok') : s === 'name' ? T('rank.name') : '';
-        } }));
+        } }), runWeek);
       };
       send();
     }
@@ -3489,45 +3489,58 @@
     if (mi >= 0) html += '<div class="rk-gap" aria-hidden="true"></div>' + rankRowHTML(mi, rows[mi], me, valOf(rows[mi]), subOf && subOf(rows[mi]));
     return '<div class="weekly-board rk-board">' + html + '</div>';
   }
-  function weeklyRowsHTML(rows, emptyKey) {
-    if (!rows || !rows.length) return '<div class="weekly-status">' + T(emptyKey || 'weekly.empty') + '</div>';
-    return rankBoardHTML(rows, (r) => nf(r.score));
+  // ---------- rivais do jogo (28/11, rivals.js): só na exibição, em seção própria, sem posição, sempre com selo ----------
+  const offlineRows = () => Object.assign([], { offline: true });
+  const rivalTag = () => '<em class="rv-badge">' + T('rival.badge') + '</em>';
+  const rivalMark = '<i class="rk-pos rv-mark" aria-hidden="true"></i>';
+  const rivalSection = (inner) => '<div class="rv-sec"><h3 class="rv-title">' + T('rival.title') + '</h3><p class="rv-note">' + T('rival.note') + '</p>' + inner + '</div>';
+  const rivalsFor = (rows, opts) => (opts && window.LRRivals ? LRRivals.forBoard(rows, opts) : []);
+  function weeklyRowsHTML(rows, emptyKey, rivalOf) {
+    const real = !rows || !rows.length ? '<div class="weekly-status">' + T(emptyKey || 'weekly.empty') + '</div>' : rankBoardHTML(rows, (r) => nf(r.score));
+    const rivals = rivalsFor(rows, rivalOf);
+    if (!rivals.length) return real;
+    return real + rivalSection('<div class="weekly-board rk-board">' + rivals.map((r, i) => '<div class="rk-row rv-row" style="--i:' + i + '">' + rivalMark +
+      '<span class="rk-name"><b>' + esc(r.name) + '</b>' + rivalTag() + '</span><strong class="rk-val">' + nf(r.score) + '</strong></div>').join('') + '</div>');
   }
-  function loadWeeklyRows(card, promise) {
+  function loadWeeklyRows(card, promise, rivalOf) {
     const box = card.querySelector('.weekly-list');
-    promise.then((rows) => { if (box && box.isConnected) box.innerHTML = weeklyRowsHTML(rows); }).catch(() => { if (box && box.isConnected) box.innerHTML = weeklyRowsHTML([]); });
+    const paint = (rows) => { if (box && box.isConnected) box.innerHTML = weeklyRowsHTML(rows, null, rivalOf); };
+    promise.then(paint).catch(() => paint(offlineRows()));
   }
   // fase Difícil: duas abas, Semanal (reseta toda segunda) e Total (recordista de todos os tempos)
-  function loadLevelBoards(card, id, weeklyPromise) {
+  function loadLevelBoards(card, id, weeklyPromise, week) {
     const box = card.querySelector('.weekly-list');
     if (!box) return;
     const rows = { week: null, all: null };
+    const shownWeek = week || Records.week();
+    const rivalOf = (t) => ({ kind: t === 'all' ? 'level-all' : 'level-week', level: id, week: shownWeek, stars: LEVELS[id - 1].stars });
     let tab = 'week';
     const fmt = (n) => (+n || 0).toLocaleString(I18N.lang === 'pt' ? 'pt-BR' : 'en-US');
     // abas montadas uma vez só: o brilho (pill) desliza até a aba ativa só com CSS (idea: transitions.dev "Tabs sliding"),
     // e só a lista troca. Assim a chegada do ranking Total não refaz a animação da lista Semanal.
     box.innerHTML = '<div class="rank-tabs" data-on="week" role="tablist"><span class="rk-pill" aria-hidden="true"></span>' +
-      '<button type="button" role="tab" data-t="week" class="on" aria-selected="true">' + T('records.tabWeek') + '</button>' +
-      '<button type="button" role="tab" data-t="all" aria-selected="false">' + T('records.tabAll') + '</button></div><div class="rk-body"></div>';
+      '<button type="button" role="tab" data-tab="week" class="on" aria-selected="true">' + T('records.tabWeek') + '</button>' +
+      '<button type="button" role="tab" data-tab="all" aria-selected="false">' + T('records.tabAll') + '</button></div><div class="rk-body"></div>';
     const tabsEl = box.querySelector('.rank-tabs'), body = box.querySelector('.rk-body');
     let shown = '';
     const render = () => {
       if (!box.isConnected) return;
       const r = rows[tab], key = tab + ':' + (r ? r.length : 'x');
       tabsEl.dataset.on = tab;
-      tabsEl.querySelectorAll('button').forEach((b) => { const on = b.dataset.t === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+      tabsEl.querySelectorAll('button').forEach((b) => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
       if (key === shown) return;
       shown = key;
       // 24/11: a linha "Recordista da fase" saiu; o 1º lugar agora já é a linha dourada com medalha, no topo da lista
       const holder = '';
       body.scrollTop = 0;
-      body.innerHTML = r ? holder + weeklyRowsHTML(r, tab === 'all' ? 'records.allEmpty' : 'weekly.empty') : '<div class="weekly-status">' + SPIN + T('weekly.loading') + '</div>';
+      body.innerHTML = r ? holder + weeklyRowsHTML(r, tab === 'all' ? 'records.allEmpty' : 'weekly.empty', rivalOf(tab)) : '<div class="weekly-status">' + SPIN + T('weekly.loading') + '</div>';
     };
-    tabsEl.querySelectorAll('button').forEach((b) => { b.onclick = () => { if (tab === b.dataset.t) return; Sound.play('click'); tab = b.dataset.t; render(); }; });
+    tabsEl.querySelectorAll('button').forEach((b) => { b.onclick = () => { if (tab === b.dataset.tab) return; Sound.play('click'); tab = b.dataset.tab; render(); }; });
     render();
     // o total só é buscado depois do semanal, para já incluir o placar que acabou de ser enviado
-    weeklyPromise.catch(() => []).then((r) => { rows.week = r || []; render(); return Records.listLevelAll(id); })
-      .catch(() => []).then((r) => { rows.all = r || []; render(); });
+    // sem nome válido o envio é recusado: ainda assim busca a lista no servidor
+    weeklyPromise.catch(() => Records.listLevel(id, shownWeek)).catch(offlineRows).then((r) => { rows.week = r || []; render(); return Records.listLevelAll(id); })
+      .catch(offlineRows).then((r) => { rows.all = r || []; render(); });
   }
   function askWeeklyName(back, next) {
     const card = openModal(
@@ -3563,7 +3576,7 @@
       '<div class="btns"><button class="btn" id="mWeeklyPlay" type="button">' + T('weekly.play') + '</button>' +
       '<button class="btn dark small" id="mWeeklyName" type="button">' + T('weekly.change') + '</button>' +
       '<button class="btn dark small" id="mBack" type="button">' + T('menu.back') + '</button></div>');
-    loadWeeklyRows(card, Records.list(L.week));
+    loadWeeklyRows(card, Records.list(L.week), { kind: 'weekly', week: L.week });
     card.querySelector('#mWeeklyPlay').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel('weekly')); };
     card.querySelector('#mWeeklyName').onclick = () => { Sound.play('click'); closeModal(); askWeeklyName(openLegacyWeeklyHub); };
     card.querySelector('#mBack').onclick = () => { Sound.play('click'); closeModal(); };
@@ -3593,9 +3606,10 @@
     const forward = (v) => { Sound.play('click'); stack.push(view); view = v; render(); };
     const render = () => {
       const tabbed = view.k === 'top' || view.k === 'levels';
-      if ((view.k === 'me' || view.k === 'top') && !ART.skinGem(0, 'solar')) ART.loadSkinGems('solar').then((ok) => { if (ok && (view.k === 'me' || view.k === 'top') && modalOpen() && $('modalCard').classList.contains('champ-page')) render(); });
-      if (view.k === 'me' && !EXTRA.done) extraReady().then(() => { if (view.k === 'me' && modalOpen() && $('modalCard').classList.contains('champ-page')) render(); });
-      const title = view.k === 'level' ? T('level') + ' ' + view.id : view.k === 'profile' || view.k === 'me' ? T('champ.profile') : T('champ.title');
+      const withAvatars = () => view.k === 'me' || view.k === 'top' || view.k === 'rival';
+      if (withAvatars() && !ART.skinGem(0, 'solar')) ART.loadSkinGems('solar').then((ok) => { if (ok && withAvatars() && modalOpen() && $('modalCard').classList.contains('champ-page')) render(); });
+      if (withAvatars() && !EXTRA.done) extraReady().then(() => { if (withAvatars() && modalOpen() && $('modalCard').classList.contains('champ-page')) render(); });
+      const title = view.k === 'level' ? T('level') + ' ' + view.id : view.k === 'profile' || view.k === 'me' || view.k === 'rival' ? T('champ.profile') : T('champ.title');
       const card = openModal(
         '<header class="sp-head">' +
           '<button type="button" class="sp-back" id="mBack" aria-label="' + T('close') + '"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 3 5.5 10l7 7 1.6-1.6L8.7 10l5.4-5.4z"/></svg></button>' +
@@ -3615,12 +3629,17 @@
         card.querySelector('#mProfile').onclick = () => forward({ k: 'me' });
         Records.champions().then((rows) => {
           if (!alive()) return;
-          if (!rows || !rows.length) return empty(rows ? 'champ.empty' : 'champ.offline');
-          const list = rows.slice(0, 10);
-          box.innerHTML = '<ol>' + list.map((p, i) => '<li><button type="button" class="ch-row av' + (i < 3 ? ' t' + (i + 1) : '') + (p.me ? ' me' : '') + '" data-i="' + i + '">' + posHTML(i) +
+          if (!rows) return empty('champ.offline');
+          const list = rows.slice(0, 10), rivals = window.LRRivals ? LRRivals.forChampions(rows) : [];
+          if (!list.length && !rivals.length) return empty('champ.empty');
+          const realHTML = !list.length ? '<p class="ch-empty small">' + T('champ.empty') + '</p>' : '<ol>' + list.map((p, i) => '<li><button type="button" class="ch-row av' + (i < 3 ? ' t' + (i + 1) : '') + (p.me ? ' me' : '') + '" data-i="' + i + '">' + posHTML(i) +
             avatarHTML(p.me ? save.avatar : p.avatar, p.name, 'ch-av') + '<span class="ch-name"><b>' + esc(p.name) + '</b>' + (p.me ? '<em class="rk-you">' + T('rank.you') + '</em>' : '') + '</span>' +
             '<span class="ch-n"><strong>' + nf(p.points) + '</strong><small>' + T('champ.unit') + '</small></span></button></li>').join('') + '</ol>';
-          box.querySelectorAll('.ch-row').forEach((b) => { b.onclick = () => { const i = +b.dataset.i; forward({ k: 'profile', p: list[i], i }); }; });
+          box.innerHTML = realHTML + (rivals.length ? rivalSection('<ol>' + rivals.map((r, i) => '<li><button type="button" class="ch-row av rv-row" data-r="' + i + '">' + rivalMark +
+            avatarHTML(r.avatar, r.name, 'ch-av') + '<span class="ch-name"><b>' + esc(r.name) + '</b>' + rivalTag() + '</span>' +
+            '<span class="ch-n"><strong>' + nf(r.points) + '</strong><small>' + T('champ.unit') + '</small></span></button></li>').join('') + '</ol>') : '');
+          box.querySelectorAll('.ch-row[data-r]').forEach((b) => { b.onclick = () => forward({ k: 'rival', r: rivals[+b.dataset.r] }); });
+          box.querySelectorAll('.ch-row[data-i]').forEach((b) => { b.onclick = () => { const i = +b.dataset.i; forward({ k: 'profile', p: list[i], i }); }; });
         });
       } else if (view.k === 'levels') {
         // só as fases que ESTE jogador já alcançou: a lista nunca entrega quantas fases existem
@@ -3631,14 +3650,25 @@
         Records.listLevelAll(view.id).then((rows) => {
           if (!alive()) return;
           const me = Records.getName().toLocaleLowerCase();
-          if (!rows || !rows.length) empty('records.allEmpty');
-          else box.innerHTML = '<ol>' + rows.slice(0, 10).map((p, i) => '<li><div class="ch-row' + (i < 3 ? ' t' + (i + 1) : '') + (isMeRow(p, me) ? ' me' : '') + '">' + posHTML(i) +
-            '<span class="ch-name"><b>' + esc(p.name) + '</b></span><span class="ch-n"><strong>' + nf(p.score) + '</strong></span></div></li>').join('') + '</ol>';
+          const rivals = rivalsFor(rows, { kind: 'level-all', level: mine.id, stars: LEVELS[mine.id - 1].stars });
+          if ((!rows || !rows.length) && !rivals.length) empty('records.allEmpty');
+          else box.innerHTML = (!rows || !rows.length ? '<p class="ch-empty small">' + T('records.allEmpty') + '</p>' : '<ol>' + rows.slice(0, 10).map((p, i) => '<li><div class="ch-row' + (i < 3 ? ' t' + (i + 1) : '') + (isMeRow(p, me) ? ' me' : '') + '">' + posHTML(i) +
+            '<span class="ch-name"><b>' + esc(p.name) + '</b></span><span class="ch-n"><strong>' + nf(p.score) + '</strong></span></div></li>').join('') + '</ol>') +
+            (rivals.length ? rivalSection('<ol>' + rivals.map((r) => '<li><div class="ch-row rv-row">' + rivalMark +
+              '<span class="ch-name"><b>' + esc(r.name) + '</b>' + rivalTag() + '</span><span class="ch-n"><strong>' + nf(r.score) + '</strong></span></div></li>').join('') + '</ol>') : '');
           if (save.stars[mine.id]) {
             box.insertAdjacentHTML('beforeend', '<button type="button" class="btn small ch-play">' + T('champ.play') + '</button>');
             box.querySelector('.ch-play').onclick = () => { Sound.play('click'); closeModal(); wipe(() => { openMap(); openPre(mine.id, true); }); };
           }
         });
+      } else if (view.k === 'rival') {
+        // perfil de rival: sem medalhas nem posições; só placares para bater, das fases que o jogador já alcançou
+        const r = mine.r, goals = LRRivals.challenges(r.id, LEVELS, save.unlocked || 1);
+        box.innerHTML = '<div class="pf-head">' + avatarHTML(r.avatar, r.name, 'big') + '<b>' + esc(r.name) + '</b>' + rivalTag() +
+          '<p class="rv-note">' + T('rival.note') + '</p><div class="pf-points"><strong>' + nf(r.points) + '</strong> ' + T('champ.unit') + '</div></div>' +
+          (goals.length ? '<h3 class="sp-sec">' + T('rival.beat') + '</h3><ol>' + goals.map((x) => '<li><button type="button" class="ch-row rv-row" data-id="' + x.level + '">' + rivalMark +
+            '<span class="ch-name"><b>' + T('level') + ' ' + x.level + '</b>' + rivalTag() + '</span><span class="ch-n"><strong>' + nf(x.score) + '</strong></span></button></li>').join('') + '</ol>' : '');
+        box.querySelectorAll('[data-id]').forEach((b) => { b.onclick = () => forward({ k: 'level', id: +b.dataset.id }); });
       } else if (view.k === 'me') {
         const owned = (set) => save.owned.includes('gem.' + set), cur = save.avatar || '', myName = Records.getName();
         const tile = (id, inner, locked, label) => '<button type="button" class="av-pick' + (cur === id ? ' on' : '') + (locked ? ' locked' : '') + '" data-av="' + id + '" aria-pressed="' + (cur === id) + '" aria-label="' + label + '">' + inner + (locked ? '<i class="av-lock" aria-hidden="true"></i>' : '') + '</button>';
@@ -3688,7 +3718,7 @@
       '<div class="weekly-list"><div class="weekly-status">' + SPIN + T('weekly.loading') + '</div></div>' +
       '<div class="btns"><button class="btn" id="mRetry" type="button">' + T('weekly.retry') + '</button>' +
       '<button class="btn dark small" id="mMap" type="button">' + T('menu.back') + '</button></div>');
-    loadWeeklyRows(card, Records.submit(sc, { week: L.week, seed: L.seed, moves: 20, replay: weeklyReplay.slice() }));
+    loadWeeklyRows(card, Records.submit(sc, { week: L.week, seed: L.seed, moves: 20, replay: weeklyReplay.slice() }), { kind: 'weekly', week: L.week });
     card.querySelector('#mRetry').onclick = () => { Sound.play('click'); closeModal(); wipe(() => startLevel('weekly')); };
     card.querySelector('#mMap').onclick = () => { Sound.play('click'); closeModal(); wipe(openMenu); };
   }

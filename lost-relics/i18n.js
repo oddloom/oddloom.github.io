@@ -107,6 +107,7 @@
       
       
       
+      'rival.badge': 'Rival', 'rival.title': 'Rivais', 'rival.note': 'Rivais são desafios criados pelo jogo', 'rival.beat': 'Placares para você bater',
       'dr.btn': 'RECOMPENSA DIÁRIA', 'dr.eyebrow': 'EXPEDIÇÃO DIÁRIA', 'dr.title': 'RECOMPENSA DIÁRIA', 'dr.sub': 'Volte diariamente para desbloquear recompensas', 'dr.day': 'Dia {n}', 'dr.grand': 'Grande Baú', 'dr.claim': 'RESGATAR DIA {n}', 'dr.next': 'Próxima recompensa em {t}', 'dr.back': 'Volte amanhã para continuar sua sequência!', 'dr.got': 'Recebido:', 'dr.broken': 'Sequência pausada no Dia {n}. Recomece ou recupere abaixo!', 'dr.recover': 'RECUPERAR DIA {n}', 'dr.recovered': 'Sequência recuperada!', 'dr.adSub': 'ver anúncio', 'note.daily': 'Sua recompensa do Dia {n} está pronta! Não perca sua sequência.',
       'playstore.label': 'Disponível no Google Play', 'playstore.over': 'Disponível no', 'playstore.name': 'Google Play',
     },
@@ -216,6 +217,7 @@
       
       
       
+      'rival.badge': 'Rival', 'rival.title': 'Rivals', 'rival.note': 'Rivals are challenges created by the game', 'rival.beat': 'Scores for you to beat',
       'dr.btn': 'DAILY REWARD', 'dr.eyebrow': 'DAILY EXPEDITION', 'dr.title': 'DAILY REWARD', 'dr.sub': 'Return daily to unlock rewards', 'dr.day': 'Day {n}', 'dr.grand': 'Grand Chest', 'dr.claim': 'CLAIM DAY {n}', 'dr.next': 'Next reward in {t}', 'dr.back': 'Come back tomorrow to keep your streak!', 'dr.got': 'Claimed:', 'dr.broken': 'Streak paused at Day {n}. Restart or recover below!', 'dr.recover': 'RECOVER DAY {n}', 'dr.recovered': 'Streak recovered!', 'dr.adSub': 'watch ad', 'note.daily': 'Your Day {n} reward is ready! Keep your streak alive.',
       'playstore.label': 'Get it on Google Play', 'playstore.over': 'Get it on', 'playstore.name': 'Google Play',
     },
@@ -274,6 +276,7 @@
       
       
       'playstore.label': 'Disponible en Google Play', 'playstore.over': 'Disponible en', 'playstore.name': 'Google Play',
+      'rival.badge': 'Rival', 'rival.title': 'Rivales', 'rival.note': 'Los rivales son desafíos creados por el juego', 'rival.beat': 'Puntuaciones que puedes superar',
       'dr.btn': 'RECOMPENSA DIARIA', 'dr.eyebrow': 'EXPEDICIÓN DIARIA', 'dr.title': 'RECOMPENSA DIARIA', 'dr.sub': 'Vuelve a diario para desbloquear recompensas', 'dr.day': 'Día {n}', 'dr.grand': 'Gran Cofre', 'dr.claim': 'RECLAMAR DÍA {n}', 'dr.next': 'Próxima recompensa en {t}', 'dr.back': '¡Vuelve mañana para mantener tu racha!', 'dr.got': 'Recibido:', 'dr.broken': 'Racha pausada en el Día {n}. ¡Reinicia o recupérala abajo!', 'dr.recover': 'RECUPERAR DÍA {n}', 'dr.recovered': '¡Racha recuperada!', 'dr.adSub': 'ver anuncio', 'note.daily': '¡Tu recompensa del Día {n} está lista! No pierdas tu racha.',
     },
     fr: {
@@ -309,6 +312,7 @@
       
       
       'playstore.label': 'Disponible sur Google Play',
+      'rival.badge': 'Rival', 'rival.title': 'Rivaux', 'rival.note': 'Les rivaux sont des défis créés par le jeu', 'rival.beat': 'Scores à battre',
       'dr.btn': 'RÉCOMPENSE DU JOUR', 'dr.eyebrow': 'EXPÉDITION DU JOUR', 'dr.title': 'RÉCOMPENSE DU JOUR', 'dr.sub': 'Revenez chaque jour pour débloquer des récompenses', 'dr.day': 'Jour {n}', 'dr.grand': 'Grand Coffre', 'dr.claim': 'PRENDRE JOUR {n}', 'dr.next': 'Prochaine récompense dans {t}', 'dr.back': 'Revenez demain pour continuer votre série !', 'dr.got': 'Reçu :', 'dr.broken': 'Série arrêtée au Jour {n}. Recommencez ou récupérez-la !', 'dr.recover': 'RÉCUPÉRER JOUR {n}', 'dr.recovered': 'Série récupérée !', 'dr.adSub': 'voir une pub', 'note.daily': 'Votre récompense du Jour {n} est prête ! Ne perdez pas votre série.',
     },
     de: {
@@ -344,6 +348,7 @@
       
       
       'playstore.label': 'Jetzt bei Google Play',
+      'rival.badge': 'Rivale', 'rival.title': 'Rivalen', 'rival.note': 'Rivalen sind vom Spiel erstellte Herausforderungen', 'rival.beat': 'Punktzahlen zum Übertreffen',
       'dr.btn': 'TÄGLICHE BELOHNUNG', 'dr.eyebrow': 'TÄGLICHE EXPEDITION', 'dr.title': 'TÄGLICHE BELOHNUNG', 'dr.sub': 'Komm täglich zurück, um Belohnungen freizuschalten', 'dr.day': 'Tag {n}', 'dr.grand': 'Große Truhe', 'dr.claim': 'TAG {n} HOLEN', 'dr.next': 'Nächste Belohnung in {t}', 'dr.back': 'Komm morgen wieder für deine Serie!', 'dr.got': 'Erhalten:', 'dr.broken': 'Serie bei Tag {n} pausiert. Neu starten oder wiederherstellen!', 'dr.recover': 'TAG {n} RETTEN', 'dr.recovered': 'Serie wiederhergestellt!', 'dr.adSub': 'Werbung ansehen', 'note.daily': 'Deine Tag-{n}-Belohnung ist bereit! Halte deine Serie am Laufen.',
     },
     it: {
@@ -373,6 +378,7 @@
       
       
       
+      'rival.badge': 'Rivale', 'rival.title': 'Rivali', 'rival.note': 'I rivali sono sfide create dal gioco', 'rival.beat': 'Punteggi da battere',
       'dr.btn': 'PREMIO GIORNALIERO', 'dr.eyebrow': 'SPEDIZIONE GIORNALIERA', 'dr.title': 'PREMIO GIORNALIERO', 'dr.sub': 'Torna ogni giorno per sbloccare ricompense', 'dr.day': 'Giorno {n}', 'dr.grand': 'Grande Forziere', 'dr.claim': 'RISCATTA GIORNO {n}', 'dr.next': 'Prossimo premio tra {t}', 'dr.back': 'Torna domani per continuare la serie!', 'dr.got': 'Ricevuto:', 'dr.broken': 'Serie interrotta al Giorno {n}. Riparti o recuperala!', 'dr.recover': 'RECUPERA GIORNO {n}', 'dr.recovered': 'Serie recuperata!', 'dr.adSub': 'guarda annuncio', 'note.daily': 'Il tuo premio del Giorno {n} è pronto! Non perdere la serie.',
     },
     id: {
@@ -399,6 +405,7 @@
       
       
       
+      'rival.badge': 'Rival', 'rival.title': 'Rival', 'rival.note': 'Rival adalah tantangan buatan game', 'rival.beat': 'Skor untuk kamu kalahkan',
       'dr.btn': 'HADIAH HARIAN', 'dr.eyebrow': 'EKSPEDISI HARIAN', 'dr.title': 'HADIAH HARIAN', 'dr.sub': 'Kembali setiap hari untuk membuka hadiah', 'dr.day': 'Hari {n}', 'dr.grand': 'Peti Besar', 'dr.claim': 'AMBIL HARI {n}', 'dr.next': 'Hadiah berikutnya dalam {t}', 'dr.back': 'Kembali besok untuk lanjutkan beruntunmu!', 'dr.got': 'Diterima:', 'dr.broken': 'Beruntun berhenti di Hari {n}. Mulai ulang atau pulihkan!', 'dr.recover': 'PULIHKAN HARI {n}', 'dr.recovered': 'Beruntun dipulihkan!', 'dr.adSub': 'tonton iklan', 'note.daily': 'Hadiah Hari {n} sudah siap! Jangan putus beruntunmu.',
     },
     ja: {
@@ -425,6 +432,7 @@
       
       
       
+      'rival.badge': 'ライバル', 'rival.title': 'ライバル', 'rival.note': 'ライバルはゲームが作った挑戦目標です', 'rival.beat': '超えたいスコア',
       'dr.btn': 'デイリー報酬', 'dr.eyebrow': '毎日の探検', 'dr.title': 'デイリー報酬', 'dr.sub': '毎日ログインして報酬を手に入れよう', 'dr.day': '{n}日目', 'dr.grand': '大宝箱', 'dr.claim': '{n}日目を受け取る', 'dr.next': '次の報酬まで {t}', 'dr.back': '明日も戻って連続ログインを続けよう！', 'dr.got': '獲得：', 'dr.broken': '{n}日目で連続記録が止まりました。再開または復旧できます！', 'dr.recover': '{n}日目を復旧', 'dr.recovered': '連続記録を復旧しました！', 'dr.adSub': '広告を見る', 'note.daily': '{n}日目のデイリー報酬が届いています！連続記録を守ろう。',
     },
   };

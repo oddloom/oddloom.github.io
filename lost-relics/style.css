@@ -1770,3 +1770,49 @@ html:lang(ja) .announce.plaque .an-title b, html:lang(ja) .announce.plaque .an-s
 @keyframes anSub { 0%, 14% { opacity: 0; transform: translateY(-16px); } 28%, 100% { opacity: 1; transform: none; } }
 @keyframes anFade { 0% { opacity: 0; } 12%, 82% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .announce.plaque, .announce.plaque:has(.ann-art) { animation: anFade 2.2s linear forwards; } .announce.plaque .an-sun, .announce.plaque .an-sub { animation: none; } }
+
+/* 28/11: rivais do jogo (não são pessoas): seção própria, sem número nem medalha, sempre com selo */
+.rv-sec { margin-top: 14px; }
+.rv-title { margin: 0 0 2px; text-align: center; font: 800 12px var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: #8fe3d6; }
+.rv-note { margin: 0 0 8px; text-align: center; font: 600 11.5px/1.35 var(--f-body); letter-spacing: 0; text-transform: none; color: #cfd8cf; }
+.rv-badge { flex: none; align-self: flex-start; width: max-content; padding: 2px 6px; border-radius: 99px; border: 1px solid rgba(143,227,214,.75); font: 800 9px var(--f-body); font-style: normal; letter-spacing: .1em; text-transform: uppercase; color: #bff5ea; background: rgba(8,40,36,.92); }
+.rk-row .rv-badge { align-self: center; margin-left: 6px; }
+.rk-pos.rv-mark, .champ-page .rk-pos.rv-mark { border: 0; background: none; box-shadow: none; }
+.rk-pos.rv-mark::before { content: '\25C6'; color: #8fe3d6; font-size: 12px; }
+.champ-page .pf-head .rv-badge { align-self: center; }
+.champ-page .rv-row .ch-name, .shop-page.champ-page .rv-row .ch-name { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; min-width: 0; }
+.champ-page .rv-row .ch-name .rv-badge { align-self: flex-start; margin: 0; }
+.ui-kit .card.champ-page .rv-note, .card.champ-page .ch-list .rv-sec .rv-note, .card.champ-page .ch-list .pf-head .rv-note { font-size: 12px; line-height: 1.35; margin: 0 0 8px; }
+.ui-kit .card .rv-sec p.rv-note, .card .rv-sec p.rv-note, .card .rv-sec .rv-note { font-size: 11.5px; line-height: 1.35; margin: 0 0 6px; }
+.weekly-list .rv-sec { margin-top: 8px; }
+.weekly-list .rk-row.rv-row .rk-name { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.weekly-list .rk-row.rv-row .rv-badge { align-self: flex-start; margin: 0; }
+.weekly-list .rk-board .rk-row.rv-row { column-gap: 5px; padding-left: 6px; padding-right: 6px; }
+.weekly-list .rk-board .rk-row.rv-row .rk-name b { font-size: 11.5px; }
+.weekly-list .rk-board .rk-row.rv-row .rk-val { font-size: 13px; }
+.weekly-list .rk-board .rk-row.rv-row .rv-mark { width: 12px; min-width: 12px; }
+
+/* 28/11: card da fase no Difícil: lista de recordes maior em tela pequena (a altura acompanha a tela) */
+.ui-kit .card.pre.hard-pre, .card.pre.hard-pre { gap: 7px; }
+.card.pre.hard-pre .pre-main { gap: 5px; }
+.card.pre.hard-pre .pre-moves { line-height: 1.1; }
+.card.pre.hard-pre .weekly-list { width: calc(100% + 16px); margin: 0 -8px; }
+.card.pre.hard-pre .rank-tabs { margin-top: 2px; }
+.card.pre.hard-pre .rk-body { max-height: clamp(150px, calc(100dvh - 520px), 340px); }
+.card.pre.hard-pre .rk-body .weekly-status { margin: 6px 0; line-height: 1.3; }
+.card.pre.hard-pre .weekly-list .rv-sec { margin-top: 4px; }
+.card.pre.hard-pre .weekly-list .rk-board .rk-row.rv-row { padding-block: 4px; min-height: 0; }
+@media (max-height: 700px) {
+  .ui-kit .card.pre.hard-pre, .card.pre.hard-pre { gap: 5px; }
+  .card.pre.hard-pre .pre-main { gap: 3px; }
+  .card.pre.hard-pre .boss-tag { font-size: 10px; line-height: 1.1; margin: 0; }
+  .card.pre.hard-pre .goal-row, .ui-kit .card.pre.hard-pre .goal-row { font-size: 13.5px; }
+  .card.pre.hard-pre .goal-row img { width: 22px; height: 22px; }
+  .card.pre.hard-pre .pre-moves { font-size: 11.5px; }
+  .card.pre.hard-pre .pre-moves b { font-size: 14px; }
+  .card.pre.hard-pre .mode-pick button { min-height: 30px; }
+  .card.pre.hard-pre .btns { gap: 4px; }
+  .ui-kit .card.pre.hard-pre #mPlay { min-height: 48px; }
+  .ui-kit .card.pre.hard-pre #mMap { min-height: 36px; }
+  .card.pre.hard-pre .rk-body { max-height: clamp(118px, calc(100dvh - 452px), 340px); }
+}

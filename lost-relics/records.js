@@ -67,11 +67,13 @@
     const r = await request('/register', { method: 'POST', body: JSON.stringify({ name: data.name, session: getSession() || undefined }) });
     data.playerId = r.playerId; data.token = r.token; save();
   }
+  // offline: lista só deste aparelho; a tela precisa saber que não é o ranking do servidor
+  const offline = (rows) => Object.assign(rows, { offline: true });
   async function list(w) {
     const key = w || week();
-    if (!API) return localRows(key);
+    if (!API) return offline(localRows(key));
     try { const r = await request('/leaderboard?week=' + encodeURIComponent(key)); return r.rows || []; }
-    catch (e) { return localRows(key); }
+    catch (e) { return offline(localRows(key)); }
   }
   async function submit(score, meta) {
     const w = (meta && meta.week) || week(), name = cleanName(data.name);
@@ -93,11 +95,11 @@
   }
   async function listLevel(levelId, w) {
     const key = w || week(), id = Math.max(1, Math.floor(+levelId || 0));
-    if (!API) return localLevelRows(key, id);
+    if (!API) return offline(localLevelRows(key, id));
     try {
       const r = await request('/level-leaderboard?week=' + encodeURIComponent(key) + '&level=' + id);
       return r.rows || [];
-    } catch (e) { return localLevelRows(key, id); }
+    } catch (e) { return offline(localLevelRows(key, id)); }
   }
   // Ranking total da fase: melhor placar de cada jogador somando todas as semanas.
   const localLevelAll = (levelId) => {
@@ -107,9 +109,9 @@
   };
   async function listLevelAll(levelId) {
     const id = Math.max(1, Math.floor(+levelId || 0));
-    if (!API) return localLevelAll(id);
+    if (!API) return offline(localLevelAll(id));
     try { const r = await request('/level-alltime?level=' + id); return r.rows || []; }
-    catch (e) { return localLevelAll(id); }
+    catch (e) { return offline(localLevelAll(id)); }
   }
   // Temporada de 3 meses (mesma regra do Worker): a semana conta na temporada da sua segunda-feira.
   const seasonKey = (w) => { const k = w || week(); return k.slice(0, 4) + '-T' + (Math.floor((+k.slice(5, 7) - 1) / 3) + 1); };
@@ -134,7 +136,12 @@
   // Campeões: GET /champions?player= -> { rows: [{ id (público), name, avatar, points, me }] }; 1º=5, 2º=4, 3º=3, 4º=2, 5º=1. null = não carregou.
   async function champions() {
     if (!API) return null;
-    try { return (await request('/champions' + (data.playerId ? '?player=' + encodeURIComponent(data.playerId) : ''))).rows || []; }
+    try {
+      const r = await request('/champions' + (data.playerId ? '?player=' + encodeURIComponent(data.playerId) : ''));
+      const rows = r.rows || [];
+      if (Number.isInteger(r.players)) rows.players = r.players; // total de jogadores no ranking permanente
+      return rows;
+    }
     catch (e) { return null; }
   }
   // Perfil: GET /champion?id= -> { name, avatar, country, records: [{ level, pos (1 a 5), score }] }
